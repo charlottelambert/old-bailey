@@ -8,10 +8,7 @@
 #
 ###############################################################################
 
-import argparse
-import time
-
-import sys, os, click, gensim, datetime
+import sys, os, click, gensim, time, tqdm, argparse
 from os import listdir
 import custom_stop_words as stop
 from gensim import corpora, models
@@ -38,7 +35,9 @@ def LDA_on_directory(args):
 
     # Compile list of lists of tokens
     texts = []
-    for file in files:
+    print("Compiling tokens.", file=sys.stderr)
+    for i tqdm(range(len(files))):
+        file = files[i]
         with open(os.path.join(args.corpus_dir, file)) as f:
             text = f.read().lower().replace("\n", " ").split(" ")
 
@@ -52,7 +51,7 @@ def LDA_on_directory(args):
         print("Finding bigrams.", file=sys.stderr)
         bigram = Phrases(texts, min_count=1) # Is this an appropriate value for min_count?
         bigram = Phraser(bigram)
-        for idx in range(len(texts)):
+        for idx in tqdm(range(len(texts))):
             bigrams = bigram[texts[idx]]
             if args.bigrams_only:
                 texts[idx] = [] # If we only want bigrams, remove all unigrams
