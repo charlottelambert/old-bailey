@@ -8,8 +8,9 @@
 #
 ###############################################################################
 
-import sys, os, click, gensim, time, tqdm, argparse
+import sys, os, click, gensim, time, argparse
 from os import listdir
+from tqdm import tqdm
 import custom_stop_words as stop
 from gensim import corpora, models
 from gensim.models.wrappers import LdaMallet
@@ -36,7 +37,7 @@ def LDA_on_directory(args):
     # Compile list of lists of tokens
     texts = []
     print("Compiling tokens.", file=sys.stderr)
-    for i tqdm(range(len(files))):
+    for i in tqdm(range(len(files))):
         file = files[i]
         with open(os.path.join(args.corpus_dir, file)) as f:
             text = f.read().lower().replace("\n", " ").split(" ")
@@ -70,6 +71,9 @@ def LDA_on_directory(args):
 
     corpus = [dictionary.doc2bow(text) for text in texts]
 
+    if not os.path.exists(args.save_model_dir):
+        os.mkdir(args.save_model_dir)
+
     # Prefix for running lda (modify if files should go to a different directory)
     pre = args.save_model_dir + "/" + time.strftime("%H:%M:%S") + args.lda_type + "."
 
@@ -99,8 +103,8 @@ def LDA_on_directory(args):
     return ldamodel.print_topics(num_topics=-1, num_words=20)
 # _________________________________________________________________________
 
-def main(corpus_dir, lda_type, unigrams_only, bigrams_only):
-    print(LDA_on_directory(args)
+def main(args):
+    print(LDA_on_directory(args))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

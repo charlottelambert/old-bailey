@@ -1,6 +1,5 @@
 #!/bin/bash
 
-#SBATCH -c 64
 #SBATCH --job-name=lda
 #SBATCH --output=../logs/lda_%A_%a.out
 #SBATCH --ntasks=1
@@ -13,7 +12,6 @@ uname -a
 date
 
 export MALLET_PATH=~/Mallet/bin/mallet
-export JAVA_OPTIONS="-Xms4G -Xmx8G"
 
 ./run_lda.py --unigrams_only
 
