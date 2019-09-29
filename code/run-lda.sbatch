@@ -13,6 +13,6 @@ date
 
 export MALLET_PATH=~/Mallet/bin/mallet
 
-./run_lda.py --unigrams_only
+./run_lda.py --unigrams_only --corpus_dir=../data/sessionsPapers-txt-tok
 
 echo Finished: `date`

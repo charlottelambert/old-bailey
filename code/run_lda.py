@@ -89,6 +89,8 @@ def LDA_on_directory(args):
     # Prefix for running lda (modify if files should go to a different directory)
     pre = args.save_model_dir + "/" + time.strftime("%H:%M:%S") + "_" + args.lda_type + "."
 
+    print_params(pre, args)
+
     # Run specified model
     if lda == gensim.models.wrappers.LdaMallet:
         ldamodel = lda(args.mallet_path, corpus, num_topics=args.num_topics,
@@ -117,7 +119,6 @@ def LDA_on_directory(args):
 # _________________________________________________________________________
 
 def main(args):
-    format_and_print(args)
     print(LDA_on_directory(args))
 
 if __name__ == '__main__':
