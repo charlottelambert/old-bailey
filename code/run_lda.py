@@ -130,7 +130,6 @@ def LDA_on_directory(args):
 # _________________________________________________________________________
 
 def main(args):
-    format_and_print(args)
     print(LDA_on_directory(args))
 
 if __name__ == '__main__':
