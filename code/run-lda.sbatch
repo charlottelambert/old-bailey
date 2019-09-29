@@ -12,7 +12,8 @@ uname -a
 date
 
 export MALLET_PATH=~/Mallet/bin/mallet
+export DTM_PATH=~/dtm-linux64
 
-./run_lda.py --unigrams_only --corpus_dir=../data/sessionsPapers-txt-tok
+./run_lda.py --unigrams_only --corpus_dir=../data/sessionsPapers-txt-tok lda_type=dtm
 
 echo Finished: `date`

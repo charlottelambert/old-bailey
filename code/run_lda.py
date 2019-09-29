@@ -10,7 +10,6 @@
 
 import sys, os, click, csv, gensim, time, argparse
 from os import listdir
-from tqdm import tqdm
 import custom_stop_words as stop
 from gensim import corpora, models
 from gensim.models.wrappers import LdaMallet
@@ -35,7 +34,7 @@ def get_ngrams(args, texts):
         print("Finding bigrams.", file=sys.stderr)
         bigram = Phrases(texts, min_count=1) # Is this an appropriate value for min_count?
         bigram = Phraser(bigram)
-        for idx in tqdm(range(len(texts))):
+        for idx in range(len(texts)):
             bigrams = bigram[texts[idx]]
             if args.bigrams_only:
                 texts[idx] = [] # If we only want bigrams, remove all unigrams
@@ -58,7 +57,7 @@ def LDA_on_directory(args):
     pre = args.save_model_dir + args.lda_type + "/" + time.strftime("%Y%m%d") + "/" + time.strftime("%H-%M-%S") + "/"
 
     if not os.path.exists(pre):
-        os.mkdir(pre)
+        os.makedirs(pre)
 
     print("Reading corpus.", file=sys.stderr)
 
@@ -68,7 +67,7 @@ def LDA_on_directory(args):
     # Compile list of lists of tokens
     texts = []
     print("Compiling tokens.", file=sys.stderr)
-    for i in tqdm(range(len(files))):
+    for i in range(len(files)):
         file = files[i]
         with open(os.path.join(args.corpus_dir, file)) as f:
             text = f.read().lower().replace("\n", " ").split(" ")
