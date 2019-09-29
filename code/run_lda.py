@@ -8,7 +8,7 @@
 #
 ###############################################################################
 
-import sys, os, click, gensim, time, argparse
+import sys, os, click, csv, gensim, time, argparse
 from os import listdir
 from tqdm import tqdm
 import custom_stop_words as stop
@@ -18,10 +18,22 @@ from gensim.test.utils import get_tmpfile
 from gensim.corpora import MalletCorpus
 from gensim.models.phrases import Phrases, Phraser
 
+# TAKEN OUT OF RUN-LDA.SBATCH, PUT BACK IF RUNNING OUT OF MEMORY
+# #SBATCH -c 64
+# export JAVA_OPTIONS="-Xms4G -Xmx8G"
+
 # Where is Mallet installed? Can be overridden with MALLET_PATH environment
 # variable, e.g.,
 #     MALLET_PATH=~/opt/mallet/bin/mallet ./run_lda.py
 # MALLET_PATH = os.environ.get("MALLET_PATH", "~/Mallet/bin/mallet")
+
+def print_params(pre, args):
+    # Print out arguments used to file
+    with open(pre + "parameters.tsv", "w+") as f:
+        tsv_writer = csv.writer(f, delimiter='\t')
+        arg_dict = vars(args)
+        for key in arg_dict:
+            tsv_writer.writerow([key, arg_dict[key]])
 
 def LDA_on_directory(args):
     if args.lda_type == "multicore":
@@ -75,7 +87,7 @@ def LDA_on_directory(args):
         os.mkdir(args.save_model_dir)
 
     # Prefix for running lda (modify if files should go to a different directory)
-    pre = args.save_model_dir + "/" + time.strftime("%H:%M:%S") + args.lda_type + "."
+    pre = args.save_model_dir + "/" + time.strftime("%H:%M:%S") + "_" + args.lda_type + "."
 
     # Run specified model
     if lda == gensim.models.wrappers.LdaMallet:
@@ -89,7 +101,8 @@ def LDA_on_directory(args):
                        prefix=pre)
 
     # Save model with timestamp
-    ldamodel.save(pre + ".model")
+    ldamodel.save(pre + "model")
+    print_params(pre, args)
 
     f = open(pre + "file_ordering.txt", "w+")
     text = ""
@@ -104,6 +117,7 @@ def LDA_on_directory(args):
 # _________________________________________________________________________
 
 def main(args):
+    format_and_print(args)
     print(LDA_on_directory(args))
 
 if __name__ == '__main__':
