@@ -12,7 +12,6 @@ import sys, os, click, csv, gensim, time, argparse
 from os import listdir
 import custom_stop_words as stop
 from gensim import corpora, models
-from gensim.models.wrappers import LdaMallet
 from gensim.test.utils import get_tmpfile
 from gensim.corpora import MalletCorpus
 from gensim.models.phrases import Phrases, Phraser
@@ -103,7 +102,7 @@ def LDA_on_directory(args):
                        workers=12, iterations=args.num_iterations,
                        prefix=pre)
     elif args.lda_type == "dtm": # Dynamic Topic Model
-        lda = gensim.models.wrappers.DtmModel
+        lda = gensim.models.wrappers.dtmmodel.DtmModel
         # Find path to DTM binary
         DTM_PATH = os.environ.get('DTM_PATH', None)
         if not DTM_PATH:
