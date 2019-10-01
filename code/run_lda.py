@@ -13,12 +13,15 @@ from os import listdir
 import custom_stop_words as stop
 from gensim import corpora, models
 from gensim.test.utils import get_tmpfile
-from gensim.corpora import MalletCorpus
+from gensim.corpora import MalletCorpus, Dictionary, bleicorpus
 from gensim.models.phrases import Phrases, Phraser
+from gensim.models.wrappers.dtmmodel import DtmModel
 
 # TAKEN OUT OF RUN-LDA.SBATCH, PUT BACK IF RUNNING OUT OF MEMORY
 # #SBATCH -c 64
 # export JAVA_OPTIONS="-Xms4G -Xmx8G"
+
+# https://markroxor.github.io/gensim/static/notebooks/ldaseqmodel.html
 
 def print_params(pre, args):
     # Print out arguments used to file
@@ -102,13 +105,12 @@ def LDA_on_directory(args):
                        workers=12, iterations=args.num_iterations,
                        prefix=pre)
     elif args.lda_type == "dtm": # Dynamic Topic Model
-        lda = gensim.models.wrappers.dtmmodel.DtmModel
         # Find path to DTM binary
         DTM_PATH = os.environ.get('DTM_PATH', None)
         if not DTM_PATH:
             raise ValueError("You need to set the DTM path")
         # Run the model
-        ldamodel = lda(DTM_PATH, corpus=corpus,
+        ldamodel = DtmModel(DTM_PATH, corpus=corpus,
             id2word=dictionary, time_slices=[1] * len(corpus), prefix=pre)
 
     # Save model with timestamp
