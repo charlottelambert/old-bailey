@@ -12,7 +12,7 @@ uname -a
 date
 
 export MALLET_PATH=~/Mallet/bin/mallet
-export DTM_PATH=~/dtm-linux64
+export DTM_PATH=/home/clambert/dtm/dtm/main
 
 ./run_lda.py --unigrams_only --corpus_dir=../data/sessionsPapers-txt-tok --lda_type=dtm
 
