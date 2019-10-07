@@ -99,7 +99,8 @@ def main(args):
     annotations_str = "-gen_annotations" if args.encode_annotations_general else ""
     annotations_str = "-spec_annotations" if args.encode_annotations_specific else annotations_str
     txt_output_dir = base_name + annotations_str
-
+    print("Writing files to " + txt_output_dir)
+    
     if not os.path.exists(txt_output_dir):
         os.mkdir(txt_output_dir)
 
@@ -111,7 +112,7 @@ def main(args):
         # Change to txt file
         filename = os.path.splitext(os.path.basename(file))[0] + ".txt"
         file_path = os.path.join(txt_output_dir, filename)
-        if os.path.exists(file_path):
+        if os.path.exists(file_path) and not args.overwrite:
             continue
 
         # Write text to txt file
@@ -122,6 +123,8 @@ def main(args):
             except UnicodeDecodeError:
                 print("Error reading " + file + ". Skipping...")
                 continue
+            except ET.ParseError:
+                print("Error reading " + file + ". Skipping...")
             txt_file.write(text_from_xml)
 
 
@@ -130,5 +133,6 @@ if __name__ == '__main__':
     parser.add_argument('corpus_XML_dir', type=str, default="../data/sessionsPapers", help='directory containing XML version of corpus')
     parser.add_argument('--encode_annotations_general', default=False, action="store_true", help='whether or not to encode general version of annotations in text')
     parser.add_argument('--encode_annotations_specific', default=False, action="store_true", help='whether or not to encode specific version of annotations in text')
+    parser.add_argument('--overwrite', default=False, action="store_true", help='whether or not to overwrite old files with the same names')
     args = parser.parse_args()
     main(args)
