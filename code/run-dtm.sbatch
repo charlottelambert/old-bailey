@@ -12,7 +12,6 @@ echo Running: $SLURM_ARRAY_TASK_ID
 uname -a
 date
 
-export JAVA_OPTIONS="-Xms4G -Xmx8G"
 export DTM_PATH=/home/clambert/dtm/dtm/main
 
 ./run_lda.py --unigrams_only --corpus_dir=../data/sessionsPapers-txt-tok --lda_type=dtm --num_topics=50
