@@ -1,0 +1,13 @@
+#!/bin/bash
+
+MODEL_TYPE=${1:-lda}
+
+if [ "$MODEL_TYPE" == "lda" ]
+then
+sbatch run-lda.sbatch
+elif [ "$MODEL_TYPE" == "dtm" ]
+then
+sbatch run-dtm.sbatch
+else
+echo "Please specify a valid model type."
+fi
