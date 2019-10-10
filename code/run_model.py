@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 ###############################################################################
-# run_lda.py
+# run_model.py
 #
-# Run LDA on input directory. Either use Mallet LDA or gensim's multicore based
-# on input.
+# Run given model on input directory. Either use Mallet LDA, gensim's multicore,
+# or DTM based on input.
 #
 ###############################################################################
 
@@ -47,16 +47,16 @@ def get_ngrams(args, texts):
                         texts[idx].append(token) # Scale bigrams
     return texts
 
-def LDA_on_directory(args):
-    # Types of valid lda models to run
-    type_list = ["mallet", "multicore", "dtm"]
-    if args.lda_type not in type_list:
-        print("Please specify a valid model type (multicore, mallet, dtm).", sys.err)
+def model_on_directory(args):
+    # Types of valid models to run
+    type_list = ["lda", "multicore", "dtm"]
+    if args.model_type not in type_list:
+        print("Please specify a valid model type (multicore, lda, dtm).", sys.err)
         sys.exit(1)
 
     # Prefix for running lda (modify if files should go to a different directory)
-    # FORMAT: "../models/lda_type/YYYYMMDD/HH-MM-SS"
-    pre = args.save_model_dir + args.lda_type + "/" + time.strftime("%Y%m%d") + "/" + time.strftime("%H-%M-%S") + "/"
+    # FORMAT: "../models/model_type/YYYYMMDD/HH-MM-SS"
+    pre = args.save_model_dir + args.model_type + "/" + time.strftime("%Y%m%d") + "/" + time.strftime("%H-%M-%S") + "/"
 
     if not os.path.exists(pre):
         os.makedirs(pre)
@@ -92,29 +92,29 @@ def LDA_on_directory(args):
     corpus = [dictionary.doc2bow(text) for text in texts]
 
     # Run the specified model
-    if args.lda_type == "multicore":
+    if args.model_type == "multicore":
         lda = gensim.models.ldamulticore.LdaMulticore
         ldamodel = lda(corpus, num_topics=args.num_topics,
                        id2word=dictionary, passes=200, alpha=20, workers=8,
                        prefix=pre)
-    elif args.lda_type == "mallet":
+    elif args.model_type == "lda":
         MALLET_PATH = os.environ.get("MALLET_PATH", "~/Mallet/bin/mallet")
         lda = gensim.models.wrappers.LdaMallet
-        ldamodel = lda(MALLET_PATH, corpus, num_topics=args.num_topics,
+        model = lda(MALLET_PATH, corpus, num_topics=args.num_topics,
                        id2word=dictionary, optimize_interval=args.optimize_interval,
                        workers=12, iterations=args.num_iterations,
                        prefix=pre)
-    elif args.lda_type == "dtm": # Dynamic Topic Model
+    elif args.model_type == "dtm": # Dynamic Topic Model
         # Find path to DTM binary
         DTM_PATH = os.environ.get('DTM_PATH', None)
         if not DTM_PATH:
             raise ValueError("You need to set the DTM path")
         # Run the model
-        ldamodel = DtmModel(DTM_PATH, corpus=corpus,
+        model = DtmModel(DTM_PATH, corpus=corpus,
             id2word=dictionary, time_slices=[1] * len(corpus), prefix=pre)
 
     # Save model with timestamp
-    ldamodel.save(pre + "model")
+    model.save(pre + "model")
     print_params(pre, args)
 
     f = open(pre + "file_ordering.txt", "w+")
@@ -126,11 +126,11 @@ def LDA_on_directory(args):
 
     print("Done.", file=sys.stderr)
 
-    return ldamodel.print_topics(num_topics=-1, num_words=20)
+    return model.print_topics(num_topics=-1, num_words=20)
 # _________________________________________________________________________
 
 def main(args):
-    print(LDA_on_directory(args))
+    print(model_on_directory(args))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -138,8 +138,8 @@ if __name__ == '__main__':
     parser.add_argument('--unigrams_only', default=False, action="store_true", help='whether or not to only include unigrams')
     parser.add_argument('--bigrams_only', default=False, action="store_true", help='whether or not to only include bigrams')
     parser.add_argument('--mixed_ngrams', default=False, action="store_true", help='whether or not to include both unigrams and bigrams')
-    parser.add_argument('--corpus_dir', type=str, default="../data/sessionsPapers-txt", help='directory containing corpus')
-    parser.add_argument('--lda_type', type=str, default="mallet", help='type of lda to run') # Include dynamic here?
+    parser.add_argument('--corpus_dir', type=str, default="../data/sessionsPapers-txt-tok", help='directory containing corpus')
+    parser.add_argument('--model_type', type=str, default="lda", help='type of model to run') # Include dynamic here?
     parser.add_argument('--num_topics', type=int, default=100, help='number of topics to find')
     parser.add_argument('--optimize_interval', type=int, default=10, help='number of topics to find')
     parser.add_argument('--num_iterations', type=int, default=1000, help='number of topics to find')
