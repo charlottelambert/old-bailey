@@ -54,7 +54,7 @@ def fix_hyphens(input):
 def main(args):
     # Compile list of files to tokenize
     files = [os.path.join(args.corpus_dir, f) for f in os.listdir(args.corpus_dir)
-             if os.path.isfile(os.path.join(args.corpus_dir, f))]
+             if (os.path.isfile(os.path.join(args.corpus_dir, f)) and f.endswith('.txt'))]
 
     # Define output directory (if not provided)
     if not args.output_dir_base:
