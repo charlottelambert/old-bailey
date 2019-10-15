@@ -91,16 +91,18 @@ def encode_annotations(args, xml_path):
 def main(args):
     if not args.corpus_XML_dir:
         print("Please specify directory containing XML files")
+        sys.exit(1)
+    args.corpus_XML_dir = os.path.join(args.corpus_XML_dir, '')
 
     input_files = [os.path.join(args.corpus_XML_dir, f) for f in os.listdir(args.corpus_XML_dir) if os.path.isfile(os.path.join(args.corpus_XML_dir, f))]
 
     # Define name of output directory
-    base_name = os.path.dirname(args.corpus_XML_dir) + "-txt"
+    base_name = os.path.dirname(args.corpus_XML_dir).rstrip("/") + "-txt"
     annotations_str = "-gen_annotations" if args.encode_annotations_general else ""
     annotations_str = "-spec_annotations" if args.encode_annotations_specific else annotations_str
     txt_output_dir = base_name + annotations_str
     print("Writing files to " + txt_output_dir)
-    
+
     if not os.path.exists(txt_output_dir):
         os.mkdir(txt_output_dir)
 

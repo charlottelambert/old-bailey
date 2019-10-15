@@ -58,8 +58,8 @@ def main(args):
 
     # Define output directory (if not provided)
     if not args.output_dir_base:
-        output_dir = args.corpus_dir + "-tok"
-    else: output_dir = args.output_dir_base + "-tok"
+        output_dir = args.corpus_dir.rstrip("/") + "-tok"
+    else: output_dir = args.output_dir_base.rstrip("/") + "-tok"
 
     # Create output directory
     if not os.path.exists(output_dir):
@@ -71,22 +71,23 @@ def main(args):
         if not args.overwrite and os.path.exists(output_file):
             continue
 
-        output = ""
+        output = []
         with open(file, "r") as f:
             for line in f:
                 # Tokenize line
                 tokens = word_tokenize(line)
                 # Handle issue with dashes appearing at start of word
-                tokens = [[s for s in fix_hyphens(token)][0] for token in tokens]
+                # tokens = [[s for s in fix_hyphens(token)][0] for token in tokens]
+                tokens = [fix_hyphens(token) for token in tokens]
                 # Keep all words containing at least one letter
                 tokens = [x for x in tokens if re.search('[a-zA-Z]', x)]
                 # Replace split contractions with full words
                 tokens = contractions(tokens)
                 # Remove words of length < 2
                 tokens = [x for x in tokens if len(x) > 2]
-
+                output.append(" ".join(tokens))
         with open(output_file, "w+") as f:
-            f.write(output)
+            f.write('\n'.join(output))
     print("Tokenization done.", file=sys.stderr)
 
 if __name__ == '__main__':
