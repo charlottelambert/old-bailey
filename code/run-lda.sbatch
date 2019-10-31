@@ -6,7 +6,7 @@
 #SBATCH --time=96:00:00
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=clambert@vassar.edu
-#SBATCH -c 64
+#SBATCH -p emc
 
 echo Running: $SLURM_ARRAY_TASK_ID
 uname -a
@@ -15,6 +15,6 @@ date
 export JAVA_OPTIONS="-Xms4G -Xmx8G"
 export MALLET_PATH=~/Mallet/bin/mallet
 
-./run_lda.py --unigrams_only --corpus_dir=../data/sessionsPapers-txt-tok --lda_type=lda --num_topics=50
+./run_model.py --unigrams_only --corpus_dir=../data/sessionsAndOrdinarys-txt-tok --num_topics=50
 
 echo Finished: `date`
