@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-import sys
+import sys, html
 import os, argparse
 import xml.etree.ElementTree as ET
 from tqdm import tqdm
 from tei_reader import TeiReader
 
+from bs4 import BeautifulSoup
 # Can't figure out how to access the individual elements
 # def tei_encode_annotation(args, xml_path):
 #     reader = TeiReader()
@@ -84,7 +85,8 @@ def encode_annotations(args, xml_path):
                 elem.text = annotated_element
 
     # Find root of tree, convert to string, and return
-    text_from_xml = str(ET.tostring(root, encoding='utf-8', method='text'))
+    text_from_xml = str(ET.tostring(root, encoding='ASCII', method='text'))
+    text_from_xml = html.unescape(text_from_xml)
     return text_from_xml.replace('\\n', '\n') # Fixes issue printing "\n"
 
 
@@ -122,12 +124,13 @@ def main(args):
             try:
                 # Get string version of xml
                 text_from_xml = encode_annotations(args, file)[2:-1]
+                txt_file.write(text_from_xml)
             except UnicodeDecodeError:
-                print("Error reading " + file + ". Skipping...")
+                print("UnicodeDecodeError reading " + file + ". Skipping...")
                 continue
             except ET.ParseError:
-                print("Error reading " + file + ". Skipping...")
-            txt_file.write(text_from_xml)
+                print("ParseError reading " + file + ". Skipping...")
+
 
 
 if __name__ == '__main__':
