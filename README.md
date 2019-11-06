@@ -6,7 +6,7 @@ The following descriptions relate to code in the `thesis/code` directory. To get
 
 Convert given XML documents to text files using the following code:
 ```
-./data_reader ../data/sessionsPapers
+./data_reader /work/clambert/thesis-data/sessionsPapers
 
 ```
 
@@ -31,7 +31,7 @@ srun -c 64 --pty /bin/bash
 ls -d CORPUS_DIR/* | parallel --progress -j 64 "./dehyphenate.py {}"
 ```
 
-This command will dehyphenate all files in `COPUS_DIR` and output all files into `COPUS_DIR-dh`. 
+This command will dehyphenate all files in `COPUS_DIR` and output all files into `COPUS_DIR-dh`.
 
 ### Topic Model
 

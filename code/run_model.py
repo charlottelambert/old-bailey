@@ -138,7 +138,7 @@ if __name__ == '__main__':
     parser.add_argument('--unigrams_only', default=False, action="store_true", help='whether or not to only include unigrams')
     parser.add_argument('--bigrams_only', default=False, action="store_true", help='whether or not to only include bigrams')
     parser.add_argument('--mixed_ngrams', default=False, action="store_true", help='whether or not to include both unigrams and bigrams')
-    parser.add_argument('--corpus_dir', type=str, default="../data/sessionsPapers-txt-tok", help='directory containing corpus')
+    parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsPapers-txt-tok", help='directory containing corpus')
     parser.add_argument('--model_type', type=str, default="lda", help='type of model to run') # Include dynamic here?
     parser.add_argument('--num_topics', type=int, default=100, help='number of topics to find')
     parser.add_argument('--optimize_interval', type=int, default=10, help='number of topics to find')

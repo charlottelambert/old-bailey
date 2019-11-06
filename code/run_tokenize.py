@@ -93,7 +93,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_dir_base', type=str, default="", help='location to save tokenized text')
-    parser.add_argument('--corpus_dir', type=str, default="../data/sessionsPapers-txt", help='directory containing corpus')
+    parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsPapers-txt", help='directory containing corpus')
     parser.add_argument('--overwrite', default=False, action="store_true", help='whether or not to overwrite old files with the same names')
     args = parser.parse_args()
     main(args)

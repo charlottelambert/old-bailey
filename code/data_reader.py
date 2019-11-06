@@ -135,7 +135,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('corpus_XML_dir', type=str, default="../data/sessionsPapers", help='directory containing XML version of corpus')
+    parser.add_argument('corpus_XML_dir', type=str, default="/work/clambert/thesis-data/sessionsPapers", help='directory containing XML version of corpus')
     parser.add_argument('--encode_annotations_general', default=False, action="store_true", help='whether or not to encode general version of annotations in text')
     parser.add_argument('--encode_annotations_specific', default=False, action="store_true", help='whether or not to encode specific version of annotations in text')
     parser.add_argument('--overwrite', default=False, action="store_true", help='whether or not to overwrite old files with the same names')
