@@ -10,6 +10,10 @@ import sys, argparse, os, re
 from tqdm import tqdm
 from nltk.tokenize import word_tokenize
 from nltk.corpus import words
+from flashtext import KeywordProcessor
+
+keyword_processor = KeywordProcessor()
+keyword_processor.add_keywords_from_list(words.words())
 
 def dehyphenate(token):
     """
@@ -28,14 +32,10 @@ def dehyphenate(token):
     for opt in options:
         ready = True
         mod_tokens = opt.join(token.split("-"))
-        for tok in mod_tokens.split():
-
-            # check if tok is a word
-            if not tok in words.words():
-                ready = False
-                break
-        if ready:
+        words_found = keyword_processor.extract_keywords(mod_tokens)
+        if len(words_found) == len(mod_tokens.split()):
             return mod_tokens
+
     return token
 
 def main(args):
