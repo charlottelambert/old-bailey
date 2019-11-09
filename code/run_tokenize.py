@@ -11,6 +11,7 @@
 import sys, argparse, os, re
 from tqdm import tqdm
 from nltk.tokenize import word_tokenize
+from nltk.util import ngrams
 
 def contractions(token_list):
     # Replace contraction tokenization with real words
@@ -41,6 +42,15 @@ def contractions(token_list):
                 token_list[idx+1] = ""
     return token_list
 
+def make_bigrams(tokens):
+    if len(tokens) == 0:
+        return tokens
+    # If using bigrams, convert tokenized unigrams to bigrams
+    bigrams = list(ngrams(tokens, 2))
+    output = []
+    for bigram in bigrams:
+        output.append(bigram[0] + "_" + bigram[1])
+    return output
 
 def fix_hyphens(input):
     """
@@ -74,6 +84,8 @@ def main(args):
         output = []
         with open(file, "r") as f:
             for line in f:
+                if not line.strip():
+                    continue
                 # Tokenize line
                 tokens = word_tokenize(line)
                 # Handle issue with dashes appearing at start of word
@@ -85,6 +97,8 @@ def main(args):
                 tokens = contractions(tokens)
                 # Remove words of length < 2
                 tokens = [x for x in tokens if len(x) > 2]
+                if args.bigrams:
+                    tokens = make_bigrams(tokens)
                 output.append(" ".join(tokens))
         with open(output_file, "w+") as f:
             f.write('\n'.join(output))
@@ -95,5 +109,6 @@ if __name__ == '__main__':
     parser.add_argument('--output_dir_base', type=str, default="", help='location to save tokenized text')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsPapers-txt", help='directory containing corpus')
     parser.add_argument('--overwrite', default=False, action="store_true", help='whether or not to overwrite old files with the same names')
+    parser.add_argument('--bigrams', default=False, action="store_true", help='whether or not to use bigrams')
     args = parser.parse_args()
     main(args)
