@@ -4,7 +4,8 @@
 # run-tokenize.py
 #
 # Tokenize text using word_tokenize and replace split-up contractions with
-# equivalent words (i.e., couldn't -> could not)
+# equivalent words (i.e., couldn't -> could not). Should be run after text
+# is dehyphenated.
 #
 ###############################################################################
 
@@ -89,7 +90,6 @@ def main(args):
                 # Tokenize line
                 tokens = word_tokenize(line)
                 # Handle issue with dashes appearing at start of word
-                # tokens = [[s for s in fix_hyphens(token)][0] for token in tokens]
                 tokens = [fix_hyphens(token) for token in tokens]
                 # Keep all words containing at least one letter
                 tokens = [x for x in tokens if re.search('[a-zA-Z]', x)]

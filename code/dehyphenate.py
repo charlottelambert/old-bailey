@@ -28,6 +28,15 @@ def dehyphenate(token):
     if not "-" in token:
         return token
 
+    # # If bigrams, run over each unigram
+    # if "_" in token:
+    #     words = token.split("_")
+    #     output = []
+    #     for word in words:
+    #         new_word = dehyphenate(word)
+    #         output.append(new_word)
+    #     return "_".join(output)
+
     options = [" ", ""]
     for opt in options:
         ready = True
