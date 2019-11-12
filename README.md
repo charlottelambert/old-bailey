@@ -17,10 +17,10 @@ Converted text data will be placed in a directory with the suffix `-txt` added t
 To tokenize data (and clean up some idiosyncrasies), run `run_tokenize.py` on a corpus of text files. Some default arguments have been added for simplicity, but can be overridden by setting the appropriate flags.
 
 ```
-./run_tokenize.py
+./run_tokenize.py --corpus_dir=CORPUS_DIR
 ```
 
-Tokenized text files will be written to a directory with the suffix `-tok` added to the input `corpus_dir`. Like with `code/data_reader.py`, by default, code will not overwrite files if they already exist in this created directory. Flags can be added to change this and to incorporate annotations from the XML into the text data.
+Tokenized text files will be written to a directory with the suffix `-tok` added to the input `CORPUS_DIR`. Like with `code/data_reader.py`, by default, code will not overwrite files if they already exist in this created directory. Flags can be added to change this and to incorporate annotations from the XML into the text data.
 
 ### Dehyphenation
 
@@ -31,7 +31,19 @@ srun -c 64 --pty /bin/bash
 ls -d CORPUS_DIR/* | parallel --progress -j 64 "./dehyphenate.py {}"
 ```
 
-This command will dehyphenate all files in `COPUS_DIR` and output all files into `COPUS_DIR-dh`.
+This command will dehyphenate all files in `CORPUS_DIR` and output all files into `CORPUS_DIR-dh`.
+
+### Bigrams (optional)
+
+To convert unigram data to bigram data, run the following line of code:
+
+```
+./run_tokenize.py --corpus_dir=CORPUS_DIR --bigrams
+```
+This command will convert all files in `CORPUS_DIR` to a bigram representation and output all files into `CORPUS_DIR-bi`.
+
+Note: the data provided should be tokenized and dehyphenated first. If data is not already dehyphenated, there is no code to properly dehyphenate bigrams.
+
 
 ### Topic Model
 
