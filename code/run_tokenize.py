@@ -68,9 +68,13 @@ def main(args):
              if (os.path.isfile(os.path.join(args.corpus_dir, f)) and f.endswith('.txt'))]
 
     # Define output directory (if not provided)
+    if args.bigrams:
+        suffix = "-bi"
+    else:
+        suffix = "-tok"
     if not args.output_dir_base:
-        output_dir = args.corpus_dir.rstrip("/") + "-tok"
-    else: output_dir = args.output_dir_base.rstrip("/") + "-tok"
+        output_dir = args.corpus_dir.rstrip("/") + suffix
+    else: output_dir = args.output_dir_base.rstrip("/") + suffix
 
     # Create output directory
     if not os.path.exists(output_dir):
@@ -87,8 +91,15 @@ def main(args):
             for line in f:
                 if not line.strip():
                     continue
+
                 # Tokenize line
                 tokens = word_tokenize(line)
+
+                if args.bigrams:
+                    tokens = make_bigrams(tokens)
+                    output.append(" ".join(tokens))
+                    continue
+
                 # Handle issue with dashes appearing at start of word
                 tokens = [fix_hyphens(token) for token in tokens]
                 # Keep all words containing at least one letter
@@ -97,8 +108,7 @@ def main(args):
                 tokens = contractions(tokens)
                 # Remove words of length < 2
                 tokens = [x for x in tokens if len(x) > 2]
-                if args.bigrams:
-                    tokens = make_bigrams(tokens)
+
                 output.append(" ".join(tokens))
         with open(output_file, "w+") as f:
             f.write('\n'.join(output))
@@ -109,6 +119,6 @@ if __name__ == '__main__':
     parser.add_argument('--output_dir_base', type=str, default="", help='location to save tokenized text')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsPapers-txt", help='directory containing corpus')
     parser.add_argument('--overwrite', default=False, action="store_true", help='whether or not to overwrite old files with the same names')
-    parser.add_argument('--bigrams', default=False, action="store_true", help='whether or not to use bigrams')
+    parser.add_argument('--bigrams', default=False, action="store_true", help='whether or not just convert data to bigrams')
     args = parser.parse_args()
     main(args)

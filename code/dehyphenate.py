@@ -11,6 +11,7 @@ from tqdm import tqdm
 from nltk.tokenize import word_tokenize
 from nltk.corpus import words
 from flashtext import KeywordProcessor
+import inflection as inf
 
 keyword_processor = KeywordProcessor()
 keyword_processor.add_keywords_from_list(words.words())
@@ -41,8 +42,17 @@ def dehyphenate(token):
     for opt in options:
         ready = True
         mod_tokens = opt.join(token.split("-"))
+        # Look for all words in the list of tokens
         words_found = keyword_processor.extract_keywords(mod_tokens)
+
+        # If all tokens were words, return new tokens
         if len(words_found) == len(mod_tokens.split()):
+            return mod_tokens
+
+        # Check if all tokens are words if they are singularized
+        # (words.words() does not contain plural words)
+        singular_words_found = keyword_processor.extract_keywords(" ".join([inf.singularize(tok) for tok in mod_tokens.split()]))
+        if len(singular_words_found) == len(mod_tokens.split()):
             return mod_tokens
 
     return token
