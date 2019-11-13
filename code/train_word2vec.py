@@ -71,7 +71,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsPapers-txt-tok-dh", help='directory containing corpus')
+    parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-dh", help='directory containing corpus')
     parser.add_argument('--save_model_dir', type=str, default="../models/", help='base directory for saving model directory')
     args = parser.parse_args()
     main(args)
