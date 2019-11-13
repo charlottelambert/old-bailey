@@ -44,8 +44,13 @@ def tsne_plot(model, pre):
                      va='bottom')
     # plt.show()
     plt.savefig(pre + 'plot.png')
+    print("TSNE plot saved.", file=sys.stderr)
 
 def main(args):
+    pre = args.save_model_dir + "word2vec/" + time.strftime("%Y-%m-%d") + "/" + time.strftime("%H-%M-%S") + "/"
+    if not os.path.exists(pre):
+        os.makedirs(pre)
+    print("Data will be saved to directory " + pre, file=sys.stderr)
     print("Building corpus...", file=sys.stderr)
     corpus = build_corpus(args.corpus_dir)
 
@@ -54,16 +59,12 @@ def main(args):
     model.build_vocab(corpus)
     print("Training model...", file=sys.stderr)
     model.train(corpus, total_examples=model.corpus_count, epochs=model.epochs)
-
-    pre = args.save_model_dir + "word2vec/" + time.strftime("%Y-%m-%d") + "/" + time.strftime("%H-%M-%S") + "/"
-    if not os.path.exists(pre):
-        os.makedirs(pre)
+    model.save(pre + "model")
+    print("Model saved. ", file=sys.stderr)
 
     print("Visualizing results...", file=sys.stderr)
     tsne_plot(model, pre)
 
-    model.save(pre + "model")
-    print("Results saved to directory " + pre, file=sys.stderr)
     print("Done!", file=sys.stderr)
 
 
