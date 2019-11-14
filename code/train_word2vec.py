@@ -75,7 +75,7 @@ def main(args):
         print("Model loaded from " + args.load_model, file=sys.stderr)
         pre = os.path.dirname(args.load_model)
 
-    if args.plot:
+    if not args.no_plot:
         print("Visualizing results...", file=sys.stderr)
         tsne_plot(model, pre)
 
