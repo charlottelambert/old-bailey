@@ -21,11 +21,12 @@ def tsne_plot(model, pre):
     labels = []
     tokens = []
     print("First loop beginning...", file=sys.stderr)
-    for word in model.wv.vocab:
+    for i, word in enumerate(model.wv.vocab):
         tokens.append(model.wv[word])
         labels.append(word)
 
     tsne_model = TSNE(perplexity=40, n_components=2, init='pca', n_iter=2500, random_state=23)
+    # PROBLEM with fit_transform, it's just never returning
     new_values = tsne_model.fit_transform(tokens)
 
     x = []
@@ -74,8 +75,9 @@ def main(args):
         print("Model loaded from " + args.load_model, file=sys.stderr)
         pre = os.path.dirname(args.load_model)
 
-    print("Visualizing results...", file=sys.stderr)
-    tsne_plot(model, pre)
+    if args.plot:
+        print("Visualizing results...", file=sys.stderr)
+        tsne_plot(model, pre)
 
     print("Done!", file=sys.stderr)
 
@@ -86,5 +88,6 @@ if __name__ == '__main__':
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-dh", help='directory containing corpus')
     parser.add_argument('--save_model_dir', type=str, default="../models/", help='base directory for saving model directory')
     parser.add_argument('--load_model', type=str, help='path to model to load and visualize.')
+    parser.add_argument('--no_plot', default=False, action="store_true", help='whether or not to visualize and plot data.')
     args = parser.parse_args()
     main(args)
