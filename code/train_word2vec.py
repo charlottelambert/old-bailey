@@ -20,18 +20,21 @@ def tsne_plot(model, pre):
     "Creates and TSNE model and plots it"
     labels = []
     tokens = []
-    print("First loop beginning...", file=sys.stderr)
     for i, word in enumerate(model.wv.vocab):
         tokens.append(model.wv[word])
         labels.append(word)
 
-    tsne_model = TSNE(perplexity=40, n_components=2, init='pca', n_iter=2500, random_state=23)
+#    tsne_model = TSNE(perplexity=30, n_components=2, init='pca', n_iter=2500, random_state=23)
+    tsne_model = TSNE(random_state=2017, perplexity=12, n_components=2, init='pca', method='barnes_hut', verbose=1)
+    print("TSNE model initialized.", file=sys.stderr)
     # PROBLEM with fit_transform, it's just never returning
-    new_values = tsne_model.fit_transform(tokens)
+    try:
+        new_values = tsne_model.fit_transform(tokens)
+    except KeyboardInterrupt:
+        print("Exiting...", file=sys.stderr)
 
     x = []
     y = []
-    print("Second loop beginning...", file=sys.stderr)
 #    for value in new_values:
     for i in tqdm(range(len(new_values))):
         value = new_values[i]
@@ -39,7 +42,6 @@ def tsne_plot(model, pre):
         y.append(value[1])
 
     plt.figure(figsize=(10, 10))
-    print("Third loop beginning...", file=sys.stderr)
     for i in tqdm(range(len(x))):
     #for i in range(len(x)):
         plt.scatter(x[i],y[i])
