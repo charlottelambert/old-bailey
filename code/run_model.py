@@ -55,7 +55,7 @@ def model_on_directory(args):
         sys.exit(1)
 
     # Prefix for running lda (modify if files should go to a different directory)
-    # FORMAT: "../models/model_type/YYYYMMDD/HH-MM-SS"
+    # FORMAT: "/work/clambert/models/model_type/YYYYMMDD/HH-MM-SS"
     pre = args.save_model_dir + args.model_type + "/" + time.strftime("%Y%m%d") + "/" + time.strftime("%H-%M-%S") + "/"
 
     if not os.path.exists(pre):
@@ -134,7 +134,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--save_model_dir', type=str, default="../models/", help='base directory for saving model directory')
+    parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--unigrams_only', default=False, action="store_true", help='whether or not to only include unigrams')
     parser.add_argument('--bigrams_only', default=False, action="store_true", help='whether or not to only include bigrams')
     parser.add_argument('--mixed_ngrams', default=False, action="store_true", help='whether or not to include both unigrams and bigrams')
