@@ -52,7 +52,7 @@ def encode_name(args, elem):
             except KeyError:
                 return base + "_unk"
 
-    return "_".join([base, "_".join(added_info)])
+    return "$" + "_".join([base, "_".join(added_info)])
 
 
 def encode_annotations(args, xml_path):
@@ -100,8 +100,8 @@ def main(args):
 
     # Define name of output directory
     base_name = os.path.dirname(args.corpus_XML_dir).rstrip("/") + "-txt"
-    annotations_str = "-gen_annotations" if args.encode_annotations_general else ""
-    annotations_str = "-spec_annotations" if args.encode_annotations_specific else annotations_str
+    annotations_str = "-gen" if args.encode_annotations_general else ""
+    annotations_str = "-spec" if args.encode_annotations_specific else annotations_str
     txt_output_dir = base_name + annotations_str
     print("Writing files to " + txt_output_dir)
 

@@ -26,7 +26,7 @@ def dehyphenate(token):
 
         token: string to dehyphenate
     """
-    if not "-" in token:
+    if not "-" in token or token[:1] == "$":
         return token
 
     # # If bigrams, run over each unigram
