@@ -67,11 +67,15 @@ def main(args):
     files = [os.path.join(args.corpus_dir, f) for f in os.listdir(args.corpus_dir)
              if (os.path.isfile(os.path.join(args.corpus_dir, f)) and f.endswith('.txt'))]
 
+    # Define additional info to add to output path
+    suffix = "-tok"
+    bigram_str = "-bi" if args.bigrams else ""
+    lower_str = "-lower" if args.lower else ""
+    street_str = "-streets" if args.street_sub else ""
+
+    suffix += bigram_str + lower_str + street_str
+
     # Define output directory (if not provided)
-    if args.bigrams:
-        suffix = "-bi"
-    else:
-        suffix = "-tok"
     if not args.output_dir_base:
         output_dir = args.corpus_dir.rstrip("/") + suffix
     else: output_dir = args.output_dir_base.rstrip("/") + suffix
@@ -92,6 +96,10 @@ def main(args):
                 if not line.strip():
                     continue
 
+                # Lower line if needed
+                if args.lower:
+                    line = line.lower()
+
                 # Tokenize line
                 tokens = word_tokenize(line)
 
@@ -108,8 +116,13 @@ def main(args):
                 tokens = contractions(tokens)
                 # Remove words of length < 2
                 tokens = [x for x in tokens if len(x) > 2]
+                finished = " ".join(tokens)
 
-                output.append(" ".join(tokens))
+                # If needed, replace street names with generic version
+                if args.street_sub:
+                    finished = re.sub("([^ ]+\-street)|([A-Z][a-z]* street)", "$name-street", finished)
+
+                output.append(finished)
         with open(output_file, "w+") as f:
             f.write('\n'.join(output))
     print("Tokenization done.", file=sys.stderr)
@@ -119,6 +132,9 @@ if __name__ == '__main__':
     parser.add_argument('--output_dir_base', type=str, default="", help='location to save tokenized text')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsPapers-txt", help='directory containing corpus')
     parser.add_argument('--overwrite', default=False, action="store_true", help='whether or not to overwrite old files with the same names')
-    parser.add_argument('--bigrams', default=False, action="store_true", help='whether or not just convert data to bigrams')
+    parser.add_argument('--bigrams', default=False, action="store_true", help='whether or not to convert data to bigrams')
+    parser.add_argument('--lower', default=False, action="store_true", help='whether or not to lowercase all text')
+    # parser.add_argument('--no_proper_nouns', default=False, action="store_true", help='whether or not to discard all proper nouns')
+    parser.add_argument('--street_sub', default=False, action="store_true", help='whether or not to substitute street names with generic string')
     args = parser.parse_args()
     main(args)
