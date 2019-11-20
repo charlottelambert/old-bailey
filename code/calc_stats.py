@@ -15,20 +15,32 @@ data_list = ["modern_english", "old_english", "latin", "unk", "total", "proper_n
 def stats_for_file(file, stats_dict):
     with open(file) as f:
         for line in f:
+            newline = ""
+            # Make capitalization more standard when checking for proper nouns
+            for word in line.split():
+                if word.isupper():
+                    word = word.lower().capitalize()
+                newline += word + " "
+
+            line = newline
             # Increment value for all tokens
             all_tokens = line.split() # SHOULD I JUST BE CHECKING FOR UNIQUE TOKENS?
             stats_dict['total'] += len(all_tokens)
             # print("\n", all_tokens)
+
             # Find proper nouns in this line
             tagged_sent = pos_tag(all_tokens)
+            # print(tagged_sent)
             propernouns = [word for word,pos in tagged_sent if pos == 'NNP']
             # print(propernouns)
             stats_dict['proper_nouns'] += len(propernouns)
-            remaining_words = [tok.lower() for tok in all_tokens if tok not in propernouns]
-            # THEN lower
-            # then check rest
+            remaining_words = [tok.lower() for tok in all_tokens if (tok not in propernouns)]
 
-            # line = " ".join([inf.singularize(tok) for tok in all_tokens])
+            # Singularize all nouns (words.words() only contains singular nouns)
+            nouns = [word for word,pos in tagged_sent if pos == 'NNS']
+            for i, word in enumerate(remaining_words):
+                remaining_words[i] = inf.singularize(word) if word in nouns else word
+
 
             english_words_found = english_words.extract_keywords(" ".join(remaining_words))
             # print(english_words_found)
@@ -72,11 +84,11 @@ def main(args):
         for i in tqdm(range(len(files))):
             stats_dict = stats_for_file(files[i], stats_dict)
             try:
-                # print(stats_dict)
+                print(stats_dict)
                 assert stats_dict["modern_english"] + stats_dict["latin"] + stats_dict["old_english"] + stats_dict["proper_nouns"] + stats_dict["unk"] == stats_dict["total"]
             except AssertionError:
                 print("Incorrectly counted words for file " + files[i] + ". Aborting.", file=sys.stderr)
-
+                exit(1)
         # Write all data to tsv file (calculates over entire corpus)
         tsv_writer.writerow([stats_dict[count] for count in data_list])
 
