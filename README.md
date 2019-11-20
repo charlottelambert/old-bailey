@@ -45,6 +45,24 @@ This command will convert all files in `CORPUS_DIR` to a bigram representation a
 Note: the data provided should be tokenized and dehyphenated first. If data is not already dehyphenated, there is no code to properly dehyphenate bigrams.
 
 
+### Calculating Corpus Statistics
+
+In order to calculate some valuable statistics about a corpus, first [download an Elementary Latin Dictionary](http://www.perseus.tufts.edu/hopper/dltext?doc=Perseus%3Atext%3A1999.04.0060). Then, to convert the downloaded XML file to a text file, run the following command:
+
+```
+./make_latin_dict.py [PATH_TO_XML_FILE] > latin_dict.txt
+
+```
+
+Then, run the following command to calculate useful statistics on how many modern english words, historical english words, latin words, and proper nouns are present in all the files in a specific corpus directory:
+
+```
+./calc_stats.py --corpus_dir=PATH_TO_CORPUS --latin_dict=latin_dict.txt
+
+```
+
+This will output a tsv file in a directory at `PATH_TO_CORPUS/../stats_dir` labeled to indicate over which corpus it ran.
+
 ### Topic Model
 
 You can run LDA or a dynamic topic model using `run-model`. By default, runnign `./run-model` will run LDA, but you can run `./run-model dtm` to specify a dynamic topic model. Parameters for the models are given some default values (in `./run_model.py`) and additional options are passed in through `./run-lda.sbatch` and `./run-dtm.sbatch`.
