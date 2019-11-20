@@ -60,8 +60,12 @@ def main(args):
     stats_dict = {}
     for count in data_list:
         stats_dict[count] = 0
+    base_stats_dir = os.path.join(os.path.basename(args.corpus_dir), "../stats_dir/")
+    if not os.path.exists(base_stats_dir):
+        os.mkdir(base_stats_dir)
 
-    with open("stats.tsv", "w") as f:
+    stats_path = os.path.join(base_stats_dir, args.corpus_dir.rstrip('/') + "_stats.tsv")
+    with open(stats_path, "w") as f: # FIX OUTPUT DIRECTORY AND PATH
         tsv_writer = csv.writer(f, delimiter='\t')
         tsv_writer.writerow(data_list)
 
@@ -76,7 +80,7 @@ def main(args):
         # Write all data to tsv file (calculates over entire corpus)
         tsv_writer.writerow([stats_dict[count] for count in data_list])
 
-    print("Wrote statistics to stats.tsv ")
+    print("Wrote statistics to", stats_path, file=sys.stderr)
     # Estimate what amount of text is proper nouns, Latin, historical English,
     # modern English, and unknown (word forms not expected and not recognized).
     # Can use Latin dictionaries/lexicons to discover what % over time the
