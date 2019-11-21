@@ -40,19 +40,23 @@ def encode_name(args, elem):
                 elif sub_elem.attrib['type'] == 'given':
                     given = sub_elem.attrib["value"].split(" ")
                     added_info = ["_".join(given)] + added_info
+
             # If name is not known, encode in format speakerType_unk
             except KeyError:
-                return base + "_unk"
+                return "$" + base + "_unk "
         # For a general annotation, encode in format speakerType_gender
         else:
             try:
                 if sub_elem.attrib['type'] == 'gender':
                     added_info.append(sub_elem.attrib["value"])
+                    # print("base:",base)
+                    # print("value:",sub_elem.attrib["value"])
             # If gender is not known, encode in format speakerType_unk
             except KeyError:
-                return base + "_unk"
+                return "$" + base + "_unk "
 
-    return "$" + "_".join([base, "_".join(added_info)])
+
+    return "$" + "_".join([base, "_".join(added_info)]) + " "
 
 
 def encode_annotations(args, xml_path):
@@ -118,9 +122,9 @@ def main(args):
         file_path = os.path.join(txt_output_dir, filename)
         if os.path.exists(file_path) and not args.overwrite:
             continue
-
+        print(file_path)
         # Write text to txt file
-        with open(os.path.join(txt_output_dir, filename), "w+") as txt_file:
+        with open(file_path, "w+") as txt_file:
             try:
                 # Get string version of xml
                 text_from_xml = encode_annotations(args, file)[2:-1]
@@ -130,7 +134,6 @@ def main(args):
                 continue
             except ET.ParseError:
                 print("ParseError reading " + file + ". Skipping...")
-
 
 
 if __name__ == '__main__':
