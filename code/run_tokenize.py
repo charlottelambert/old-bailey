@@ -126,6 +126,7 @@ def main(args):
                 # processing and return without removing words
                 if args.stats:
                     # Make capitalization more standard when checking for proper nouns
+                    newline=""
                     for word in tokens:
                         if word.isupper():
                             word = word.lower().capitalize()
