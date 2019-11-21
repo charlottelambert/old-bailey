@@ -48,7 +48,10 @@ def encode_name(args, elem):
         else:
             try:
                 if sub_elem.attrib['type'] == 'gender':
-                    added_info.append(sub_elem.attrib["value"])
+                    gender = sub_elem.attrib["value"]
+                    if gender == "indeterminate":
+                        gender = "unk"
+                    added_info.append(gender)
                     # print("base:",base)
                     # print("value:",sub_elem.attrib["value"])
             # If gender is not known, encode in format speakerType_unk
@@ -122,7 +125,6 @@ def main(args):
         file_path = os.path.join(txt_output_dir, filename)
         if os.path.exists(file_path) and not args.overwrite:
             continue
-        print(file_path)
         # Write text to txt file
         with open(file_path, "w+") as txt_file:
             try:
