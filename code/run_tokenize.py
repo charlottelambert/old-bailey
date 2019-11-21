@@ -75,6 +75,9 @@ def main(args):
 
     suffix += bigram_str + lower_str + street_str
 
+    if args.stats:
+        suffix = "-stats"
+
     # Define output directory (if not provided)
     if not args.output_dir_base:
         output_dir = args.corpus_dir.rstrip("/") + suffix
@@ -97,23 +100,40 @@ def main(args):
                     continue
 
                 # Lower line if needed
-                if args.lower:
+                if args.lower and not args.stats:
                     line = line.lower()
 
                 # Tokenize line
                 tokens = word_tokenize(line)
 
-                if args.bigrams:
+                if args.bigrams and not args.stats:
                     tokens = make_bigrams(tokens)
                     output.append(" ".join(tokens))
                     continue
 
+                # Remove issue with slashes in text (just replace with space)
+                # tokens = [re.sub("/", " ", token) for token in tokens]
                 # Handle issue with dashes appearing at start of word
                 tokens = [fix_hyphens(token) for token in tokens]
-                # Keep all words containing at least one letter
-                tokens = [x for x in tokens if re.search('[a-zA-Z]', x)]
+                if not args.stats:
+                    # Keep all words containing at least one letter
+                    tokens = [x for x in tokens if re.search('[a-zA-Z]', x)]
+
                 # Replace split contractions with full words
                 tokens = contractions(tokens)
+
+                # If tokenizing text in order to find useful stats, do extra
+                # processing and return without removing words
+                if args.stats:
+                    # Make capitalization more standard when checking for proper nouns
+                    for word in tokens:
+                        if word.isupper():
+                            word = word.lower().capitalize()
+                        newline += word + " "
+                    # Get rid of problem with slashes
+                    output.append(newline.replace("/", " "))
+                    continue
+
                 # Remove words of length < 2
                 tokens = [x for x in tokens if len(x) > 2]
                 finished = " ".join(tokens)
@@ -123,6 +143,7 @@ def main(args):
                     finished = re.sub("([^ ]+\-street)|([A-Z][a-z]* street)", "$name-street", finished)
 
                 output.append(finished)
+                
         with open(output_file, "w+") as f:
             f.write('\n'.join(output))
     print("Tokenization done.", file=sys.stderr)
@@ -134,6 +155,7 @@ if __name__ == '__main__':
     parser.add_argument('--overwrite', default=False, action="store_true", help='whether or not to overwrite old files with the same names')
     parser.add_argument('--bigrams', default=False, action="store_true", help='whether or not to convert data to bigrams')
     parser.add_argument('--lower', default=False, action="store_true", help='whether or not to lowercase all text')
+    parser.add_argument('--stats', default=False, action="store_true", help='whether or not to process text for finding statistics (calc_stats.py)')
     # parser.add_argument('--no_proper_nouns', default=False, action="store_true", help='whether or not to discard all proper nouns')
     parser.add_argument('--street_sub', default=False, action="store_true", help='whether or not to substitute street names with generic string')
     args = parser.parse_args()
