@@ -122,7 +122,6 @@ def main(args):
         file_path = os.path.join(txt_output_dir, filename)
         if os.path.exists(file_path) and not args.overwrite:
             continue
-        print(file_path)
         # Write text to txt file
         with open(file_path, "w+") as txt_file:
             try:
