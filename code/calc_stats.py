@@ -10,7 +10,7 @@ english_words = KeywordProcessor()
 english_words.add_keywords_from_list(words.words())
 latin_words = KeywordProcessor()
 
-data_list = ["modern_english", "old_english", "latin", "unk", "total", "proper_nouns"]
+data_list = ["modern_english", "old_english", "latin", "proper_nouns", "unk", "total"]
 
 def stats_for_file(file, stats_dict):
     backup = copy.deepcopy(stats_dict)
@@ -63,6 +63,10 @@ def init_stats_dict(data):
         stats_dict[count] = 0
     return stats_dict
 
+# def calculate_percentages(stats_dict):
+#     [stats_dict[count]/stats_dict[total] for count in data_list]
+
+
 def main(args):
     with open(args.latin_dict) as f:
         latin_dict = f.read().split()
@@ -103,7 +107,7 @@ def main(args):
             # If we've surpassed the time frame, write the row
             if year_idx >= args.year_split:
                 # Write all data to tsv file (calculates over entire corpus)
-                tsv_writer.writerow([file_path] + [stats_dict[count] for count in data_list])
+                tsv_writer.writerow([file_path] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
                 stats_dict = init_stats_dict(data_list)
                 first_year = int(os.path.basename(file_path)[0:4])
 
