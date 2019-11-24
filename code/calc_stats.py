@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, argparse, csv, sys
+import os, argparse, csv, sys, copy
 from tqdm import tqdm
 from nltk.corpus import words
 from flashtext import KeywordProcessor
@@ -13,25 +13,17 @@ latin_words = KeywordProcessor()
 data_list = ["modern_english", "old_english", "latin", "unk", "total", "proper_nouns"]
 
 def stats_for_file(file, stats_dict):
+    backup = copy.deepcopy(stats_dict)
+
     with open(file) as f:
         for line in f:
-            # newline = ""
-            # # Make capitalization more standard when checking for proper nouns
-            # for word in line.split():
-            #     if word.isupper():
-            #         word = word.lower().capitalize()
-            #     newline += word + " "
-            #
-            # line = newline
             # Increment value for all tokens
             all_tokens = line.split() # SHOULD I JUST BE CHECKING FOR UNIQUE TOKENS?
             stats_dict['total'] += len(all_tokens)
-            # print("\n", all_tokens)
 
             # Find proper nouns in this line
             tagged_sent = pos_tag(all_tokens)
             propernouns = [word for word,pos in tagged_sent if pos == 'NNP']
-            # print(propernouns)
             stats_dict['proper_nouns'] += len(propernouns)
             remaining_words = [tok.lower() for tok in all_tokens if (tok not in propernouns)]
 
@@ -40,19 +32,12 @@ def stats_for_file(file, stats_dict):
             for i, word in enumerate(remaining_words):
                 remaining_words[i] = inf.singularize(word) if word in nouns else word
 
-                # avoid issue with keyword processor splitting hyphenated words and evaluating them individually
-                # remaining_words[i] = remaining_words[i].replace("-", "_")
-
-            # print("REM TEMP:",remaining_words)
             english_words_found = english_words.extract_keywords(" ".join(remaining_words))
-            # print(english_words_found)
             english_words_found = [word.lower() for word in english_words_found]
             stats_dict['modern_english'] += len(english_words_found)
 
             remaining_words = [word for word in remaining_words if word not in english_words_found]
-            # print(remaining_words)
             latin_words_found = latin_words.extract_keywords(" ".join(remaining_words))
-            # print(latin_words_found)
             stats_dict['latin'] += len(latin_words_found)
             remaining_words = [word for word in remaining_words if word not in latin_words_found]
             stats_dict['unk'] += len(remaining_words)
@@ -60,16 +45,22 @@ def stats_for_file(file, stats_dict):
             try:
                 assert stats_dict["modern_english"] + stats_dict["latin"] + stats_dict["old_english"] + stats_dict["proper_nouns"] + stats_dict["unk"] == stats_dict["total"]
             except AssertionError:
-                print("\n", len(line.split()), "LINE:",line)
+                # print("\n", len(line.split()), "LINE:",line)
                 # print("TAGS:", tagged_sent)
                 # print(len(propernouns), "PROPER NOUNS:",propernouns)
                 # print(len(english_words_found), "ENGLISH:",english_words_found)
                 # print(len(latin_words_found), "LATIN:",latin_words_found)
                 # print(len(remaining_words), "REST:",remaining_words)
-                print(stats_dict)
-                print("Incorrectly counted words for file " + file + ". Aborting.", file=sys.stderr)
-                exit(1)
+                # print(stats_dict)
+                print("Incorrectly counted words for file " + file + ". Skipping file...", file=sys.stderr)
+                return backup
 
+    return stats_dict
+
+def init_stats_dict(data):
+    stats_dict = {}
+    for count in data:
+        stats_dict[count] = 0
     return stats_dict
 
 def main(args):
@@ -81,9 +72,8 @@ def main(args):
              if (os.path.isfile(os.path.join(args.corpus_dir, f)) and f.endswith('.txt'))]
 
     # Initialize stats dict
-    stats_dict = {}
-    for count in data_list:
-        stats_dict[count] = 0
+    stats_dict = init_stats_dict(data_list)
+
     base_stats_dir = os.path.join(args.corpus_dir, "../stats_dir/")
     if not os.path.exists(base_stats_dir):
         os.mkdir(base_stats_dir)
@@ -91,18 +81,32 @@ def main(args):
     stats_path = os.path.join(base_stats_dir, args.corpus_dir.rstrip('/') + "_stats.tsv")
     with open(stats_path, "w") as f: # FIX OUTPUT DIRECTORY AND PATH
         tsv_writer = csv.writer(f, delimiter='\t')
-        tsv_writer.writerow(data_list)
+        tsv_writer.writerow(["file"] +  data_list)
+
+        try:
+            offset = 2 if os.path.basename(files[0])[:2] == "OA" else 0
+            first_year = int(os.path.basename(files[0])[0 + offset:4 + offset]) # Find first year of earliest file
+        except:
+            print("Error: failed to process file. Skipping", files[0])
 
         for i in tqdm(range(len(files))):
-            stats_dict = stats_for_file(files[i], stats_dict)
-            # try:
-            print(stats_dict)
-            #     assert stats_dict["modern_english"] + stats_dict["latin"] + stats_dict["old_english"] + stats_dict["proper_nouns"] + stats_dict["unk"] == stats_dict["total"]
-            # except AssertionError:
-            #     print("Incorrectly counted words for file " + files[i] + ". Aborting.", file=sys.stderr)
-            #     exit(1)
-        # Write all data to tsv file (calculates over entire corpus)
-        tsv_writer.writerow([stats_dict[count] for count in data_list])
+            year_idx = 0
+            file_path = files[i]
+            offset = 2 if os.path.basename(file_path)[:2] == "OA" else 0
+            try:
+                year_idx = int(os.path.basename(file_path)[0+offset:4+offset]) - first_year
+            except:
+                print("Error: failed to process file. Skipping", file_path)
+                continue
+            stats_dict = stats_for_file(file_path, stats_dict)
+
+            # If we've surpassed the time frame, write the row
+            if year_idx >= args.year_split:
+                # Write all data to tsv file (calculates over entire corpus)
+                tsv_writer.writerow([file_path] + [stats_dict[count] for count in data_list])
+                stats_dict = init_stats_dict(data_list)
+                first_year = int(os.path.basename(file_path)[0:4])
+
 
     print("Wrote statistics to", stats_path, file=sys.stderr)
     # Estimate what amount of text is proper nouns, Latin, historical English,
@@ -115,6 +119,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-stats", help='directory containing corpus')
+    parser.add_argument('--year_split', type=int, default=100, help='number of years to calculate stats for')
     parser.add_argument('--latin_dict', type=str, default="./latin_words.txt", help='text file containing latin dictionary')
     args = parser.parse_args()
     main(args)
