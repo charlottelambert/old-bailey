@@ -133,12 +133,6 @@ def main(args):
                 # If tokenizing text in order to find useful stats, do extra
                 # processing and return without removing words
                 if args.stats:
-                    # Make capitalization more standard when checking for proper nouns
-                    newline=""
-                    for word in tokens:
-                        if word.isupper():
-                            word = word.lower().capitalize()
-                        newline += word + " "
                     # Get rid of problem with slashes
                     output.append(newline.replace("/", " "))
                     continue

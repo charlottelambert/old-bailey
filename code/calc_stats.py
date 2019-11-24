@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, argparse, csv, sys, copy
+import os, argparse, csv, sys, copy, natsort
 from tqdm import tqdm
 from nltk.corpus import words
 from flashtext import KeywordProcessor
@@ -10,13 +10,27 @@ english_words = KeywordProcessor()
 english_words.add_keywords_from_list(words.words())
 latin_words = KeywordProcessor()
 
-data_list = ["modern_english", "old_english", "latin", "proper_nouns", "unk", "total"]
+data_list = ["modern_english", "old_english", "latin", "proper_nouns", "upper", "lower", "mixed", "unk", "total"]
 
 def stats_for_file(file, stats_dict):
     backup = copy.deepcopy(stats_dict)
 
     with open(file) as f:
         for line in f:
+            # Make capitalization more standard when checking for proper nouns
+            # and calculate capitalization statistics
+            newline = ""
+            for word in line.split():
+                if word.isupper():
+                    stats_dict['upper'] += 1
+                    # word = word.lower().capitalize()
+                elif word.islower():
+                    stats_dict['lower'] += 1
+                else:
+                    stats_dict['mixed'] += 1
+                newline += word + " "
+            line = newline
+
             # Increment value for all tokens
             all_tokens = line.split() # SHOULD I JUST BE CHECKING FOR UNIQUE TOKENS?
             stats_dict['total'] += len(all_tokens)
@@ -24,6 +38,7 @@ def stats_for_file(file, stats_dict):
             # Find proper nouns in this line
             tagged_sent = pos_tag(all_tokens)
             propernouns = [word for word,pos in tagged_sent if pos == 'NNP']
+
             stats_dict['proper_nouns'] += len(propernouns)
             remaining_words = [tok.lower() for tok in all_tokens if (tok not in propernouns)]
 
@@ -44,6 +59,7 @@ def stats_for_file(file, stats_dict):
 
             try:
                 assert stats_dict["modern_english"] + stats_dict["latin"] + stats_dict["old_english"] + stats_dict["proper_nouns"] + stats_dict["unk"] == stats_dict["total"]
+                assert stats_dict["lower"] + stats_dict["upper"] + stats_dict["mixed"] == stats_dict["total"]
             except AssertionError:
                 # print("\n", len(line.split()), "LINE:",line)
                 # print("TAGS:", tagged_sent)
@@ -52,10 +68,10 @@ def stats_for_file(file, stats_dict):
                 # print(len(latin_words_found), "LATIN:",latin_words_found)
                 # print(len(remaining_words), "REST:",remaining_words)
                 # print(stats_dict)
-                print("Incorrectly counted words for file " + file + ". Skipping file...", file=sys.stderr)
-                return backup
-
-    return stats_dict
+                # print("Incorrectly counted words for file " + file + ". Skipping file...", file=sys.stderr)
+                return [backup, 0]
+    # print(stats_dict)
+    return [stats_dict, 1]
 
 def init_stats_dict(data):
     stats_dict = {}
@@ -63,9 +79,11 @@ def init_stats_dict(data):
         stats_dict[count] = 0
     return stats_dict
 
-# def calculate_percentages(stats_dict):
-#     [stats_dict[count]/stats_dict[total] for count in data_list]
-
+def get_order(file):
+    base = os.path.basename(file)
+    if base[:2] == "OA":
+        return base[2:]
+    return base
 
 def main(args):
     with open(args.latin_dict) as f:
@@ -74,7 +92,7 @@ def main(args):
 
     files = [os.path.join(args.corpus_dir, f) for f in os.listdir(args.corpus_dir)
              if (os.path.isfile(os.path.join(args.corpus_dir, f)) and f.endswith('.txt'))]
-
+    files = natsort.natsorted(files, key=lambda x: get_order(x))  # Sort in ascending numeric order
     # Initialize stats dict
     stats_dict = init_stats_dict(data_list)
 
@@ -85,7 +103,7 @@ def main(args):
     stats_path = os.path.join(base_stats_dir, args.corpus_dir.rstrip('/') + "_stats.tsv")
     with open(stats_path, "w") as f: # FIX OUTPUT DIRECTORY AND PATH
         tsv_writer = csv.writer(f, delimiter='\t')
-        tsv_writer.writerow(["file"] +  data_list)
+        tsv_writer.writerow(["start_year"] +  data_list)
 
         try:
             offset = 2 if os.path.basename(files[0])[:2] == "OA" else 0
@@ -93,8 +111,8 @@ def main(args):
         except:
             print("Error: failed to process file. Skipping", files[0])
 
+        year_idx = 0
         for i in tqdm(range(len(files))):
-            year_idx = 0
             file_path = files[i]
             offset = 2 if os.path.basename(file_path)[:2] == "OA" else 0
             try:
@@ -102,14 +120,24 @@ def main(args):
             except:
                 print("Error: failed to process file. Skipping", file_path)
                 continue
-            stats_dict = stats_for_file(file_path, stats_dict)
+
 
             # If we've surpassed the time frame, write the row
             if year_idx >= args.year_split:
                 # Write all data to tsv file (calculates over entire corpus)
-                tsv_writer.writerow([file_path] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
+
+                if valid:
+                    tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
+
                 stats_dict = init_stats_dict(data_list)
                 first_year = int(os.path.basename(file_path)[0:4])
+
+            stats_dict, valid = stats_for_file(file_path, stats_dict)
+
+        if valid:
+            tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
+
+
 
 
     print("Wrote statistics to", stats_path, file=sys.stderr)
