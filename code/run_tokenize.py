@@ -103,6 +103,9 @@ def main(args):
                 if args.lower and not args.stats:
                     line = line.lower()
 
+                # Fix apostrophe escapes:
+                line = line.replace("\'", "'")
+
                 # Tokenize line
                 tokens = word_tokenize(line)
 
@@ -141,10 +144,14 @@ def main(args):
 
                 # If needed, replace street names with generic version
                 if args.street_sub:
-                    finished = re.sub("([^ ]+\-street)|([A-Z][a-z]* street)", "$name-street", finished)
+                    finished = re.sub("([^ ]+\-street)|([A-Z][a-z]* street)", "$name_street", finished)
+                    # finished = re.sub("([^ ]+\-lane)|([A-Z][a-z]* lane)", "$name_street", finished)
+                    # finished = re.sub("([^ ]+\-road)|([A-Z][a-z]* road)", "$name_street", finished)
+                    # finished = re.sub("[^ ]+\-row", "$name_street", finished)
+                    # also -square, -highway, -cross, -grove, -town
 
                 output.append(finished)
-                
+
         with open(output_file, "w+") as f:
             f.write('\n'.join(output))
     print("Tokenization done.", file=sys.stderr)

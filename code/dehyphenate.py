@@ -8,7 +8,6 @@
 ###############################################################################
 import sys, argparse, os, re
 from tqdm import tqdm
-from nltk.tokenize import word_tokenize
 from nltk.corpus import words
 from flashtext import KeywordProcessor
 import inflection as inf
@@ -26,8 +25,13 @@ def dehyphenate(token):
 
         token: string to dehyphenate
     """
-    if not "-" in token or token[:1] == "$":
+    if(not "—" in token and not "-" in token) or token[:1] == "$":
         return token
+
+    if "—" in token:
+        split_tok = "—"
+    else:
+        split_tok = "-"
 
     # # If bigrams, run over each unigram
     # if "_" in token:
@@ -41,7 +45,7 @@ def dehyphenate(token):
     options = [" ", ""]
     for opt in options:
         ready = True
-        mod_tokens = opt.join(token.split("-"))
+        mod_tokens = opt.join(token.split(split_tok))
         # Look for all words in the list of tokens
         words_found = keyword_processor.extract_keywords(mod_tokens)
 
