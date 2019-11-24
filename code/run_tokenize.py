@@ -109,6 +109,11 @@ def main(args):
                 # Tokenize line
                 tokens = word_tokenize(line)
 
+                # Join $ to names
+                for i, tok in enumerate(tokens):
+                    if tok == '$':
+                        tokens[i:i+2] = [''.join(tokens[i:i+2])]
+
                 if args.bigrams and not args.stats:
                     tokens = make_bigrams(tokens)
                     output.append(" ".join(tokens))
