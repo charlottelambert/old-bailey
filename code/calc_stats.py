@@ -19,7 +19,6 @@ def stats_for_file(file, stats_dict):
         for line in f:
             # Make capitalization more standard when checking for proper nouns
             # and calculate capitalization statistics
-            newline = ""
             for word in line.split():
                 if word.isupper():
                     stats_dict['upper'] += 1
@@ -28,8 +27,8 @@ def stats_for_file(file, stats_dict):
                     stats_dict['lower'] += 1
                 else:
                     stats_dict['mixed'] += 1
-                newline += word + " "
-            line = newline
+                
+            line = line.replace("/", " ")
 
             # Increment value for all tokens
             all_tokens = line.split() # SHOULD I JUST BE CHECKING FOR UNIQUE TOKENS?
