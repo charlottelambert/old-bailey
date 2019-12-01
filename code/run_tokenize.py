@@ -134,7 +134,7 @@ def main(args):
                 # processing and return without removing words
                 if args.stats:
                     # Get rid of problem with slashes
-                    output.append(newline)
+                    output.append(" ".join(tokens))
                     continue
 
                 # Remove words of length < 2
