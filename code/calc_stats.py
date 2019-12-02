@@ -11,16 +11,38 @@ latin_words = KeywordProcessor()
 
 data_list = ["modern_english", "old_english", "latin", "proper_nouns", "upper", "lower", "mixed", "unk", "total"]
 
+
+def update_tok_lists(all_tokens, list_to_check):
+    out = []
+    new_all = []
+    for i in range(len(all_tokens)):
+        if all_tokens[i] in list_to_check:
+            out.append(all_tokens[i])
+        else:
+            new_all.append(all_tokens[i].lower()) # Lowercase because it isn't a proper noun anymore
+    return [new_all, out]
+
 def stats_for_file(file, stats_dict):
     backup = copy.deepcopy(stats_dict)
+
+    # Define set if we're looking for only unique words
+    if args.unique:
+        words_seen = set()
 
     with open(file) as f:
         for line in f:
             line = line.replace("/", " ")
             # all_tokens: all words in line (excluding just punctuation)
             all_tokens = [tok for tok in line.split() if re.search('[a-zA-Z]', tok)]
+
+            # If only looking for unique words, don't add any that have already been processed
+            if args.unique:
+                all_tokens = list(set([tok for tok in all_tokens if tok not in words_seen]))
+                words_seen.update(all_tokens)
+
             stats_dict['total'] += len(all_tokens)
 
+            # print("\n", len(all_tokens), "LINE:",' '.join(all_tokens))
             # Calculate capitalization statistics
             for word in all_tokens:
                 if word.isupper():
@@ -32,16 +54,23 @@ def stats_for_file(file, stats_dict):
                     stats_dict['mixed'] += 1
 
             # propernouns: all proper nouns in the line
+            # print("ALL", all_tokens)
             tagged_sent = pos_tag(all_tokens)
             tagged_nnp = [pair[0] for pair in tagged_sent if pair[1] == 'NNP']
-
-            propernouns = []
-            for i, word in enumerate(all_tokens):
-                if word in tagged_nnp:
-                    propernouns.append(word)
-                    all_tokens.remove(word)
-                else:
-                    all_tokens[i] = word.lower() # Lowercase because it isn't a proper noun anymore
+            # print("nnp: ", tagged_nnp)
+            # print("ALL", all_tokens)
+            # propernouns = []
+            # new_all = []
+            # for i in range(len(all_tokens)):
+            #     print(all_tokens[i])
+            #     if all_tokens[i] in tagged_nnp:
+            #         propernouns.append(all_tokens[i])
+            #     else:
+            #         new_all.append(all_tokens[i].lower()) # Lowercase because it isn't a proper noun anymore
+            #         # print(all_tokens[i])
+            # all_tokens = new_all
+            all_tokens, propernouns = update_tok_lists(all_tokens, tagged_nnp)
+            # print(len(all_tokens), "am i lower:",all_tokens)
 
             # propernouns = [word for word,pos in tagged_sent if pos == 'NNP']
             # propernouns = [word for word in all_tokens if word in propernouns] # Make sure
@@ -49,35 +78,39 @@ def stats_for_file(file, stats_dict):
 
             # english_words: all words in english in the line
             in_english = english_words.extract_keywords(" ".join(all_tokens))
-            english_words_found = []
-            for i, word in enumerate(all_tokens):
-                if word in in_english:
-                    english_words_found.append(word)
-                    all_tokens.remove(word)
+            # english_words_found = []
+            # for i, word in enumerate(all_tokens):
+            #     if word in in_english:
+            #         english_words_found.append(word)
+            #         all_tokens.remove(word)
+            all_tokens, english_words_found = update_tok_lists(all_tokens, in_english)
+
             stats_dict['modern_english'] += len(english_words_found)
 
             # latin_words: all latin words in the line
             in_latin = latin_words.extract_keywords(" ".join(all_tokens))
-            latin_words_found = []
-            for i, word in enumerate(all_tokens):
-                if word in in_latin:
-                    latin_words_found.append(word)
-                    all_tokens.remove(word)
+            # latin_words_found = []
+            # for i, word in enumerate(all_tokens):
+            #     if word in in_latin:
+            #         latin_words_found.append(word)
+            #         all_tokens.remove(word)
+            all_tokens, latin_words_found = update_tok_lists(all_tokens, in_latin)
             stats_dict['latin'] += len(latin_words_found)
 
 
             stats_dict['unk'] += len(all_tokens)
+            # # print("TAGS:", tagged_sent)
+            # print(len(propernouns), "PROPER NOUNS:",propernouns)
+            # # print(len(temporary), "TEMPORARY:", temporary)
+            # print(len(english_words_found), "ENGLISH:",english_words_found)
+            # print(len(latin_words_found), "LATIN:",latin_words_found)
+            # print(len(all_tokens), "unk words:",all_tokens)
+            # exit(0)
             try:
                 assert stats_dict["modern_english"] + stats_dict["latin"] + stats_dict["old_english"] + stats_dict["proper_nouns"] + stats_dict["unk"] == stats_dict["total"]
                 assert stats_dict["lower"] + stats_dict["upper"] + stats_dict["mixed"] == stats_dict["total"]
             except AssertionError:
-                # print("\n", len(all_tokens), "LINE:",' '.join(all_tokens))
-                # # print("TAGS:", tagged_sent)
-                # print(len(propernouns), "PROPER NOUNS:",propernouns)
-                # # print(len(temporary), "TEMPORARY:", temporary)
-                # print(len(english_words_found), "ENGLISH:",english_words_found)
-                # print(len(latin_words_found), "LATIN:",latin_words_found)
-                # print(len(remaining_words), "REST:",remaining_words)
+
                 print(stats_dict)
 
                 print("Error: failed to process file. Skipping", file, file=sys.stderr)
@@ -185,5 +218,6 @@ if __name__ == '__main__':
     parser.add_argument('--year_split', type=int, default=100, help='number of years to calculate stats for')
     parser.add_argument('--latin_dict', type=str, default="./latin_words.txt", help='text file containing latin dictionary')
     parser.add_argument('--english_words', type=str, default = "", help='optional path to file containing english words')
+    parser.add_argument('--unique', default=False, action='store_true', help='whether or not to count only unique words')
     args = parser.parse_args()
     main(args)
