@@ -101,7 +101,7 @@ def main(args):
         print("Model loaded from " + args.load_model, file=sys.stderr)
         pre = os.path.dirname(args.load_model)
 
-    if not args.no_plot:
+    if args.plot:
         print("Visualizing results...", file=sys.stderr)
         tsne_plot(model, pre)
 
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-dh", help='directory containing corpus')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--load_model', type=str, help='path to model to load and visualize.')
-    parser.add_argument('--no_plot', default=False, action="store_true", help='whether or not to visualize and plot data.')
+    parser.add_argument('--plot', default=False, action="store_true", help='whether or not to visualize and plot data.')
     parser.add_argument('--filter_top_words', type=int, default=10000, help='number of words to include in model (take the most common words)')
     args = parser.parse_args()
     main(args)
