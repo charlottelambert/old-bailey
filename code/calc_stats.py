@@ -5,12 +5,12 @@ from nltk.corpus import words
 from flashtext import KeywordProcessor
 import inflection as inf
 from nltk.tag import pos_tag
+from utils import *
 
 english_words = KeywordProcessor()
 latin_words = KeywordProcessor()
 
 data_list = ["modern_english", "old_english", "latin", "proper_nouns", "upper", "lower", "mixed", "unk", "total"]
-
 
 def update_tok_lists(all_tokens, list_to_check):
     out = []
@@ -23,6 +23,13 @@ def update_tok_lists(all_tokens, list_to_check):
     return [new_all, out]
 
 def stats_for_file(file, stats_dict):
+    """
+        For a given file, increment values in stats dict based on types of words
+        in the file.
+
+        return updated stats dictionary and flag indicating if valid. If not
+        valid, will return original stats dict without updating.
+    """
     backup = copy.deepcopy(stats_dict)
 
     # Define set if we're looking for only unique words
@@ -42,70 +49,34 @@ def stats_for_file(file, stats_dict):
 
             stats_dict['total'] += len(all_tokens)
 
-            # print("\n", len(all_tokens), "LINE:",' '.join(all_tokens))
             # Calculate capitalization statistics
             for word in all_tokens:
                 if word.isupper():
                     stats_dict['upper'] += 1
-                    # word = word.lower().capitalize()
                 elif word.islower():
                     stats_dict['lower'] += 1
                 else:
                     stats_dict['mixed'] += 1
 
             # propernouns: all proper nouns in the line
-            # print("ALL", all_tokens)
             tagged_sent = pos_tag(all_tokens)
             tagged_nnp = [pair[0] for pair in tagged_sent if pair[1] == 'NNP']
-            # print("nnp: ", tagged_nnp)
-            # print("ALL", all_tokens)
-            # propernouns = []
-            # new_all = []
-            # for i in range(len(all_tokens)):
-            #     print(all_tokens[i])
-            #     if all_tokens[i] in tagged_nnp:
-            #         propernouns.append(all_tokens[i])
-            #     else:
-            #         new_all.append(all_tokens[i].lower()) # Lowercase because it isn't a proper noun anymore
-            #         # print(all_tokens[i])
-            # all_tokens = new_all
-            all_tokens, propernouns = update_tok_lists(all_tokens, tagged_nnp)
-            # print(len(all_tokens), "am i lower:",all_tokens)
 
-            # propernouns = [word for word,pos in tagged_sent if pos == 'NNP']
-            # propernouns = [word for word in all_tokens if word in propernouns] # Make sure
+            all_tokens, propernouns = update_tok_lists(all_tokens, tagged_nnp)
             stats_dict['proper_nouns'] += len(propernouns)
 
             # english_words: all words in english in the line
             in_english = english_words.extract_keywords(" ".join(all_tokens))
-            # english_words_found = []
-            # for i, word in enumerate(all_tokens):
-            #     if word in in_english:
-            #         english_words_found.append(word)
-            #         all_tokens.remove(word)
             all_tokens, english_words_found = update_tok_lists(all_tokens, in_english)
 
             stats_dict['modern_english'] += len(english_words_found)
 
             # latin_words: all latin words in the line
             in_latin = latin_words.extract_keywords(" ".join(all_tokens))
-            # latin_words_found = []
-            # for i, word in enumerate(all_tokens):
-            #     if word in in_latin:
-            #         latin_words_found.append(word)
-            #         all_tokens.remove(word)
             all_tokens, latin_words_found = update_tok_lists(all_tokens, in_latin)
             stats_dict['latin'] += len(latin_words_found)
 
-
             stats_dict['unk'] += len(all_tokens)
-            # # print("TAGS:", tagged_sent)
-            # print(len(propernouns), "PROPER NOUNS:",propernouns)
-            # # print(len(temporary), "TEMPORARY:", temporary)
-            # print(len(english_words_found), "ENGLISH:",english_words_found)
-            # print(len(latin_words_found), "LATIN:",latin_words_found)
-            # print(len(all_tokens), "unk words:",all_tokens)
-            # exit(0)
             try:
                 assert stats_dict["modern_english"] + stats_dict["latin"] + stats_dict["old_english"] + stats_dict["proper_nouns"] + stats_dict["unk"] == stats_dict["total"]
                 assert stats_dict["lower"] + stats_dict["upper"] + stats_dict["mixed"] == stats_dict["total"]
@@ -114,32 +85,19 @@ def stats_for_file(file, stats_dict):
                 print(stats_dict)
 
                 print("Error: failed to process file. Skipping", file, file=sys.stderr)
-                # error_toks = []
-                # for tok in all_tokens:
-                #     if tok in propernouns or tok in english_words_found or tok in latin_words_found or tok in remaining_words or tok:
-                #         continue
-                #     temp = tok.lower()
-                #     if temp in propernouns or temp in english_words_found or temp in latin_words_found or temp in remaining_words or tok:
-                #         continue
-                #     error_toks.append(tok)
-                # print("Problematic tokens:", error_toks)
-
-                # exit(1)
                 return [backup, 0]
     # print(stats_dict)
     return [stats_dict, 1]
 
 def init_stats_dict(data):
+    """
+        Initialize an empty stats dictionary.
+    """
     stats_dict = {}
     for count in data:
         stats_dict[count] = 0
     return stats_dict
 
-def get_order(file):
-    base = os.path.basename(file)
-    if base[:2] == "OA":
-        return base[2:]
-    return base
 
 def main(args):
     # Add latin words to keyword processor
@@ -154,9 +112,7 @@ def main(args):
     else:
         english_words.add_keywords_from_list(words.words())
 
-    files = [os.path.join(args.corpus_dir, f) for f in os.listdir(args.corpus_dir)
-             if (os.path.isfile(os.path.join(args.corpus_dir, f)) and f.endswith('.txt'))]
-    files = natsort.natsorted(files, key=lambda x: get_order(x))  # Sort in ascending numeric order
+    files_dict = order_files(args)
     # Initialize stats dict
     stats_dict = init_stats_dict(data_list)
 
@@ -168,41 +124,15 @@ def main(args):
     with open(stats_path, "w") as f: # FIX OUTPUT DIRECTORY AND PATH
         tsv_writer = csv.writer(f, delimiter='\t')
         tsv_writer.writerow(["start_year"] +  data_list)
+        valid = 1
 
-        try:
-            offset = 2 if os.path.basename(files[0])[:2] == "OA" else 0
-            first_year = int(os.path.basename(files[0])[0 + offset:4 + offset]) # Find first year of earliest file
-        except:
-            print("Error: failed to process file. Skipping", files[0],  file=sys.stderr)
+        for first_year, files in files_dict.items():
+            for i in tqdm(range(len(files))):
+                file_path = files[i]
+                stats_dict, valid = stats_for_file(file_path, stats_dict)
 
-        year_idx = 0
-        for i in tqdm(range(len(files))):
-            file_path = files[i]
-            offset = 2 if os.path.basename(file_path)[:2] == "OA" else 0
-            try:
-                year_idx = int(os.path.basename(file_path)[0+offset:4+offset]) - first_year
-            except:
-                print("Error: failed to process file. Skipping", file_path, file=sys.stderr)
-                continue
-
-
-            # If we've surpassed the time frame, write the row
-            if year_idx >= args.year_split:
-                # Write all data to tsv file (calculates over entire corpus)
-                if valid:
-                    tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
-                    print(stats_dict)
-
-
-                stats_dict = init_stats_dict(data_list)
-                first_year = int(os.path.basename(file_path)[0:4])
-
-            stats_dict, valid = stats_for_file(file_path, stats_dict)
-
-        if valid:
-            tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
-
-
+            if valid:
+                tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
 
     print("Wrote statistics to", stats_path, file=sys.stderr)
     # Estimate what amount of text is proper nouns, Latin, historical English,
