@@ -6,11 +6,60 @@ from flashtext import KeywordProcessor
 import inflection as inf
 from nltk.tag import pos_tag
 from utils import *
+from gensim import models, corpora
+from gensim.corpora.mmcorpus import MmCorpus
+import numpy as np
 
 english_words = KeywordProcessor()
 latin_words = KeywordProcessor()
 
 data_list = ["modern_english", "old_english", "latin", "proper_nouns", "upper", "lower", "mixed", "unk", "total"]
+
+def load_models(args):
+    model_dict = {}
+    files = [os.path.join(args.tfidf_model_dir_path, f) for f in os.listdir(args.tfidf_model_dir_path)
+             if (os.path.isfile(os.path.join(args.tfidf_model_dir_path, f)))]
+    all_models = [path for path in files if "model" in os.path.basename(path)]
+    # print("ALL",all_models)
+    for model in all_models:
+        # print(model)
+        if model == "model":
+            print("Please re-run train_tfidf.py and provide new path.", file=sys.stderr)
+            exit(1)
+        try:
+            year = int(os.path.basename(model).split("-")[1])
+        except:
+            print("Error with naming of file " + model + ". Files should be in format model-YYYY,", file=sys.stderr)
+            exit(1)
+        # cur_year_files = [path for path in files if path.endswith(str(year))]
+        try:
+            corpus = mm = MmCorpus(os.path.join(args.tfidf_model_dir_path, "corpus-" + str(year)))
+            tfidf = models.TfidfModel.load(os.path.join(args.tfidf_model_dir_path, "model-" + str(year)))
+            mydict = corpora.Dictionary.load(os.path.join(args.tfidf_model_dir_path, "dictionary-" + str(year)))
+        except FileNotFoundError:
+            print("Tf-idf model directory path must contain model, corpus, and dictionary with year as suffix.", file=sys.stderr)
+            exit(1)
+
+        model_dict[year] = {"corpus":corpus, "model":tfidf, "dictionary":mydict}
+    return model_dict
+
+def get_top_words(args, loaded_data):
+    # Get the TF-IDF weights for each chunk of years
+    tfidf = loaded_data["model"]
+    # print(loaded_data["corpus"])
+    # model_on_corpus = tfidf[loaded_data["corpus"]]
+    # print(type(model_on_corpus))
+    # print(model_on_corpus[1])
+
+    # exit(0)
+    weights = []
+    for doc in tfidf[loaded_data["corpus"]]:
+        # HELP HERE: i don't think this is the proper way to find top weights over all docs in this chunk
+        weights += [[loaded_data["dictionary"][id], np.around(freq, decimals=2)] for id, freq in doc]
+    top_words = natsort.natsorted(weights, key=lambda x: x[1], reverse=True)[:args.num_top_words]
+    print(top_words)
+    # should i combine all these top words?
+    return [word[0] for word in top_words]
 
 def update_tok_lists(all_tokens, list_to_check):
     out = []
@@ -81,12 +130,9 @@ def stats_for_file(file, stats_dict):
                 assert stats_dict["modern_english"] + stats_dict["latin"] + stats_dict["old_english"] + stats_dict["proper_nouns"] + stats_dict["unk"] == stats_dict["total"]
                 assert stats_dict["lower"] + stats_dict["upper"] + stats_dict["mixed"] == stats_dict["total"]
             except AssertionError:
-
-                print(stats_dict)
-
                 print("Error: failed to process file. Skipping", file, file=sys.stderr)
                 return [backup, 0]
-    # print(stats_dict)
+
     return [stats_dict, 1]
 
 def init_stats_dict(data):
@@ -100,11 +146,19 @@ def init_stats_dict(data):
 
 
 def main(args):
+    # If we have a model to load, add fields to data_list and load model
+    if args.tfidf_model_dir_path:
+        data_list.append("top_" + str(args.num_top_words) + "_words")
+        # load all models with path "model-XXXX" and put in dictionary
+        model_dict = load_models(args)
+        print("Successfully loaded model, corpus, and dictionary from directory", args.tfidf_model_dir_path, file=sys.stderr)
+
     # Add latin words to keyword processor
     with open(args.latin_dict) as f:
         latin_dict = f.read().split()
     latin_words.add_keywords_from_list(latin_dict)
 
+    # Define an English dictionary depending on inputs
     if args.english_words:
         with open(args.english_words) as f:
             ewords = f.read().split("\n")
@@ -112,10 +166,13 @@ def main(args):
     else:
         english_words.add_keywords_from_list(words.words())
 
+    # Order files by year
     files_dict = order_files(args)
+
     # Initialize stats dict
     stats_dict = init_stats_dict(data_list)
 
+    # Make output path
     base_stats_dir = os.path.join(args.corpus_dir, "../stats_dir/")
     if not os.path.exists(base_stats_dir):
         os.mkdir(base_stats_dir)
@@ -127,12 +184,16 @@ def main(args):
         valid = 1
 
         for first_year, files in files_dict.items():
+            # top_words = get_top_words(args, model_dict[first_year]) # REMOVE THIS
+            # exit(0)
+
             for i in tqdm(range(len(files))):
                 file_path = files[i]
                 stats_dict, valid = stats_for_file(file_path, stats_dict)
 
             if valid:
-                tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
+                top_words = get_top_words(args, model_dict[first_year])
+                tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list] + [", ".join(top_words)])
 
     print("Wrote statistics to", stats_path, file=sys.stderr)
     # Estimate what amount of text is proper nouns, Latin, historical English,
@@ -141,13 +202,14 @@ def main(args):
     # corpus uses latin words. If possible, see if you can download pre-1800
     # historic English lexicon (to get old english stats)
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-stats", help='directory containing corpus')
     parser.add_argument('--year_split', type=int, default=100, help='number of years to calculate stats for')
+    parser.add_argument('--num_top_words', type=int, default=10, help='number of top words to record')
     parser.add_argument('--latin_dict', type=str, default="./latin_words.txt", help='text file containing latin dictionary')
     parser.add_argument('--english_words', type=str, default = "", help='optional path to file containing english words')
     parser.add_argument('--unique', default=False, action='store_true', help='whether or not to count only unique words')
+    parser.add_argument('--tfidf_model_dir_path', type=str, default = "", help='path to tfidf model directory containing model to load.')
     args = parser.parse_args()
     main(args)
