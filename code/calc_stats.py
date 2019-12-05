@@ -148,11 +148,13 @@ def init_stats_dict(data):
 def main(args):
     # If we have a model to load, add fields to data_list and load model
     if args.tfidf_model_dir_path:
+        path_suff = "-top_words"
         data_list.append("top_" + str(args.num_top_words) + "_words")
         # load all models with path "model-XXXX" and put in dictionary
         model_dict = load_models(args)
         print("Successfully loaded model, corpus, and dictionary from directory", args.tfidf_model_dir_path, file=sys.stderr)
-
+    else:
+        path_suff = ""
     # Add latin words to keyword processor
     with open(args.latin_dict) as f:
         latin_dict = f.read().split()
@@ -177,7 +179,8 @@ def main(args):
     if not os.path.exists(base_stats_dir):
         os.mkdir(base_stats_dir)
 
-    stats_path = os.path.join(base_stats_dir, args.corpus_dir.rstrip('/') + "_stats.tsv")
+
+    stats_path = os.path.join(base_stats_dir, args.corpus_dir.rstrip('/') + path_suff + "-stats.tsv")
     with open(stats_path, "w") as f: # FIX OUTPUT DIRECTORY AND PATH
         tsv_writer = csv.writer(f, delimiter='\t')
         tsv_writer.writerow(["start_year"] +  data_list)
