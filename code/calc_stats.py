@@ -192,8 +192,11 @@ def main(args):
                 stats_dict, valid = stats_for_file(file_path, stats_dict)
 
             if valid:
-                top_words = get_top_words(args, model_dict[first_year])
-                tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list] + [", ".join(top_words)])
+                if args.tfidf_model_dir_path:
+                    top_words = get_top_words(args, model_dict[first_year])
+                    tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list] + [", ".join(top_words)])
+                else:
+                    tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
 
     print("Wrote statistics to", stats_path, file=sys.stderr)
     # Estimate what amount of text is proper nouns, Latin, historical English,
