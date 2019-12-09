@@ -15,7 +15,7 @@ latin_words = KeywordProcessor()
 
 data_list = ["modern_english", "old_english", "latin", "proper_nouns", "upper", "lower", "mixed", "unk", "total"]
 
-def load_models(args):
+def load_models_old(args):
     model_dict = {}
     files = [os.path.join(args.tfidf_model_dir_path, f) for f in os.listdir(args.tfidf_model_dir_path)
              if (os.path.isfile(os.path.join(args.tfidf_model_dir_path, f)))]
@@ -43,22 +43,29 @@ def load_models(args):
         model_dict[year] = {"corpus":corpus, "model":tfidf, "dictionary":mydict}
     return model_dict
 
-def get_top_words(args, loaded_data):
-    # Get the TF-IDF weights for each chunk of years
-    tfidf = loaded_data["model"]
-    # print(loaded_data["corpus"])
-    # model_on_corpus = tfidf[loaded_data["corpus"]]
-    # print(type(model_on_corpus))
-    # print(model_on_corpus[1])
+def load_models(args):
+    try:
+        tfidf = models.TfidfModel.load(os.path.join(args.tfidf_model_dir_path, "model"))
+        corpus = mm = MmCorpus(os.path.join(args.tfidf_model_dir_path, "corpus"))
+        mydict = corpora.Dictionary.load(os.path.join(args.tfidf_model_dir_path, "dictionary"))
+    except FileNotFoundError:
+        print("Tf-idf model directory path must contain model, corpus, and dictionary.", file=sys.stderr)
+        exit(1)
+    return tfidf, corpus, mydict
+
+def get_top_words(args, i, tfidf, corpus, mydict):
+
+     # # Show the TF-IDF weights
+     # for doc in tfidf[corpus]:
+     #     print([[mydict[id], np.around(freq, decimals=2)] for id, freq in doc])
 
     # exit(0)
     weights = []
-    for doc in tfidf[loaded_data["corpus"]]:
-        # HELP HERE: i don't think this is the proper way to find top weights over all docs in this chunk
-        weights += [[loaded_data["dictionary"][id], np.around(freq, decimals=2)] for id, freq in doc]
+    # for doc in tfidf[corpus]:
+    doc = tfidf[corpus][i]
+    weights = [[mydict[id], np.around(freq, decimals=2)] for id, freq in doc]
     top_words = natsort.natsorted(weights, key=lambda x: x[1], reverse=True)[:args.num_top_words]
     print(top_words)
-    # should i combine all these top words?
     return [word[0] for word in top_words]
 
 def update_tok_lists(all_tokens, list_to_check):
@@ -151,10 +158,12 @@ def main(args):
         path_suff = "-top_words"
         data_list.append("top_" + str(args.num_top_words) + "_words")
         # load all models with path "model-XXXX" and put in dictionary
-        model_dict = load_models(args)
-        print("Successfully loaded model, corpus, and dictionary from directory", args.tfidf_model_dir_path, file=sys.stderr)
+        model, corpus, mydict = load_models(args)
+        print(timestamp, "Successfully loaded model, corpus, and dictionary from directory", args.tfidf_model_dir_path, file=sys.stderr)
     else:
         path_suff = ""
+    if args.unique:
+        path_suff += "-unique"
     # Add latin words to keyword processor
     with open(args.latin_dict) as f:
         latin_dict = f.read().split()
@@ -185,23 +194,20 @@ def main(args):
         tsv_writer = csv.writer(f, delimiter='\t')
         tsv_writer.writerow(["start_year"] +  data_list)
         valid = 1
-
+        i = 0
         for first_year, files in files_dict.items():
-            # top_words = get_top_words(args, model_dict[first_year]) # REMOVE THIS
-            # exit(0)
-
             for i in tqdm(range(len(files))):
                 file_path = files[i]
                 stats_dict, valid = stats_for_file(file_path, stats_dict)
 
             if valid:
                 if args.tfidf_model_dir_path:
-                    top_words = get_top_words(args, model_dict[first_year])
+                    top_words = get_top_words(args, i, model, corpus, mydict)
                     tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list] + [", ".join(top_words)])
                 else:
                     tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
-
-    print("Wrote statistics to", stats_path, file=sys.stderr)
+            i += 1
+    print(timestamp, "Wrote statistics to", stats_path, file=sys.stderr)
     # Estimate what amount of text is proper nouns, Latin, historical English,
     # modern English, and unknown (word forms not expected and not recognized).
     # Can use Latin dictionaries/lexicons to discover what % over time the

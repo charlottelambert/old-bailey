@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-import os, argparse, natsort
+import os, argparse, natsort, datetime
+
+def timestamp():
+	return "["+datetime.now().strftime('%Y-%m-%d %H:%M:%S')+"]"
 
 def get_order(file):
     base = os.path.basename(file)
