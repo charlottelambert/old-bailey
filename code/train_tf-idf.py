@@ -30,19 +30,22 @@ def build_vocab(documents):
 
 def sklearn_tfidf(args, pre, documents):
     stop_words = stopwords.words('english') + list(punctuation)
-    print(timestamp, "Building vocabulary...", file=sys.stderr)
+    print(timestamp() + " Building vocabulary...", file=sys.stderr)
     vocabulary = build_vocab(documents)
     tfidf = TfidfVectorizer(stop_words=stop_words, vocabulary=vocabulary) #tokenizer=tokenize,
 
-    print(timestamp, "Fitting the model...", file=sys.stderr)
+    print(timestamp() + " Fitting the model...", file=sys.stderr)
     # Fit the TfIdf model
     # tfidf.fit([doc for doc in documents])
     # or:
-    tfidf.fit_transform(documents) # ?
+    X = tfidf.fit_transform(documents) # ?
+    print(X.shape)
+    print(X[1])
+    exit(0)
 
     # MAKE THIS SPLIT UP BY DOC IN DOCUMENTS! THIS IS JUST TF IDF OVER ALL
 
-    print(timestamp, "Calculating top words...", file=sys.stderr)
+    print(timestamp() + " Calculating top words...", file=sys.stderr)
     indices = np.argsort(tfidf.idf_)[::-1]
     features = tfidf.get_feature_names()
     top_n = 10
@@ -62,15 +65,13 @@ def sklearn_tfidf(args, pre, documents):
 
 
 def gensim_tfidf(args, pre, documents):
-
-
     # Create the Dictionary and Corpus
-    print(timestamp, "Building dictionary...", file=sys.stderr)
+    print(timestamp() + " Building dictionary...", file=sys.stderr)
     mydict = corpora.Dictionary([simple_preprocess(doc) for doc in documents])
-    print(timestamp, "Building corpus...", file=sys.stderr)
+    print(timestamp() + " Building corpus...", file=sys.stderr)
     corpus = [mydict.doc2bow(simple_preprocess(doc)) for doc in documents]
 
-    print(timestamp, "Creating tf-idf model... ", file=sys.stderr)
+    print(timestamp() + " Creating tf-idf model... ", file=sys.stderr)
     # Create the TF-IDF model
     tfidf = models.TfidfModel(corpus, smartirs='ntc')
 
@@ -78,18 +79,18 @@ def gensim_tfidf(args, pre, documents):
     tfidf.save(os.path.join(pre, "model"))
     mydict.save(os.path.join(pre, "dictionary"))
     MmCorpus.serialize(os.path.join(pre, "corpus"), corpus)
-    print(timestamp, "Model, corpus, and dictionary saved to directory " + pre, file=sys.stderr)
+    print(timestamp() + " Model, corpus, and dictionary saved to directory " + pre, file=sys.stderr)
 
 
 def main(args):
-    print(timestamp, "Beginning at " + time.strftime("%d/%m/%Y %H:%M "), file=sys.stderr)
+    print(timestamp() +  " Beginning at " + time.strftime("%d/%m/%Y %H:%M "), file=sys.stderr)
     pre = os.path.join(args.save_model_dir, "tf-idf", time.strftime("%Y-%m-%d"), time.strftime("%H-%M-%S"))
     pre = pre.rstrip("/") + "/"
     print(pre)
     if not os.path.exists(pre):
         os.makedirs(pre)
 
-    print(timestamp, "Collecting files...", file=sys.stderr)
+    print(timestamp() + " Collecting files...", file=sys.stderr)
 
     files_dict = order_files(args)
     documents = []
@@ -102,10 +103,10 @@ def main(args):
 
         documents.append("\n".join(joined_docs))
 
-    sklearn_tfidf(args, pre, documents)
-    # gensim_tfidf(args, pre, documents)
+    # sklearn_tfidf(args, pre, documents)
+    gensim_tfidf(args, pre, documents)
 
-    print(timestamp, "Done!", file=sys.stderr)
+    print(timestamp() + " Done!", file=sys.stderr)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import os, argparse, natsort, datetime
+import os, argparse, natsort
+from datetime import datetime
 
 def timestamp():
 	return "["+datetime.now().strftime('%Y-%m-%d %H:%M:%S')+"]"
