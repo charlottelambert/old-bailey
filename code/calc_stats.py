@@ -9,6 +9,7 @@ from utils import *
 from gensim import models, corpora
 from gensim.corpora.mmcorpus import MmCorpus
 import numpy as np
+from train_tfidf import *
 
 english_words = KeywordProcessor()
 latin_words = KeywordProcessor()
@@ -53,19 +54,11 @@ def load_models(args):
         exit(1)
     return tfidf, corpus, mydict
 
-def get_top_words(args, i, tfidf, corpus, mydict):
-
-     # # Show the TF-IDF weights
-     # for doc in tfidf[corpus]:
-     #     print([[mydict[id], np.around(freq, decimals=2)] for id, freq in doc])
-
-    # exit(0)
+def get_top_words(args, doc_idx, tfidf=None, corpus=None, mydict=None):
     weights = []
-    # for doc in tfidf[corpus]:
-    doc = tfidf[corpus][i]
+    doc = tfidf[corpus][doc_idx]
     weights = [[mydict[id], np.around(freq, decimals=2)] for id, freq in doc]
     top_words = natsort.natsorted(weights, key=lambda x: x[1], reverse=True)[:args.num_top_words]
-    print(top_words)
     return [word[0] for word in top_words]
 
 def update_tok_lists(all_tokens, list_to_check):
@@ -154,14 +147,18 @@ def init_stats_dict(data):
 
 def main(args):
     # If we have a model to load, add fields to data_list and load model
+    data_list.append("top_" + str(args.num_top_words) + "_words")
+
     if args.tfidf_model_dir_path:
-        path_suff = "-top_words"
-        data_list.append("top_" + str(args.num_top_words) + "_words")
         # load all models with path "model-XXXX" and put in dictionary
-        model, corpus, mydict = load_models(args)
-        print(timestamp, "Successfully loaded model, corpus, and dictionary from directory", args.tfidf_model_dir_path, file=sys.stderr)
+        tfidf, corpus, mydict = load_models(args)
+        print(timestamp() + " Successfully loaded model, corpus, and dictionary from directory", args.tfidf_model_dir_path, file=sys.stderr)
     else:
-        path_suff = ""
+        # If not passed in a saved tfidf mode, run it now and save the output
+        pre, documents = before_train(args)
+        tfidf, corpus, mydict = gensim_tfidf(args, pre, documents)
+
+    path_suff = ""
     if args.unique:
         path_suff += "-unique"
     # Add latin words to keyword processor
@@ -194,25 +191,21 @@ def main(args):
         tsv_writer = csv.writer(f, delimiter='\t')
         tsv_writer.writerow(["start_year"] +  data_list)
         valid = 1
-        i = 0
+        doc_idx = 0
         for first_year, files in files_dict.items():
             for i in tqdm(range(len(files))):
                 file_path = files[i]
                 stats_dict, valid = stats_for_file(file_path, stats_dict)
 
             if valid:
-                if args.tfidf_model_dir_path:
-                    top_words = get_top_words(args, i, model, corpus, mydict)
-                    tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list] + [", ".join(top_words)])
-                else:
-                    tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
-            i += 1
-    print(timestamp, "Wrote statistics to", stats_path, file=sys.stderr)
-    # Estimate what amount of text is proper nouns, Latin, historical English,
-    # modern English, and unknown (word forms not expected and not recognized).
-    # Can use Latin dictionaries/lexicons to discover what % over time the
-    # corpus uses latin words. If possible, see if you can download pre-1800
-    # historic English lexicon (to get old english stats)
+                top_words = get_top_words(args, doc_idx, tfidf, corpus, mydict)
+                tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list] + [", ".join(top_words)])
+                # else:
+                #     tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
+
+            doc_idx += 1
+    print(timestamp() + " Wrote statistics to", stats_path, file=sys.stderr)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -223,5 +216,6 @@ if __name__ == '__main__':
     parser.add_argument('--english_words', type=str, default = "", help='optional path to file containing english words')
     parser.add_argument('--unique', default=False, action='store_true', help='whether or not to count only unique words')
     parser.add_argument('--tfidf_model_dir_path', type=str, default = "", help='path to tfidf model directory containing model to load.')
+    parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     args = parser.parse_args()
     main(args)

@@ -81,9 +81,10 @@ def gensim_tfidf(args, pre, documents):
     MmCorpus.serialize(os.path.join(pre, "corpus"), corpus)
     print(timestamp() + " Model, corpus, and dictionary saved to directory " + pre, file=sys.stderr)
 
+    return[tfidf, corpus, mydict]
 
-def main(args):
-    print(timestamp() +  " Beginning at " + time.strftime("%d/%m/%Y %H:%M "), file=sys.stderr)
+def before_train(args):
+    print(timestamp() +  " Beginning tf-idf...", file=sys.stderr)
     pre = os.path.join(args.save_model_dir, "tf-idf", time.strftime("%Y-%m-%d"), time.strftime("%H-%M-%S"))
     pre = pre.rstrip("/") + "/"
     print(pre)
@@ -102,9 +103,12 @@ def main(args):
                 joined_docs.append(f.read())
 
         documents.append("\n".join(joined_docs))
+    return [pre, documents]
 
+def main(args):
+    pre, documents = before_train(args)
     # sklearn_tfidf(args, pre, documents)
-    gensim_tfidf(args, pre, documents)
+    tfidf, corpus, mydict = gensim_tfidf(args, pre, documents)
 
     print(timestamp() + " Done!", file=sys.stderr)
 
