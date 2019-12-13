@@ -68,6 +68,8 @@ def gensim_tfidf(args, pre, documents):
     # Create the Dictionary and Corpus
     print(timestamp() + " Building dictionary...", file=sys.stderr)
     mydict = corpora.Dictionary([simple_preprocess(doc) for doc in documents])
+
+    mydict.filter_extremes(no_above=0.9, no_below=0)
     print(timestamp() + " Building corpus...", file=sys.stderr)
     corpus = [mydict.doc2bow(simple_preprocess(doc)) for doc in documents]
 
@@ -75,7 +77,6 @@ def gensim_tfidf(args, pre, documents):
     # Create the TF-IDF model
     tfidf = models.TfidfModel(corpus, smartirs='ntc')
 
-    # CHANGE NAMING CONVENTION!!!!
     tfidf.save(os.path.join(pre, "model"))
     mydict.save(os.path.join(pre, "dictionary"))
     MmCorpus.serialize(os.path.join(pre, "corpus"), corpus)
