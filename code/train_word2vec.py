@@ -7,8 +7,10 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import numpy as np
 from utils import *
+from dump_w2v import dump_w2v
 
-word_list = ["punishment", "guilt", "murder", "suffrage", "woman", "man", "innocent"]
+word_list = ["sentence", "punishment", "guilt", "murder", "vote", "woman", "man", "innocent", "London", "crime", "female", "foreigner", "slave"]
+word_list.sort()
 
 # want to do this once for all models trained
 def find_n_neighbors(args, pre, model_dict):
@@ -16,14 +18,19 @@ def find_n_neighbors(args, pre, model_dict):
     tsv_path = os.path.join(pre, "neighbors.tsv")
     with open(tsv_path, "w") as f:
         tsv_writer = csv.writer(f, delimiter='\t')
-        tsv_writer.writerow(["word", "year", "neighbors", "model path"])
-        for first_year, model_info in model_dict.items():
-            for word in word_list:
+        label_row = ["word"] + [first_year for first_year, model_info in model_dict.items()]
+        tsv_writer.writerow(label_row)
+
+        for word in word_list:
+            row_contents = [word]
+            for first_year, model_info in model_dict.items():
                 try:
                     neighbor_list = [neighbor[0] for neighbor in model_info["model"].similar_by_word(word, args.find_n_neighbors)]
-                    tsv_writer.writerow([word, first_year, ", ".join(neighbor_list), model_info["model_path"]])
+                    row_contents.append(neighbor_list)
                 except KeyError:
                     print("Word \"" + word + "\" not in vocabulary. Skipping...", file=sys.stderr)
+                    row_contents.append("UNK")
+            tsv_writer.writerow(row_contents)
 
     print(timestamp() + " Wrote top", args.find_n_neighbors, "neighbors to", tsv_path, file=sys.stderr)
 
@@ -140,6 +147,7 @@ def main(args):
             model.save(model_path)
             model_dict[first_year] = {"model": model, "model_path": model_path}
             print(timestamp(), "Model saved to", model_path, file=sys.stderr)
+        dump_w2v(model_dict=model_dict)
 
     else: # FIX THIS SO IT CAN CALL FIND N NEIGHBORS PROPERLY
         # Load model from args.load_model MAKE THIS LAOD A MODEL DIR INSTEAD OF A MODEL!
@@ -155,6 +163,7 @@ def main(args):
     if args.plot:
         print(timestamp(), "Visualizing results...", file=sys.stderr)
         tsne_plot(model, pre)
+
 
     print(timestamp(), "Done! Ending at " + time.strftime("%d/%m/%Y %H:%M ") , file=sys.stderr)
 
