@@ -55,6 +55,10 @@ def load_models(args):
     return tfidf, corpus, mydict
 
 def get_top_words(args, doc_idx, tfidf=None, corpus=None, mydict=None):
+    if not (tfidf and corpus and mydict):
+        print("get_top_words(): You must input a valid model, corpus, and dictionary.", file=sys.stderr)
+        exit(1)
+
     weights = []
     doc = tfidf[corpus][doc_idx]
     weights = [[mydict[id], np.around(freq, decimals=2)] for id, freq in doc]
@@ -212,8 +216,8 @@ if __name__ == '__main__':
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-stats", help='directory containing corpus')
     parser.add_argument('--year_split', type=int, default=100, help='number of years to calculate stats for')
     parser.add_argument('--num_top_words', type=int, default=10, help='number of top words to record')
-    parser.add_argument('--latin_dict', type=str, default="/work/clambert/thesis-data/latin_dict.txt", help='text file containing latin dictionary')
-    parser.add_argument('--english_words', type=str, default = "/work/clambert/thesis-data/english_dict.txt", help='optional path to file containing english words')
+    parser.add_argument('--latin_dict', type=str, default="./latin_words.txt", help='text file containing latin dictionary')
+    parser.add_argument('--english_words', type=str, default = "", help='optional path to file containing english words')
     parser.add_argument('--unique', default=False, action='store_true', help='whether or not to count only unique words')
     parser.add_argument('--tfidf_model_dir_path', type=str, default = "", help='path to tfidf model directory containing model to load.')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
