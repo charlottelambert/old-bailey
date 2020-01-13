@@ -54,6 +54,12 @@ In order to calculate some valuable statistics about a corpus, first [download a
 
 ```
 
+From the XML files of BNC data gotten [here](https://ota.bodleian.ox.ac.uk/repository/xmlui/handle/20.500.12024/2554#), extract all words and compile a list of words that can be considered modern English words. Pass in the output file (path provided by `--save_lexicon_path` option) as the `--english_words` argument to `calc_stats.py`.
+
+```
+./build_bnc.py [XML_BASE_DIR]
+```
+
 Then, run the following command to calculate useful statistics on how many modern english words, historical english words, latin words, and proper nouns are present in all the files in a specific corpus directory:
 
 ```
