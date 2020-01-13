@@ -9,7 +9,7 @@ import numpy as np
 from utils import *
 from dump_w2v import dump_w2v
 
-word_list = ["sentence", "punishment", "guilt", "murder", "vote", "woman", "man", "innocent", "London", "crime", "female", "foreigner", "slave"]
+word_list = ["sentence", "punishment", "guilt", "murder", "vote", "woman", "man", "innocent", "London", "crime", "female", "foreigner", "slave", "chattle", "foreigner", "foreign",  "theft", "robbery", "rape", "thievery", "larceny", "burglary", "assault", "hanging", "prison", "convict"]
 word_list.sort()
 
 # want to do this once for all models trained
