@@ -18,7 +18,7 @@ def dump_w2v(model_paths=None, model_dict=None):
 
         base = os.path.dirname(model_path)
         model_name = os.path.basename(model_path)
-        model_txt_path = os.path.join(base, model_name + ".txt")
+        model_txt_path = os.path.join(base, model_name.split(".model")[0] + ".txt")
 
         # Dump model binary to text file of word2vec format
         model = gensim.models.Word2Vec.load(model_path) if loading else model_dict[obj]["model"]
@@ -30,8 +30,8 @@ def dump_w2v(model_paths=None, model_dict=None):
 
 
         # Convert text file to tsv file
-        model_tsv_path = os.path.join(base, model_name + ".tsv")
-        labels_tsv_path = os.path.join(base, model_name + "_labels.tsv")
+        model_tsv_path = os.path.join(base, model_name.split(".model")[0] + ".tsv")
+        labels_tsv_path = os.path.join(base, model_name.split(".model")[0] + "_labels.tsv")
         model_tsv_output = []
         labels_tsv_output = []
         first = True
