@@ -119,7 +119,7 @@ def tsne_plot(model, pre):
 
 def main(args):
     print(timestamp(), "Beginning at " + time.strftime("%d/%m/%Y %H:%M "), file=sys.stderr)
-    if not args.load_model:
+    if not args.load_model_dir:
         pre = args.save_model_dir + "word2vec/" + time.strftime("%Y-%m-%d") + "/" + time.strftime("%H-%M-%S") + "/"
         if not os.path.exists(pre):
             os.makedirs(pre)
@@ -143,20 +143,26 @@ def main(args):
                 model = filter_top_words(model, args.filter_top_words)
             print(timestamp(), "Training model...", file=sys.stderr)
             model.train(corpus, total_examples=model.corpus_count, epochs=model.epochs)
-            model_path = os.path.join(pre, "model-" + str(first_year))
+            model_path = os.path.join(pre, str(first_year)) + ".model"
             model.save(model_path)
             model_dict[first_year] = {"model": model, "model_path": model_path}
             print(timestamp(), "Model saved to", model_path, file=sys.stderr)
         dump_w2v(model_dict=model_dict)
+        print("model dict:", model_dict)
 
     else: # FIX THIS SO IT CAN CALL FIND N NEIGHBORS PROPERLY
-        # Load model from args.load_model MAKE THIS LAOD A MODEL DIR INSTEAD OF A MODEL!
-        model = Word2Vec.load(args.load_model)
-        print(timestamp(), "Model loaded from " + args.load_model, file=sys.stderr)
-        pre = os.path.dirname(args.load_model)
+        # Load model from args.load_model_dir MAKE THIS LAOD A MODEL DIR INSTEAD OF A MODEL!
+        models = [os.path.join(args.load_model_dir, f) for f in os.listdir(args.load_model_dir)
+                 if os.path.join(args.load_model_dir, f)[-6:] == ".model"]
+        model_dict = {}
+        for model_path in models:
+            model_name = os.path.basename(model_path).split(".model")[0]
+            model = Word2Vec.load(model_path)
+            model_dict[model_name] = {"model": model, "model_path": model_path}
+            print(timestamp(), "Model loaded from " + model_path, file=sys.stderr)
+            pre = os.path.dirname(model_path)
 
     if args.find_n_neighbors:
-        model_path = args.load_model if args.load_model else pre + "model"
         find_n_neighbors(args, pre, model_dict)
 
     # THIS IS BROKEN
@@ -173,7 +179,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-dh", help='directory containing corpus')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
-    parser.add_argument('--load_model', type=str, help='path to model to load and visualize.')
+    parser.add_argument('--load_model_dir', type=str, help='path to directory containing models to load and visualize.')
     parser.add_argument('--plot', default=False, action="store_true", help='whether or not to visualize and plot data.')
     parser.add_argument('--filter_top_words', type=int, default=10000, help='number of words to include in model (take the most common words)')
     parser.add_argument('--find_n_neighbors', type=int, default=0, help='how many nearest neighbors to find')
