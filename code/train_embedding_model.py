@@ -118,9 +118,10 @@ def tsne_plot(model, pre):
     print(timestamp(), "TSNE plot saved.", file=sys.stderr)
 
 def main(args):
-    print(timestamp(), "Beginning at " + time.strftime("%d/%m/%Y %H:%M "), file=sys.stderr)
+    print(timestamp(), "Beginning at " + time.strftime("%m/%d/%Y %H:%M "), file=sys.stderr)
     model_base = "fasttext/" if args.f else "word2vec/"
     embedding_model = FastText if args.f else Word2Vec
+    print("Embedding model:", embedding_model)
 
     if not args.load_model_dir:
         pre = args.save_model_dir + model_base + time.strftime("%Y-%m-%d") + "/" + time.strftime("%H-%M-%S") + "/"
