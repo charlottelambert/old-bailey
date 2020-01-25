@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os, sys, argparse, time, csv
-from gensim.models import Word2Vec
+from gensim.models import Word2Vec, FastText
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -119,8 +119,11 @@ def tsne_plot(model, pre):
 
 def main(args):
     print(timestamp(), "Beginning at " + time.strftime("%d/%m/%Y %H:%M "), file=sys.stderr)
+    model_base = "fasttext/" if args.f else "word2vec/"
+    embedding_model = FastText if args.f else Word2Vec
+
     if not args.load_model_dir:
-        pre = args.save_model_dir + "word2vec/" + time.strftime("%Y-%m-%d") + "/" + time.strftime("%H-%M-%S") + "/"
+        pre = args.save_model_dir + model_base + time.strftime("%Y-%m-%d") + "/" + time.strftime("%H-%M-%S") + "/"
         if not os.path.exists(pre):
             os.makedirs(pre)
 
@@ -133,12 +136,12 @@ def main(args):
             print(timestamp(), "Building corpus...", file=sys.stderr)
             corpus = build_corpus(files=file_list)
 
-            model = Word2Vec(min_count=1)#, size=100, window=20)#, workers=4)
+            model = embedding_model(min_count=1)#, size=100, window=20)#, workers=4)
             print(timestamp(), "Building vocab...", file=sys.stderr)
             model.build_vocab(corpus)
 
             # Filter out top words (need to filter to 10000 if using projector.tensorflow)
-            if args.filter_top_words:
+            if args.filter_top_words: # Should this only happen with word2vec and not fasttext?
                 print(timestamp(), "Extracting top " + str(args.filter_top_words) + " words...", file=sys.stderr)
                 model = filter_top_words(model, args.filter_top_words)
             print(timestamp(), "Training model...", file=sys.stderr)
@@ -157,7 +160,7 @@ def main(args):
         model_dict = {}
         for model_path in models:
             model_name = os.path.basename(model_path).split(".model")[0]
-            model = Word2Vec.load(model_path)
+            model = embedding_model.load(model_path)
             model_dict[model_name] = {"model": model, "model_path": model_path}
             print(timestamp(), "Model loaded from " + model_path, file=sys.stderr)
             pre = os.path.dirname(model_path)
@@ -184,5 +187,6 @@ if __name__ == '__main__':
     parser.add_argument('--filter_top_words', type=int, default=10000, help='number of words to include in model (take the most common words)')
     parser.add_argument('--find_n_neighbors', type=int, default=0, help='how many nearest neighbors to find')
     parser.add_argument('--year_split', type=int, default=100, help='number of years to include in each chunk of corpus (run tf-idf over each chunk)')
+    parser.add_argument('-f', action='store_true', help='use fasttext model instead of word2vec')
     args = parser.parse_args()
     main(args)
