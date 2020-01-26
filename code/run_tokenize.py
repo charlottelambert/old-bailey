@@ -61,8 +61,7 @@ def fix_hyphens(input):
     out = re.sub(r'([^a-zA-z-])([\—\-]+)([a-zA-z])', '\\1 \\2 \\3', out)
     out = re.sub(r'([a-zA-z])([\—\-]+)([^a-zA-z-])', '\\1 \\2 \\3', out)
     out = re.sub(r'([a-zA-z])([\—\-]+)([a-zA-z-])', '\\1 \\2 \\3', out)
-    # out = re.sub(r'[a-zA-z]\—[]')
-    # —
+
     return out.split()
 
 def main(args):
@@ -122,15 +121,12 @@ def main(args):
                     output.append(" ".join(tokens))
                     continue
 
-                # Remove issue with slashes in text (just replace with space)
-                # tokens = [re.sub("/", " ", token) for token in tokens]
                 # Handle issue with dashes appearing at start of word
                 mod_tokens = []
                 for i in range(len(tokens)):
                     mod_tokens += fix_hyphens(tokens[i])
                 tokens = mod_tokens
 
-                # tokens = [fix_hyphens(token) for token in tokens]
                 if not args.stats:
                     # Keep all words containing at least one letter
                     tokens = [x for x in tokens if re.search('[a-zA-Z]', x)]
