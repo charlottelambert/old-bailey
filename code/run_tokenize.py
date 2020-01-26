@@ -156,8 +156,6 @@ def main(args):
                     # also -square, -highway, -cross, -grove, -town
 
                 output.append(finished)
-        print('\n'.join(output))
-        exit(0)
         with open(output_file, "w+") as f:
             f.write('\n'.join(output))
     print("Tokenization done.", file=sys.stderr)
