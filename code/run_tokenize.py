@@ -57,10 +57,13 @@ def fix_hyphens(input):
     """
         Fix issues with hyphens that isn't fixed through tokenization.
     """
-    out = re.sub(r'([^a-zA-z-])(\-+)([^a-zA-z-])', '\\1 \\2 \\3', input)
-    out = re.sub(r'([^a-zA-z-])(\-+)([a-zA-z])', '\\1 \\2 \\3', out)
-    out = re.sub(r'([a-zA-z])(\-+)([^a-zA-z-])', '\\1 \\2 \\3', out)
-    return out
+    out = re.sub(r'([^a-zA-z-])([\—\-]+)([^a-zA-z-])', '\\1 \\2 \\3', input)
+    out = re.sub(r'([^a-zA-z-])([\—\-]+)([a-zA-z])', '\\1 \\2 \\3', out)
+    out = re.sub(r'([a-zA-z])([\—\-]+)([^a-zA-z-])', '\\1 \\2 \\3', out)
+    out = re.sub(r'([a-zA-z])([\—\-]+)([a-zA-z-])', '\\1 \\2 \\3', out)
+    # out = re.sub(r'[a-zA-z]\—[]')
+    # —
+    return out.split()
 
 def main(args):
     # Compile list of files to tokenize
@@ -122,7 +125,12 @@ def main(args):
                 # Remove issue with slashes in text (just replace with space)
                 # tokens = [re.sub("/", " ", token) for token in tokens]
                 # Handle issue with dashes appearing at start of word
-                tokens = [fix_hyphens(token) for token in tokens]
+                mod_tokens = []
+                for i in range(len(tokens)):
+                    mod_tokens += fix_hyphens(tokens[i])
+                tokens = mod_tokens
+
+                # tokens = [fix_hyphens(token) for token in tokens]
                 if not args.stats:
                     # Keep all words containing at least one letter
                     tokens = [x for x in tokens if re.search('[a-zA-Z]', x)]
@@ -139,6 +147,8 @@ def main(args):
 
                 # Remove words of length < 2
                 tokens = [x for x in tokens if len(x) > 2]
+                # Remove trailing slashes
+                tokens = [re.sub(r'([^\\]*)(\\+)', '\\1', x) for x in tokens]
                 finished = " ".join(tokens)
 
                 # If needed, replace street names with generic version
@@ -150,7 +160,8 @@ def main(args):
                     # also -square, -highway, -cross, -grove, -town
 
                 output.append(finished)
-
+        print('\n'.join(output))
+        exit(0)
         with open(output_file, "w+") as f:
             f.write('\n'.join(output))
     print("Tokenization done.", file=sys.stderr)
