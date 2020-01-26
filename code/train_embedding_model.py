@@ -9,7 +9,7 @@ import numpy as np
 from utils import *
 from dump_w2v import dump_w2v
 
-word_list = ["sentence", "punishment", "guilt", "murder", "vote", "woman", "man", "innocent", "London", "crime", "female", "foreigner", "slave", "chattle", "foreigner", "foreign",  "theft", "robbery", "rape", "thievery", "larceny", "burglary", "assault", "hanging", "prison", "convict"]
+word_list = ["sentence", "punishment", "guilt", "murder", "vote", "woman", "man", "innocent", "London", "crime", "female", "slave", "chattle", "foreigner", "foreign",  "theft", "robbery", "rape", "thievery", "larceny", "burglary", "assault", "hanging", "prison", "convict"]
 word_list.sort()
 
 # want to do this once for all models trained
@@ -20,20 +20,23 @@ def find_n_neighbors(args, pre, model_dict):
         tsv_writer = csv.writer(f, delimiter='\t')
         label_row = ["word"] + [first_year for first_year, model_info in model_dict.items()]
         tsv_writer.writerow(label_row)
+        neighbor_dict = {}
 
         for word in word_list:
             row_contents = [word]
             for first_year, model_info in model_dict.items():
                 try:
-                    neighbor_list = [neighbor[0] for neighbor in model_info["model"].similar_by_word(word, args.find_n_neighbors)]
+                    neighbor_list = model_info["model"].similar_by_word(word, args.find_n_neighbors)
                     row_contents.append(neighbor_list)
+                    neighbor_dict[first_year] = {}
+                    neighbor_dict[first_year][word] = neighbor_list
                 except KeyError:
                     print("Word \"" + word + "\" not in vocabulary. Skipping...", file=sys.stderr)
                     row_contents.append("UNK")
             tsv_writer.writerow(row_contents)
 
     print(timestamp() + " Wrote top", args.find_n_neighbors, "neighbors to", tsv_path, file=sys.stderr)
-
+    return neighbor_dict
 
 def build_corpus(input_dir_path=None, files=None):
     """
@@ -75,18 +78,41 @@ def filter_top_words(model, n):
 
 # want to do this for each model trained
 # https://www.kaggle.com/jeffd23/visualizing-word-vectors-with-t-sne/notebook
-def tsne_plot(model, pre):
+def tsne_plot(model, pre, neighbor_dict):
     """
         Creates and TSNE model and plots it
     """
+    words_to_plot = []
+    for word in neighbor_dict:
+        words_to_plot.append(word)
+        for neighbor in neighbor_dict[word]:
+            words_to_plot.append(neighbor[0])
 
+    # # problem: this is plotting all the stuff by year
+    # for first_year in neighbor_dict:
+    #     # Reset labels
     labels = []
     tokens = []
+
+        # for word in neighbor_dict[first_year]:
+        #     try:
+        #         tokens.append(model.wv[word])
+        #         labels.append(word)
+        #     except KeyError:
+        #         continue
+        #     for neighbor in neighbor_dict[first_year][word]:
+        #         tokens.append(neighbor[1])
+        #         labels.append(neighbor[0])
+
+
+        # ###############
     for i, word in enumerate(model.wv.vocab):
+        # print(word)
+        # exit(0)
         tokens.append(model.wv[word])
         labels.append(word)
 
-#    tsne_model = TSNE(perplexity=30, n_components=2, init='pca', n_iter=2500, random_state=23)
+#   tsne_model = TSNE(perplexity=30, n_components=2, init='pca', n_iter=2500, random_state=23)
     tsne_model = TSNE(random_state=2017, perplexity=12, n_components=2, init='pca', method='barnes_hut', verbose=1)
     print(timestamp(), "TSNE model initialized.", file=sys.stderr)
     # PROBLEM with fit_transform, it's just never returning
@@ -105,7 +131,10 @@ def tsne_plot(model, pre):
 
     plt.figure(figsize=(10, 10))
     for i in tqdm(range(len(x))):
+        if labels[i] not in words_to_plot:
+            continue
     #for i in range(len(x)):
+
         plt.scatter(x[i],y[i])
         plt.annotate(labels[i],
                      xy=(x[i], y[i]),
@@ -114,7 +143,7 @@ def tsne_plot(model, pre):
                      ha='right',
                      va='bottom')
     # plt.show()
-    plt.savefig(os.path.join(pre, 'plot.png'))
+    plt.savefig(pre + "_plot.png")
     print(timestamp(), "TSNE plot saved.", file=sys.stderr)
 
 def main(args):
@@ -166,13 +195,15 @@ def main(args):
             print(timestamp(), "Model loaded from " + model_path, file=sys.stderr)
             pre = os.path.dirname(model_path)
 
-    if args.find_n_neighbors:
-        find_n_neighbors(args, pre, model_dict)
+    # Find nearest n neighbors
+    if args.find_n_neighbors or args.plot_neighbors:
+        neighbor_dict = find_n_neighbors(args, pre, model_dict)
 
     # THIS IS BROKEN
-    if args.plot:
+    if args.plot_neighbors:
         print(timestamp(), "Visualizing results...", file=sys.stderr)
-        tsne_plot(model, pre)
+        for year in model_dict:
+            tsne_plot(model_dict[year]["model"], os.path.join(pre, str(year)), neighbor_dict[year])
 
 
     print(timestamp(), "Done! Ending at " + time.strftime("%d/%m/%Y %H:%M ") , file=sys.stderr)
@@ -184,7 +215,7 @@ if __name__ == '__main__':
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-dh", help='directory containing corpus')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--load_model_dir', type=str, help='path to directory containing models to load and visualize.')
-    parser.add_argument('--plot', default=False, action="store_true", help='whether or not to visualize and plot data.')
+    parser.add_argument('--plot_neighbors', default=False, action="store_true", help='whether or not to visualize and plot data.')
     parser.add_argument('--filter_top_words', type=int, default=10000, help='number of words to include in model (take the most common words)')
     parser.add_argument('--find_n_neighbors', type=int, default=0, help='how many nearest neighbors to find')
     parser.add_argument('--year_split', type=int, default=100, help='number of years to include in each chunk of corpus (run tf-idf over each chunk)')
