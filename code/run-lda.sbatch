@@ -15,6 +15,6 @@ date
 export JAVA_OPTIONS="-Xms4G -Xmx8G"
 export MALLET_PATH=~/Mallet/bin/mallet
 
-./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-dh-1774 --num_topics=20
+./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-dh-1874 --num_topics=20
 
 echo Finished: `date`
