@@ -31,7 +31,10 @@ def gen_wordcloud(args, pre, neighbor_dict):
         word_frequency_list += neighbor_dict[word]
 
     wordcloud = wordcloud.fit_words(dict(word_frequency_list))
-    wordcloud.to_file(pre + "_wordcloud.jpg")
+    wc_path = pre + "_" + word + "_wordcloud.jpg"
+    wordcloud.to_file(wc_path)
+    print(timestamp(), "Saving word cloud to", wc_path, file=sys.stderr)
+
 
 # want to do this once for all models trained
 def find_n_neighbors(args, pre, model_dict):
