@@ -8,9 +8,30 @@ from tqdm import tqdm
 import numpy as np
 from utils import *
 from dump_w2v import dump_w2v
+from wordcloud import WordCloud
+import pandas as pd
 
 word_list = ["sentence", "punishment", "guilt", "murder", "vote", "woman", "man", "innocent", "London", "crime", "female", "slave", "chattle", "foreigner", "foreign",  "theft", "robbery", "rape", "thievery", "larceny", "burglary", "assault", "hanging", "prison", "convict"]
 word_list.sort()
+
+def gen_wordcloud(args, pre, neighbor_dict):
+    # dict is {word: [(neighbor, similarity), ...]}
+    # pre will be /path/to/dir/1674
+    max_words = len(word_list)*(args.find_n_neighbors+1)
+    # wc = WordCloud(background_color="white", max_words=max_words, width=400, height=400, random_state=1).generate(text)
+    # # to recolour the image
+    # # plt.imshow(wc.recolor(color_func=image_colors))
+    # plt.imshow()
+
+    wordcloud = WordCloud(background_color="white", max_words=max_words, width=400, height=400)
+
+    word_frequency_list = []
+    for word in neighbor_dict:
+        word_frequency_list.append((word, 1))
+        word_frequency_list += neighbor_dict[word]
+
+    wordcloud = wordcloud.fit_words(dict(word_frequency_list))
+    wordcloud.to_file(pre + "_wordcloud.jpg")
 
 # want to do this once for all models trained
 def find_n_neighbors(args, pre, model_dict):
@@ -30,6 +51,8 @@ def find_n_neighbors(args, pre, model_dict):
                     row_contents.append(neighbor_list)
                     neighbor_dict[first_year] = {}
                     neighbor_dict[first_year][word] = neighbor_list
+                    gen_wordcloud(args, os.path.join(pre, str(first_year)), neighbor_dict[first_year])
+
                 except KeyError:
                     print("Word \"" + word + "\" not in vocabulary. Skipping...", file=sys.stderr)
                     row_contents.append("UNK")
@@ -174,6 +197,7 @@ def main(args):
             if args.filter_top_words: # Should this only happen with word2vec and not fasttext?
                 print(timestamp(), "Extracting top " + str(args.filter_top_words) + " words...", file=sys.stderr)
                 model = filter_top_words(model, args.filter_top_words)
+
             print(timestamp(), "Training model...", file=sys.stderr)
             model.train(corpus, total_examples=model.corpus_count, epochs=model.epochs)
             model_path = os.path.join(pre, str(first_year)) + ".model"
@@ -207,8 +231,6 @@ def main(args):
 
 
     print(timestamp(), "Done! Ending at " + time.strftime("%d/%m/%Y %H:%M ") , file=sys.stderr)
-
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
