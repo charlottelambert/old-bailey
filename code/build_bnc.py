@@ -55,7 +55,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('xml_base_path', type=str, default="/work/clambert/thesis-data/bnc/download/Texts", help='base directory for all BNC xml files')
+    parser.add_argument('xml_base_path', type=str, default="/work/jgordon/tmp/bnc/text", help='base directory for all BNC xml files')
     parser.add_argument('--save_lexicon_path', type=str, default="/work/clambert/thesis-data/bnc_lexicon.txt", help='output file path')
     args = parser.parse_args()
     main(args)
