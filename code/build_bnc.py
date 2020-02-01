@@ -2,7 +2,7 @@
 import sys, re, argparse, os
 from tqdm import tqdm
 from bs4 import BeautifulSoup
-from run_tokenize import fix_hyphens
+from utils import c_dict
 
 # Extract words from one XML file and compile
 def update_bnc_words(xml_path):
@@ -22,13 +22,13 @@ def update_bnc_words(xml_path):
 
         # Add all actual words to the list
         for word in word_list:
-            fixed_word = fix_hyphens(word)
-            # May be a proper noun, add both lower and upper versions
-            is_word = re.match('[a-zA-Z]', fixed_word)
-
+            is_word = re.match('[a-zA-Z]', word)
+            low = word.lower()
             if is_word:
-                bnc_words.add(fixed_word.lower())
-
+                if low in c_dict:
+                    bnc_words.update(c_dict[low].split())
+                else:
+                    bnc_words.add(low)
     return bnc_words
 
 def main(args):

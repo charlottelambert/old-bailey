@@ -14,23 +14,9 @@ from tqdm import tqdm
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 from nltk.util import ngrams
+from utils import c_dict
 
 def contractions(token_list):
-    # Replace contraction tokenization with real words
-    c_dict =    {
-    "ca n't": "can not",
-    "wo n't": "will not",
-    "couldn't 've": "could not have",
-    "could n't": "could not",
-    "n't": "not",
-    "'d": "would",
-    "'ll": "will",
-    "'ve": "have",
-    "'m": "am",
-    "let 's": "let us",
-    "'re": "are"
-    }
-
     # Remove all asterisks and replace contractions
     for idx, token in enumerate(token_list):
         if token == "*":
