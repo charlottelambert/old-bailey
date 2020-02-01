@@ -2,6 +2,20 @@
 import os, argparse, natsort
 from datetime import datetime
 
+c_dict =    {
+	"ca n't": "can not",
+	"wo n't": "will not",
+	"couldn't 've": "could not have",
+	"could n't": "could not",
+	"n't": "not",
+	"'d": "would",
+	"'ll": "will",
+	"'ve": "have",
+	"'m": "am",
+	"let 's": "let us",
+	"'re": "are"
+}
+
 def timestamp():
 	return "["+datetime.now().strftime('%Y-%m-%d %H:%M:%S')+"]"
 

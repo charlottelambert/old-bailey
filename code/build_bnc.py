@@ -2,7 +2,7 @@
 import sys, re, argparse, os
 from tqdm import tqdm
 from bs4 import BeautifulSoup
-from run_tokenize import fix_hyphens
+from utils import c_dict
 
 # Extract words from one XML file and compile
 def update_bnc_words(xml_path):
@@ -18,17 +18,17 @@ def update_bnc_words(xml_path):
         raw_word = re.sub(r'(.+)\'\s+', "\\1", raw_word)
 
         # Split on slashes
-        word_list = raw_word.split("\/")
+        word_list = raw_word.split("/")
 
         # Add all actual words to the list
         for word in word_list:
-            fixed_word = fix_hyphens(word)
-            # May be a proper noun, add both lower and upper versions
-            is_word = re.match('[a-zA-Z]', fixed_word)
-
+            is_word = re.match('[a-zA-Z]', word)
+            low = word.lower()
             if is_word:
-                bnc_words.add(fixed_word.lower())
-
+                if low in c_dict:
+                    bnc_words.update(c_dict[low].split())
+                else:
+                    bnc_words.add(low)
     return bnc_words
 
 def main(args):
@@ -54,7 +54,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('xml_base_path', type=str, default="/work/jgordon/tmp/bnc/text", help='base directory for all BNC xml files')
+    parser.add_argument('--xml_base_path', type=str, default="/work/jgordon/tmp/bnc/text", help='base directory for all BNC xml files')
     parser.add_argument('--save_lexicon_path', type=str, default="/work/clambert/thesis-data/bnc_lexicon.txt", help='output file path')
     args = parser.parse_args()
     main(args)
