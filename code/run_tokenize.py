@@ -12,6 +12,7 @@
 import sys, argparse, os, re
 from tqdm import tqdm
 from nltk.tokenize import word_tokenize
+from nltk.stem import PorterStemmer
 from nltk.util import ngrams
 
 def contractions(token_list):
@@ -68,6 +69,9 @@ def main(args):
     # Compile list of files to tokenize
     files = [os.path.join(args.corpus_dir, f) for f in os.listdir(args.corpus_dir)
              if (os.path.isfile(os.path.join(args.corpus_dir, f)) and f.endswith('.txt'))]
+
+    if args.stem:
+        ps = PorterStemmer()
 
     # Define additional info to add to output path
     suffix = "-tok"
@@ -127,9 +131,15 @@ def main(args):
                     mod_tokens += fix_hyphens(tokens[i])
                 tokens = mod_tokens
 
+
                 if not args.stats:
                     # Keep all words containing at least one letter
-                    tokens = [x for x in tokens if re.search('[a-zA-Z]', x)]
+                    # Also remove words of length < 2 and remove trailing slashes
+                    # Stem if necessary
+                    if args.stem:
+                        tokens = [ps.stem(re.sub(r'([^\\]*)(\\+)', '\\1', x)) for x in tokens if re.search('[a-zA-Z]', x) and len(x) > 2]
+                    else:
+                        tokens = [re.sub(r'([^\\]*)(\\+)', '\\1', x) for x in tokens if re.search('[a-zA-Z]', x) and len(x) > 2]
 
                 # Replace split contractions with full words
                 tokens = contractions(tokens)
@@ -137,14 +147,9 @@ def main(args):
                 # If tokenizing text in order to find useful stats, do extra
                 # processing and return without removing words
                 if args.stats:
-                    # Get rid of problem with slashes
                     output.append(" ".join(tokens))
                     continue
 
-                # Remove words of length < 2
-                tokens = [x for x in tokens if len(x) > 2]
-                # Remove trailing slashes
-                tokens = [re.sub(r'([^\\]*)(\\+)', '\\1', x) for x in tokens]
                 finished = " ".join(tokens)
 
                 # If needed, replace street names with generic version
@@ -170,5 +175,6 @@ if __name__ == '__main__':
     parser.add_argument('--stats', default=False, action="store_true", help='whether or not to process text for finding statistics (calc_stats.py)')
     # parser.add_argument('--no_proper_nouns', default=False, action="store_true", help='whether or not to discard all proper nouns')
     parser.add_argument('--street_sub', default=False, action="store_true", help='whether or not to substitute street names with generic string')
+    parser.add_argument('--stem', default=False, action="store_true", help='whether or not to stem all text')
     args = parser.parse_args()
     main(args)
