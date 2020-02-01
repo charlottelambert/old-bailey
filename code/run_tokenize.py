@@ -77,13 +77,15 @@ def main(args):
     suffix = "-tok"
     bigram_str = "-bi" if args.bigrams else ""
     lower_str = "-lower" if args.lower else ""
-    lower_str = "-stem" if args.stem else ""
+    stem_str = "-stem" if args.stem else ""
     street_str = "-streets" if args.street_sub else ""
 
-    suffix += bigram_str + lower_str + street_str
+    suffix += bigram_str + lower_str + stem_str + street_str
 
     if args.stats:
         suffix = "-stats"
+
+    print("Tokenizing data to", suffix, file=sys.stderr)
 
     # Define output directory (if not provided)
     if not args.output_dir_base:
