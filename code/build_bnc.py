@@ -2,17 +2,15 @@
 import sys, re, argparse, os
 from tqdm import tqdm
 from bs4 import BeautifulSoup
+from run_tokenize import fix_hyphens
 
 # Extract words from one XML file and compile
 def update_bnc_words(xml_path):
-    # Define XML tree from xmlFile
-
     with open(xml_path) as f:
         content = f.read()
 
     xml_content = BeautifulSoup(content, features="lxml")
     xml_content = xml_content.text.split()
-
 
     bnc_words = set()
     for raw_word in xml_content:
@@ -24,11 +22,12 @@ def update_bnc_words(xml_path):
 
         # Add all actual words to the list
         for word in word_list:
+            fixed_word = fix_hyphens(word)
             # May be a proper noun, add both lower and upper versions
-            is_word = re.match('[a-zA-Z]', word)
+            is_word = re.match('[a-zA-Z]', fixed_word)
 
             if is_word:
-                bnc_words.add(word.lower())
+                bnc_words.add(fixed_word.lower())
 
     return bnc_words
 
