@@ -79,8 +79,8 @@ def main(args):
     else: output_dir = args.output_dir_base.rstrip("/") + suffix
 
     # Create output directory
-    # if not os.path.exists(output_dir):
-    #     os.mkdir(output_dir)
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
 
     for i in tqdm(range(len(files))):
         file = files[i]
@@ -155,8 +155,6 @@ def main(args):
                     # also -square, -highway, -cross, -grove, -town
 
                 output.append(finished)
-        print("\n".join(output))
-        exit(0)
         with open(output_file, "w+") as f:
             f.write('\n'.join(output))
     print("Tokenization done.", file=sys.stderr)
