@@ -99,7 +99,7 @@ def main(args):
                     line = line.lower()
 
                 # Fix apostrophe escapes:
-                line = line.replace("\'", "'")
+                line = line.replace("\\\'", "'")
 
                 # Tokenize line
                 tokens = word_tokenize(line)
@@ -123,12 +123,17 @@ def main(args):
 
                 if not args.stats:
                     # Keep all words containing at least one letter
-                    # Also remove words of length < 2 and remove trailing slashes
+                    # Also remove words of length < 2
                     # Stem if necessary
+
+                    # First, remove trailing hyphens and slashes
+                    dash_pattern = r'([^‒–—―\-\\]*)([‒–—―\-\\]+)$' # FIX THIS: ITS REMOVING ALL TRAILING PUNCT
+                    tokens = [re.sub(dash_pattern, '\\1', x) for x in tokens]
+
                     if args.stem:
-                        tokens = [ps.stem(re.sub(r'([^\\]*)(\\+)', '\\1', x)) for x in tokens if re.search('[a-zA-Z]', x) and len(x) > 2]
+                        tokens = [ps.stem(x) for x in tokens if len(x) > 2 and re.search('[a-zA-Z]', x)]
                     else:
-                        tokens = [re.sub(r'([^\\]*)(\\+)', '\\1', x) for x in tokens if re.search('[a-zA-Z]', x) and len(x) > 2]
+                        tokens = [x for x in tokens if len(x) > 2 and re.search('[a-zA-Z]', x)]
 
                 # Replace split contractions with full words
                 tokens = contractions(tokens)
