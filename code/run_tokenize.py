@@ -12,7 +12,7 @@
 import sys, argparse, os, re
 from tqdm import tqdm
 from nltk.tokenize import word_tokenize
-from nltk.stem import PorterStemmer
+from nltk.stem import WordNetLemmatizer
 from nltk.util import ngrams
 from utils import c_dict
 
@@ -56,17 +56,17 @@ def main(args):
     files = [os.path.join(args.corpus_dir, f) for f in os.listdir(args.corpus_dir)
              if (os.path.isfile(os.path.join(args.corpus_dir, f)) and f.endswith('.txt'))]
 
-    if args.stem:
-        ps = PorterStemmer()
+    if args.lemma:
+        lemmatizer = WordNetLemmatizer()
 
     # Define additional info to add to output path
     suffix = "-tok"
     bigram_str = "-bi" if args.bigrams else ""
     lower_str = "-lower" if args.lower else ""
-    stem_str = "-stem" if args.stem else ""
+    lemma_str = "-lemma" if args.lemma else ""
     street_str = "-streets" if args.street_sub else ""
 
-    suffix += bigram_str + lower_str + stem_str + street_str
+    suffix += bigram_str + lower_str + lemma_str + street_str
 
     if args.stats:
         suffix = "-stats"
@@ -122,16 +122,16 @@ def main(args):
 
 
                 if not args.stats:
-                    # Keep all words containing at least one letter
-                    # Also remove words of length < 2
-                    # Stem if necessary
 
                     # First, remove trailing hyphens and slashes
                     dash_pattern = r'([^‒–—―\-\\]*)([‒–—―\-\\]+)$' # FIX THIS: ITS REMOVING ALL TRAILING PUNCT
                     tokens = [re.sub(dash_pattern, '\\1', x) for x in tokens]
 
-                    if args.stem:
-                        tokens = [ps.stem(x) for x in tokens if len(x) > 2 and re.search('[a-zA-Z]', x)]
+                    # Keep all words containing at least one letter
+                    # Also remove words of length < 2
+                    # Lemmatize if necessary
+                    if args.lemma:
+                        tokens = [lemmatizer.lemmatize(x) for x in tokens if len(x) > 2 and re.search('[a-zA-Z]', x)]
                     else:
                         tokens = [x for x in tokens if len(x) > 2 and re.search('[a-zA-Z]', x)]
 
@@ -169,6 +169,6 @@ if __name__ == '__main__':
     parser.add_argument('--stats', default=False, action="store_true", help='whether or not to process text for finding statistics (calc_stats.py)')
     # parser.add_argument('--no_proper_nouns', default=False, action="store_true", help='whether or not to discard all proper nouns')
     parser.add_argument('--street_sub', default=False, action="store_true", help='whether or not to substitute street names with generic string')
-    parser.add_argument('--stem', default=False, action="store_true", help='whether or not to stem all text')
+    parser.add_argument('--lemma', default=False, action="store_true", help='whether or not to lemmatize all text')
     args = parser.parse_args()
     main(args)
