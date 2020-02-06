@@ -16,6 +16,8 @@ latin_words = KeywordProcessor()
 
 data_list = ["modern_english", "old_english", "latin", "proper_nouns", "upper", "lower", "mixed", "unk", "total"]
 
+unk_words = set()
+
 def load_models_old(args):
     model_dict = {}
     files = [os.path.join(args.tfidf_model_dir_path, f) for f in os.listdir(args.tfidf_model_dir_path)
@@ -130,6 +132,7 @@ def stats_for_file(file, stats_dict):
             stats_dict['latin'] += len(latin_words_found)
 
             stats_dict['unk'] += len(all_tokens)
+            unk_words.update(all_tokens)
             try:
                 assert stats_dict["modern_english"] + stats_dict["latin"] + stats_dict["old_english"] + stats_dict["proper_nouns"] + stats_dict["unk"] == stats_dict["total"]
                 assert stats_dict["lower"] + stats_dict["upper"] + stats_dict["mixed"] == stats_dict["total"]
@@ -209,15 +212,15 @@ def main(args):
 
             doc_idx += 1
     print(timestamp() + " Wrote statistics to", stats_path, file=sys.stderr)
-
+    print("\n".join(list(unk_words)))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-stats", help='directory containing corpus')
     parser.add_argument('--year_split', type=int, default=100, help='number of years to calculate stats for')
     parser.add_argument('--num_top_words', type=int, default=10, help='number of top words to record')
-    parser.add_argument('--latin_dict', type=str, default="./latin_words.txt", help='text file containing latin dictionary')
-    parser.add_argument('--english_words', type=str, default = "", help='optional path to file containing english words')
+    parser.add_argument('--latin_dict', type=str, default="/work/clambert/thesis-data/latin_dict.txt", help='text file containing latin dictionary')
+    parser.add_argument('--english_words', type=str, default = "/work/clambert/thesis-data/bnc_lexicon.txt", help='optional path to file containing english words')
     parser.add_argument('--unique', default=False, action='store_true', help='whether or not to count only unique words')
     parser.add_argument('--tfidf_model_dir_path', type=str, default = "", help='path to tfidf model directory containing model to load.')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
