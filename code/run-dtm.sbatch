@@ -14,6 +14,6 @@ date
 
 export DTM_PATH=/home/clambert/dtm/dtm/main
 
-./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/dtm-test --num_topics=20 --model_type=dtm
+./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=20 --model_type=dtm
 
 echo Finished: `date`

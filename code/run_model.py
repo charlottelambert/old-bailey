@@ -16,6 +16,7 @@ from gensim.test.utils import get_tmpfile
 from gensim.corpora import MalletCorpus, Dictionary, bleicorpus
 from gensim.models.phrases import Phrases, Phraser
 from gensim.models.wrappers.dtmmodel import DtmModel
+from utils import *
 
 # TAKEN OUT OF RUN-LDA.SBATCH, PUT BACK IF RUNNING OUT OF MEMORY
 # #SBATCH -c 64
@@ -63,9 +64,10 @@ def model_on_directory(args):
 
     print("Reading corpus.", file=sys.stderr)
 
-    files = [f for f in os.listdir(args.corpus_dir)
-             if os.path.isfile(os.path.join(args.corpus_dir, f))]
-
+#    files = [f for f in os.listdir(args.corpus_dir)
+#             if os.path.isfile(os.path.join(args.corpus_dir, f))]
+    files, time_slices = order_files(args, ret_dict=False)
+    print(time_slices)
     # Compile list of lists of tokens
     texts = []
     print("Compiling tokens.", file=sys.stderr)
@@ -108,10 +110,10 @@ def model_on_directory(args):
         # Find path to DTM binary
         DTM_PATH = os.environ.get('DTM_PATH', None)
         if not DTM_PATH:
-            raise ValueError("You need to set the DTM path")
+            raise ValueError("You need to set the DTM path.")
         # Run the model
         model = DtmModel(DTM_PATH, corpus=corpus,
-            id2word=dictionary, time_slices=[1] * 3, prefix=pre)
+            id2word=dictionary, time_slices=time_slices, prefix=pre)
 
     # Save model with timestamp
     model.save(pre + "model")
@@ -143,5 +145,6 @@ if __name__ == '__main__':
     parser.add_argument('--num_topics', type=int, default=100, help='number of topics to find')
     parser.add_argument('--optimize_interval', type=int, default=10, help='number of topics to find')
     parser.add_argument('--num_iterations', type=int, default=1000, help='number of topics to find')
+    parser.add_argument('--year_split', type=int, default = 100, help='Number of years per time slice')
     args = parser.parse_args()
     main(args)
