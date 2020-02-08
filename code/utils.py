@@ -3,21 +3,21 @@ import os, argparse, natsort
 from datetime import datetime
 
 c_dict =    {
-	"ca n't": "can not",
-	"wo n't": "will not",
-	"couldn't 've": "could not have",
-	"could n't": "could not",
-	"n't": "not",
-	"'d": "would",
-	"'ll": "will",
-	"'ve": "have",
-	"'m": "am",
-	"let 's": "let us",
-	"'re": "are"
+    "ca n't": "can not",
+    "wo n't": "will not",
+    "couldn't 've": "could not have",
+    "could n't": "could not",
+    "n't": "not",
+    "'d": "would",
+    "'ll": "will",
+    "'ve": "have",
+    "'m": "am",
+    "let 's": "let us",
+    "'re": "are"
 }
 
 def timestamp():
-	return "["+datetime.now().strftime('%Y-%m-%d %H:%M:%S')+"]"
+    return "["+datetime.now().strftime('%Y-%m-%d %H:%M:%S')+"]"
 
 def get_order(file):
     base = os.path.basename(file)
@@ -36,7 +36,7 @@ def get_year(file):
     offset = 2 if os.path.basename(file)[:2] == "OA" else 0
     return int(os.path.basename(file)[0 + offset:4 + offset])
 
-def order_files(args):
+def order_files(args, ret_dict=True):
     """
         Sort a list of input files by years.
 
@@ -55,4 +55,8 @@ def order_files(args):
             start_year = cur_year
             files_dict[start_year] = []
         files_dict[start_year].append(file)
-    return files_dict
+    if ret_dict:
+        return files_dict
+    else:
+        # [ordered_file_list, [docs_per_slice]]
+        return [files, [len(files_dict[chunk]) for chunk in files_dict]]

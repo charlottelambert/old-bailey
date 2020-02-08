@@ -90,6 +90,7 @@ def main(args):
 
         output = []
         with open(file, "r") as f:
+            print("opened:", file)
             for line in f:
                 if not line.strip():
                     continue
@@ -117,16 +118,16 @@ def main(args):
                 # Handle issue with dashes appearing at start of word
                 mod_tokens = []
                 for i in range(len(tokens)):
-                    mod_tokens += fix_hyphens(tokens[i])
+                    mod_tokens += tokens[i].split() #fix_hyphens(tokens[i])
                 tokens = mod_tokens
 
 
                 if not args.stats:
-
                     # First, remove trailing hyphens and slashes
-                    dash_pattern = r'([^‒–—―\-\\]*)([‒–—―\-\\]+)$' # FIX THIS: ITS REMOVING ALL TRAILING PUNCT
-                    tokens = [re.sub(dash_pattern, '\\1', x) for x in tokens]
-
+                    # dash_pattern = r'([^‒–—―\-\\]*)([‒–—―\-\\]+)$' # FIX THIS: ITS REMOVING ALL TRAILING PUNCT
+                    # tokens = [re.sub(dash_pattern, '\\1', x) for x in tokens]
+                    sub_pattern = '\A([\W_]*)([A-Za-z0-9]+|[A-Za-z0-9]+[\W_]+[A-Za-z0-9]+)([\W_]*)$'
+                    tokens = [re.sub(sub_pattern, "\\2", x) for x in tokens]
                     # Keep all words containing at least one letter
                     # Also remove words of length < 2
                     # Lemmatize if necessary
@@ -155,6 +156,8 @@ def main(args):
                     # also -square, -highway, -cross, -grove, -town
 
                 output.append(finished)
+            print('\n'.join(output))
+            exit(0)
         with open(output_file, "w+") as f:
             f.write('\n'.join(output))
     print("Tokenization done.", file=sys.stderr)
