@@ -111,7 +111,7 @@ def model_on_directory(args):
             raise ValueError("You need to set the DTM path")
         # Run the model
         model = DtmModel(DTM_PATH, corpus=corpus,
-            id2word=dictionary, time_slices=[1] * len(corpus), prefix=pre)
+            id2word=dictionary, time_slices=[1] * 3, prefix=pre)
 
     # Save model with timestamp
     model.save(pre + "model")
