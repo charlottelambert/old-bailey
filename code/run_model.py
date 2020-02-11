@@ -62,6 +62,8 @@ def model_on_directory(args):
     if not os.path.exists(pre):
         os.makedirs(pre)
 
+    print_params(pre, args)
+
     print(timestamp() + " Reading corpus.", file=sys.stderr)
 
 #    files = [f for f in os.listdir(args.corpus_dir)
@@ -117,7 +119,6 @@ def model_on_directory(args):
 
     # Save model with timestamp
     model.save(pre + "model")
-    print_params(pre, args)
 
     f = open(pre + "file_ordering.txt", "w+")
     text = ""
