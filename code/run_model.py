@@ -34,7 +34,7 @@ def print_params(pre, args):
 
 def get_ngrams(args, texts):
     if not args.unigrams_only:
-        print("Finding bigrams.", file=sys.stderr)
+        print(timestamp() + " Finding bigrams.", file=sys.stderr)
         bigram = Phrases(texts, min_count=1) # Is this an appropriate value for min_count?
         bigram = Phraser(bigram)
         for idx in range(len(texts)):
@@ -62,15 +62,15 @@ def model_on_directory(args):
     if not os.path.exists(pre):
         os.makedirs(pre)
 
-    print("Reading corpus.", file=sys.stderr)
+    print(timestamp() + " Reading corpus.", file=sys.stderr)
 
 #    files = [f for f in os.listdir(args.corpus_dir)
 #             if os.path.isfile(os.path.join(args.corpus_dir, f))]
     files, time_slices = order_files(args, ret_dict=False)
-    print(time_slices)
+    print(timestamp() + " Time slices:", time_slices)
     # Compile list of lists of tokens
     texts = []
-    print("Compiling tokens.", file=sys.stderr)
+    print(timestamp() + " Compiling tokens.", file=sys.stderr)
     for i in range(len(files)):
         file = files[i]
         with open(os.path.join(args.corpus_dir, file)) as f:
@@ -84,7 +84,7 @@ def model_on_directory(args):
     # If we want to include a mix of unigrams and bigrams or just bigrams
     texts = get_ngrams(args, texts)
 
-    print("Building dictionary.", file=sys.stderr)
+    print(timestamp() + " Building dictionary.", file=sys.stderr)
 
     dictionary = corpora.Dictionary(texts)
     if not args.mixed_ngrams:
@@ -126,12 +126,15 @@ def model_on_directory(args):
     f.write(text[:-1])
     f.close()
 
-    print("Done.", file=sys.stderr)
+    print(timestamp() + " Done.", file=sys.stderr)
 
     return model.print_topics(num_topics=-1, num_words=20)
 # _________________________________________________________________________
 
 def main(args):
+    arg_dict = vars(args)
+    print(timestamp() + " Starting...")
+    print(str(arg_dict))
     print(model_on_directory(args))
 
 if __name__ == '__main__':
@@ -142,9 +145,9 @@ if __name__ == '__main__':
     parser.add_argument('--mixed_ngrams', default=False, action="store_true", help='whether or not to include both unigrams and bigrams')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsPapers-txt-tok", help='directory containing corpus')
     parser.add_argument('--model_type', type=str, default="lda", help='type of model to run') # Include dynamic here?
-    parser.add_argument('--num_topics', type=int, default=100, help='number of topics to find')
+    parser.add_argument('--num_topics', type=int, default=20, help='number of topics to find')
     parser.add_argument('--optimize_interval', type=int, default=10, help='number of topics to find')
     parser.add_argument('--num_iterations', type=int, default=1000, help='number of topics to find')
-    parser.add_argument('--year_split', type=int, default = 100, help='Number of years per time slice')
+    parser.add_argument('--year_split', type=int, default=100, help='Number of years per time slice')
     args = parser.parse_args()
     main(args)
