@@ -8,13 +8,11 @@
 ###############################################################################
 import sys, argparse, os, re
 from tqdm import tqdm
-from nltk.corpus import words
+# from nltk.corpus import words
 from flashtext import KeywordProcessor
 import inflection as inf
 
 keyword_processor = KeywordProcessor()
-keyword_processor.add_keywords_from_list(words.words())
-
 def dehyphenate(token):
     """
         Dehyphenate input token. First, try replacing hyphen with a space. If
@@ -69,6 +67,9 @@ def main(args):
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
+    with open(args.english_words) as f:
+        content = f.read().split("\n")
+        keyword_processor.add_keywords_from_list(content)
 
     output_file = os.path.join(output_dir, os.path.basename(args.file))
     if not args.overwrite and os.path.exists(output_file):
@@ -87,5 +88,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file', type=str, help='file to dehyphenate')
     parser.add_argument('--overwrite', default=False, action="store_true", help='whether or not to overwrite old files with the same names')
+    parser.add_argument('--english_words', type=str, default = "/work/clambert/thesis-data/bnc_lexicon.txt", help='optional path to file containing english words')
     args = parser.parse_args()
     main(args)
