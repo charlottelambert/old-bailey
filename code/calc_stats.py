@@ -152,7 +152,46 @@ def init_stats_dict(data):
     return stats_dict
 
 
+def find_basic_stats(args, files_dict):
+    # First, find out how many files there are per year chunk
+    stats_path = os.path.join(args.corpus_dir, "basic_stats.tsv")
+    tsv_writer = csv.writer(f, delimiter='\t')
+    stat_dict = {"header": ["stat_name"], "num_docs":["num_docs"],
+                 "num_tokens":["num_tokens"], "num_types":["num_types"]}
+
+    for start_year in files_dict:
+        stat_dict["header"].append(start_year)
+        stat_dict["num_docs"].append(str(len(files_dict[start_year])))
+        num_tokens = 0
+        types = set()
+
+        for file in files_dict[start_year]:
+            with open(file, "r") as f:
+                toks = f.read().split()
+                num_tokens += len(toks)
+                types.update(toks)
+
+        stat_dict["num_tokens"].append(str(num_tokens))
+        stat_dict["num_types"].append(str(len(types)))
+
+        # item 1674 1774 1874
+        # num_documents x y z
+        # num_tokens
+        # num_types
+    for row in stat_dict:
+        tsv_writer.writerow(stat_dict[row])
+    
+
+    # Then, find how many words (tokens and types) there are for each year chunk
+
 def main(args):
+    # Order files by year
+    files_dict = order_files(args)
+
+    if args.basic_stats:
+        find_basic_stats(args, files_dict)
+        exit(0)
+
     # If we have a model to load, add fields to data_list and load model
     data_list.append("top_" + str(args.num_top_words) + "_words")
 
@@ -181,9 +220,6 @@ def main(args):
     else:
         english_words.add_keywords_from_list(words.words())
 
-    # Order files by year
-    files_dict = order_files(args)
-
     # Initialize stats dict
     stats_dict = init_stats_dict(data_list)
 
@@ -191,7 +227,6 @@ def main(args):
     base_stats_dir = os.path.join(args.corpus_dir, "../stats_dir/")
     if not os.path.exists(base_stats_dir):
         os.mkdir(base_stats_dir)
-
 
     stats_path = os.path.join(base_stats_dir, args.corpus_dir.rstrip('/') + path_suff + "-stats.tsv")
     with open(stats_path, "w") as f: # FIX OUTPUT DIRECTORY AND PATH
@@ -216,6 +251,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--basic_stats', default=False, help='whether to find basic corpus stats only.')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-stats", help='directory containing corpus')
     parser.add_argument('--year_split', type=int, default=100, help='number of years to calculate stats for')
     parser.add_argument('--num_top_words', type=int, default=10, help='number of top words to record')
