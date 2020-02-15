@@ -153,34 +153,39 @@ def init_stats_dict(data):
 
 
 def find_basic_stats(args, files_dict):
+    print(timestamp() + " Starting statistics calculation...", file=sys.stderr)
     # First, find out how many files there are per year chunk
     stats_path = os.path.join(args.corpus_dir, "basic_stats.tsv")
-    tsv_writer = csv.writer(f, delimiter='\t')
-    stat_dict = {"header": ["stat_name"], "num_docs":["num_docs"],
-                 "num_tokens":["num_tokens"], "num_types":["num_types"]}
+    with open(stats_path, "w") as f:
+        tsv_writer = csv.writer(f, delimiter='\t')
+        stat_dict = {"header": ["stat_name"], "num_docs":["num_docs"],
+                     "num_tokens":["num_tokens"], "num_types":["num_types"]}
 
-    for start_year in files_dict:
-        stat_dict["header"].append(start_year)
-        stat_dict["num_docs"].append(str(len(files_dict[start_year])))
-        num_tokens = 0
-        types = set()
+        for start_year, files in files_dict.items():
+            print(timestamp() + " Start year:", start_year, file=sys.stderr)
 
-        for file in files_dict[start_year]:
-            with open(file, "r") as f:
-                toks = f.read().split()
-                num_tokens += len(toks)
-                types.update(toks)
+            stat_dict["header"].append(start_year)
+            stat_dict["num_docs"].append(str(len(files)))
+            num_tokens = 0
+            types = set()
+            for i in tqdm(range(len(files))):
+                file = files[i]
+                with open(file, "r") as f:
+                    toks = f.read().split()
+                    num_tokens += len(toks)
+                    types.update(toks)
 
-        stat_dict["num_tokens"].append(str(num_tokens))
-        stat_dict["num_types"].append(str(len(types)))
+            stat_dict["num_tokens"].append(str(num_tokens))
+            stat_dict["num_types"].append(str(len(types)))
 
-        # item 1674 1774 1874
-        # num_documents x y z
-        # num_tokens
-        # num_types
-    for row in stat_dict:
-        tsv_writer.writerow(stat_dict[row])
-    
+            # item 1674 1774 1874
+            # num_documents x y z
+            # num_tokens
+            # num_types
+        for row in stat_dict:
+            tsv_writer.writerow(stat_dict[row])
+    print(timestamp() + " Done! Wrote basic statistics to", stats_path, file=sys.stderr)
+
 
     # Then, find how many words (tokens and types) there are for each year chunk
 
@@ -251,7 +256,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--basic_stats', default=False, help='whether to find basic corpus stats only.')
+    parser.add_argument('--basic_stats', default=False, action='store_true', help='whether to find basic corpus stats only.')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-stats", help='directory containing corpus')
     parser.add_argument('--year_split', type=int, default=100, help='number of years to calculate stats for')
     parser.add_argument('--num_top_words', type=int, default=10, help='number of top words to record')
