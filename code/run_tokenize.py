@@ -76,7 +76,11 @@ def tokenize_file(args, file, output_dir, d):
             # Spelling correction
             updated_tokens = []
             for i, tok in enumerate(tokens):
-                updated_tokens += spell_correct(args, d, tok).split()
+                spell_checked = spell_correct(args, d, tok).split()
+                updated_tokens += spell_checked
+                # print(spell_checked)
+                # if not spell_checked[0] == tok:
+                #     print(tok,":", " ".join(spell_checked))
             tokens = updated_tokens
 
             if args.bigrams and not args.stats:
@@ -133,11 +137,11 @@ def tokenize_file(args, file, output_dir, d):
 def spell_correct(args, d, word):
     # print(word)
     # If the line is a valid word, continue
-    if d.check(word):
+    if word == "" or d.check(word):
         return word
 
     # Split word by non-alphanumeric characters
-    split_word = re.split("\W", word)
+    split_word = re.split("[^A-Za-z0-9_\']", word)
 
     split_word = [w for w in split_word if not w == '']
     corrected_word = split_word
@@ -161,23 +165,17 @@ def spell_correct(args, d, word):
 def main(args):
     if args.test:
         print("starting test")
-        words = []
-        # load()
-        d = enchant.Dict("en_US") # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
+        d = enchant.Dict("en_GB") # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
 
-        with open("./temp2.txt") as f:
-            lines = f.read().splitlines()
-            for i in tqdm(range(len(lines))):
-                line = lines[i]
+        with open("/Users/charlottelambert/test/16840515.txt") as f:
+            lines = f.read().split()
+            # for i in tqdm(range(len(lines))):
+                # line = lines[i].rstrip()
+            for line in lines:
+                corrections = spell_correct(args, d, line.rstrip()).split()
+                if corrections[0] != line:
+                    print(line.rstrip(),":", " ".join(corrections))
 
-                corrections = spell_correct(args, d, line.rstrip())
-
-                words.append((line.rstrip(), "".join(corrections)))
-
-        words_str = "\n".join([": ".join(word) for word in words])
-        print(words_str)
-        with open("./unk_words3-fix3.txt", "w") as f:
-            f.write(words_str)
         print("done")
         exit(0)
 
