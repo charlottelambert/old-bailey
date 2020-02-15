@@ -158,13 +158,13 @@ def find_basic_stats(args, files_dict):
     stats_path = os.path.join(args.corpus_dir, "basic_stats.tsv")
     with open(stats_path, "w") as f:
         tsv_writer = csv.writer(f, delimiter='\t')
-        stat_dict = {"header": ["stat_name"], "num_docs":["num_docs"],
-                     "num_tokens":["num_tokens"], "num_types":["num_types"]}
+        stat_dict = {"stat_name": [], "num_docs":[],
+                     "num_tokens":[], "num_types":[]}
 
         for start_year, files in files_dict.items():
             print(timestamp() + " Start year:", start_year, file=sys.stderr)
 
-            stat_dict["header"].append(start_year)
+            stat_dict["stat_name"].append(start_year)
             stat_dict["num_docs"].append(str(len(files)))
             num_tokens = 0
             types = set()
@@ -183,7 +183,9 @@ def find_basic_stats(args, files_dict):
             # num_tokens
             # num_types
         for row in stat_dict:
-            tsv_writer.writerow(stat_dict[row])
+            stat_dict["stat_name"].append("total")
+            stat_dict[row].append(sum(stat_dict[row]))
+            tsv_writer.writerow([row] + stat_dict[row])
     print(timestamp() + " Done! Wrote basic statistics to", stats_path, file=sys.stderr)
 
 
