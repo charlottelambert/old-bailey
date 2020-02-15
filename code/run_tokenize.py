@@ -202,12 +202,12 @@ def main(args):
         output_dir = base.rstrip("/") + suffix
     else:
         output_dir = args.output_dir_base.rstrip("/") + suffix
-    print(output_dir)
     # Create output directory
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
-    print(timestamp() + " Tokenizing data to", suffix, file=sys.stderr)
+    if not args.filepath:
+        print(timestamp() + " Tokenizing data to", suffix, file=sys.stderr)
 
     d = enchant.Dict("en_US") # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
 
