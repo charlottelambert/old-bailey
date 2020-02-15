@@ -22,6 +22,8 @@ To tokenize data (and clean up some idiosyncrasies), run `run_tokenize.py` on a 
 
 Tokenized text files will be written to a directory with the suffix `-tok` added to the input `CORPUS_DIR`. Like with `code/data_reader.py`, by default, code will not overwrite files if they already exist in this created directory. Flags can be added to change this and to incorporate annotations from the XML into the text data.
 
+You can also provide a path to a specific file using the option `--filepath` to tokenize that file only. This allows for parallelization.
+
 ### Dehyphenation
 
 To dehyphenate data, run `dehyphenate.py` on a single text file. Typically, dehyphenation should only be done after data has been tokenized. You can run the code as follows, using parallelization for faster processing.
@@ -91,4 +93,4 @@ This code will generate two tsv files in the same directory as the input model: 
 
 ### FastText MODEL
 
-To run a FastText model, use the same process described in the above section for Word2Vec and include the flag `-f`. 
+To run a FastText model, use the same process described in the above section for Word2Vec and include the flag `-f`.
