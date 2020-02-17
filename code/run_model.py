@@ -125,8 +125,8 @@ def model_on_directory(args):
             lda_sequence_max_iter=args.num_iterations)
 
         if args.vis:
-            for slice in time_slices:
-                what_am_i = DtmModel.dtm_vis(corpus, slice)
+            for slice in len(time_slices):
+                what_am_i = DtmModel.dtm_vis(corpus, time=slice)
                 print(what_am_i)
             #
             #    data = {'topic_term_dists': data_input['phi'],

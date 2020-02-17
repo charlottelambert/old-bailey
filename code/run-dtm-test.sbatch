@@ -19,7 +19,7 @@ date
 
 export DTM_PATH=/home/clambert/dtm/dtm/main
 
-./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-dh --num_topics=$TOPICS --num_iterations=$ITERS --seed=$SEED --model_type=dtm --year_split=100 --vis --suffix=$SUFFIX
+./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-dh --num_topics=$TOPICS --num_iterations=$ITERS --seed=$SEED --model_type=dtm --year_split=100 --suffix=$SUFFIX
 
 
 echo Finished: `date`
