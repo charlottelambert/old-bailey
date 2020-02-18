@@ -57,10 +57,16 @@ def model_on_directory(args):
 
     # Prefix for running lda (modify if files should go to a different directory)
     # FORMAT: "/work/clambert/models/model_type/YYYYMMDD/HH-MM-SS"
-    pre = args.save_model_dir + args.model_type + "/" + time.strftime("%Y%m%d") + "/" + time.strftime("%H-%M-%S") + "/"
+    suffix = "-" + args.suffix if args.suffix else ""
+    pre = args.save_model_dir + args.model_type + "/" + time.strftime("%Y%m%d") + "/" + time.strftime("%H-%M-%S") + suffix +"/"
 
     if not os.path.exists(pre):
         os.makedirs(pre)
+    # else:
+    #     os.makedirs(pre)
+    #     make a dir like time/1 or time/2
+
+    print(timestamp() + " Model will be saved to", pre, file=sys.stderr)
 
     print_params(pre, args)
 
@@ -115,7 +121,20 @@ def model_on_directory(args):
             raise ValueError("You need to set the DTM path.")
         # Run the model
         model = DtmModel(DTM_PATH, corpus=corpus, num_topics=args.num_topics,
-            id2word=dictionary, time_slices=time_slices, prefix=pre)
+            id2word=dictionary, time_slices=time_slices, prefix=pre,
+            lda_sequence_max_iter=args.num_iterations)
+
+        if args.vis:
+            print(timestamp() + " About to visualize...", file=sys.stderr)
+            for slice in range(len(time_slices)):
+                what_am_i = DtmModel.dtm_vis(corpus, time=slice)
+                print(what_am_i)
+            #
+            #    data = {'topic_term_dists': data_input['phi'],
+            # 'doc_topic_dists': data_input['theta'],
+            # 'doc_lengths': data_input['doc.length'],
+            # 'vocab': data_input['vocab'],
+            # 'term_frequency': data_input['term.frequency']}
 
     # Save model with timestamp
     model.save(pre + "model")
@@ -150,5 +169,8 @@ if __name__ == '__main__':
     parser.add_argument('--optimize_interval', type=int, default=10, help='number of topics to find')
     parser.add_argument('--num_iterations', type=int, default=1000, help='number of topics to find')
     parser.add_argument('--year_split', type=int, default=100, help='Number of years per time slice')
+    parser.add_argument('--vis', default=False, action='store_true', help='whether or not to visualize')
+    parser.add_argument('--seed', type=int, default=0, help='random seed to make deterministic')
+    parser.add_argument('--suffix', type=str, default="", help="suffix to add to model directory if exists")
     args = parser.parse_args()
     main(args)
