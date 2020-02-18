@@ -8,7 +8,7 @@
 #
 ###############################################################################
 
-import sys, os, click, csv, gensim, time, argparse
+import sys, os, click, csv, gensim, time, argparse, pyLDAvis
 from os import listdir
 import custom_stop_words as stop
 from gensim import corpora, models
@@ -128,6 +128,12 @@ def model_on_directory(args):
             print(timestamp() + " About to visualize...", file=sys.stderr)
             for slice in range(len(time_slices)):
                 doc_topic, topic_term, doc_lengths, term_frequency, vocab = model.dtm_vis(time=slice, corpus=corpus)
+                vis_wrapper = pyLDAvis.prepare(topic_term_dists=topic_term,
+                                               doc_topic_dists=doc_topic,
+                                               doc_lengths=doc_lengths,
+                                               vocab=vocab,
+                                               term_frequency=term_frequency)
+                pyLDAvis.save_html(vis_wrapper, pre + "time_slice_" + str(slice) + ".html")
                 print(timestamp() + " Prepared time slice", slice, "for pyLDAvis...", file=sys.stderr)
             #
             #    data = {'topic_term_dists': data_input['phi'],
