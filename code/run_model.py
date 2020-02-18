@@ -127,8 +127,8 @@ def model_on_directory(args):
         if args.vis:
             print(timestamp() + " About to visualize...", file=sys.stderr)
             for slice in range(len(time_slices)):
-                what_am_i = DtmModel.dtm_vis(corpus=corpus, time=slice)
-                print(what_am_i)
+                doc_topic, topic_term, doc_lengths, term_frequency, vocab = model.dtm_vis(time=slice, corpus=corpus)
+                print(timestamp() + " Prepared time slice", slice, "for pyLDAvis...", file=sys.stderr)
             #
             #    data = {'topic_term_dists': data_input['phi'],
             # 'doc_topic_dists': data_input['theta'],
