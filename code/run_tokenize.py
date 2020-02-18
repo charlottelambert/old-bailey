@@ -141,7 +141,7 @@ def spell_correct(args, d, word):
         return word
 
     # Split word by non-alphanumeric characters
-    split_word = re.split("[^A-Za-z0-9_\']", word)
+    split_word = re.split("[^A-Za-z0-9_]", word)
 
     split_word = [w for w in split_word if not w == '']
     corrected_word = split_word
@@ -167,7 +167,7 @@ def main(args):
         print("starting test")
         d = enchant.Dict("en_GB") # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
 
-        with open("/home/clambert/test/testfile.txt") as f:
+        with open(args.filepath) as f:
             lines = f.read().split()
             # for i in tqdm(range(len(lines))):
                 # line = lines[i].rstrip()
