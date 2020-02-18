@@ -76,6 +76,7 @@ def tokenize_file(args, file, output_dir, d):
             # Spelling correction
             updated_tokens = []
             for i, tok in enumerate(tokens):
+
                 spell_checked = spell_correct(args, d, tok).split()
                 updated_tokens += spell_checked
                 # print(spell_checked)
@@ -135,7 +136,6 @@ def tokenize_file(args, file, output_dir, d):
 # this up, parallel?
 # gonna have millions of tokens, need to be more efficient!
 def spell_correct(args, d, word):
-    # print(word)
     # If the line is a valid word, continue
     if word == "" or d.check(word):
         return word
@@ -167,7 +167,7 @@ def main(args):
         print("starting test")
         d = enchant.Dict("en_GB") # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
 
-        with open("/Users/charlottelambert/test/16840515.txt") as f:
+        with open("/home/clambert/test/testfile.txt") as f:
             lines = f.read().split()
             # for i in tqdm(range(len(lines))):
                 # line = lines[i].rstrip()
@@ -207,7 +207,7 @@ def main(args):
     if not args.filepath:
         print(timestamp() + " Tokenizing data to", suffix, file=sys.stderr)
 
-    d = enchant.Dict("en_US") # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
+    d = enchant.Dict("en_GB") # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
 
     # If processing one file, don't loop!
     if args.filepath:
