@@ -165,7 +165,7 @@ def find_basic_stats(args, files_dict):
             print(timestamp() + " Start year:", start_year, file=sys.stderr)
 
             stat_dict["stat_name"].append(start_year)
-            stat_dict["num_docs"].append(str(len(files)))
+            stat_dict["num_docs"].append(len(files))
             num_tokens = 0
             types = set()
             for i in tqdm(range(len(files))):
@@ -175,16 +175,17 @@ def find_basic_stats(args, files_dict):
                     num_tokens += len(toks)
                     types.update(toks)
 
-            stat_dict["num_tokens"].append(str(num_tokens))
-            stat_dict["num_types"].append(str(len(types)))
+            stat_dict["num_tokens"].append(num_tokens)
+            stat_dict["num_types"].append(len(types))
 
             # item 1674 1774 1874
             # num_documents x y z
             # num_tokens
             # num_types
+        stat_dict["stat_name"].append("total")
         for row in stat_dict:
-            stat_dict["stat_name"].append("total")
-            stat_dict[row].append(sum(stat_dict[row]))
+            if not row == "stat_name":
+                stat_dict[row].append(sum(stat_dict[row]))
             tsv_writer.writerow([row] + stat_dict[row])
     print(timestamp() + " Done! Wrote basic statistics to", stats_path, file=sys.stderr)
 

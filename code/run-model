@@ -8,6 +8,20 @@ sbatch run-lda.sbatch
 elif [ "$MODEL_TYPE" == "dtm" ]
 then
 sbatch run-dtm.sbatch
+elif [ "$MODEL_TYPE" == "dtm-test" ]
+then
+ITER_ARR=(30 50 100 500 1000)
+TOPIC_ARR=(30 50 75 100)
+SEED=8
+declare -i SUFFIX=0
+
+for iter in ${ITER_ARR[@]};
+do for topic in ${TOPIC_ARR[@]};
+do sbatch run-dtm-test.sbatch $iter $topic $SEED $SUFFIX;
+SUFFIX=$(( SUFFIX + 1 ))
+done;
+done;
+
 else
 echo "Please specify a valid model type."
 fi
