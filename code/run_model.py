@@ -16,6 +16,7 @@ from gensim.test.utils import get_tmpfile
 from gensim.corpora import MalletCorpus, Dictionary, bleicorpus
 from gensim.models.phrases import Phrases, Phraser
 from gensim.models.wrappers.dtmmodel import DtmModel
+from gensim.models.ldaseqmodel import LdaSeqModel
 from utils import *
 
 # TAKEN OUT OF RUN-LDA.SBATCH, PUT BACK IF RUNNING OUT OF MEMORY
@@ -50,9 +51,9 @@ def get_ngrams(args, texts):
 
 def model_on_directory(args):
     # Types of valid models to run
-    type_list = ["lda", "multicore", "dtm"]
+    type_list = ["lda", "multicore", "dtm", "ldaseq"]
     if args.model_type not in type_list:
-        print("Please specify a valid model type (multicore, lda, dtm).", sys.err)
+        print("\"" + args.model_type + "\" is not a valid model type. Please specify a valid model type (" + ", ".join(type_list) + ").", sys.stderr)
         sys.exit(1)
 
     # Prefix for running lda (modify if files should go to a different directory)
@@ -114,15 +115,21 @@ def model_on_directory(args):
                        id2word=dictionary, optimize_interval=args.optimize_interval,
                        workers=12, iterations=args.num_iterations,
                        prefix=pre)
-    elif args.model_type == "dtm": # Dynamic Topic Model
-        # Find path to DTM binary
-        DTM_PATH = os.environ.get('DTM_PATH', None)
-        if not DTM_PATH:
-            raise ValueError("You need to set the DTM path.")
-        # Run the model
-        model = DtmModel(DTM_PATH, corpus=corpus, num_topics=args.num_topics,
-            id2word=dictionary, time_slices=time_slices, prefix=pre,
-            lda_sequence_max_iter=args.num_iterations)
+    else:
+        if args.model_type == "dtm": # Dynamic Topic Model
+            # Find path to DTM binary
+            DTM_PATH = os.environ.get('DTM_PATH', None)
+            if not DTM_PATH:
+                raise ValueError("You need to set the DTM path.")
+            # Run the model
+            model = DtmModel(DTM_PATH, corpus=corpus, num_topics=args.num_topics,
+                id2word=dictionary, time_slices=time_slices, prefix=pre,
+                lda_sequence_max_iter=args.num_iterations)
+        elif args.model_type == "ldaseq":
+            # Run the model
+            model = LdaSeqModel(corpus=corpus, num_topics=args.num_topics,
+                id2word=dictionary, time_slice=time_slices, prefix=pre,
+                lda_sequence_max_iter=args.num_iterations)
 
         if args.vis:
             print(timestamp() + " About to visualize...", file=sys.stderr)

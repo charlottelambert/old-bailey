@@ -5,9 +5,9 @@ MODEL_TYPE=${1:-lda}
 if [ "$MODEL_TYPE" == "lda" ]
 then
 sbatch run-lda.sbatch
-elif [ "$MODEL_TYPE" == "dtm" ]
+elif [[ "$MODEL_TYPE" == "dtm" || "$MODEL_TYPE" == "ldaseq" ]];
 then
-sbatch run-dtm.sbatch
+sbatch run-dtm.sbatch $MODEL_TYPE
 elif [ "$MODEL_TYPE" == "dtm-test" ]
 then
 ITER_ARR=(30 50 100 500 1000)
@@ -23,5 +23,5 @@ done;
 done;
 
 else
-echo "Please specify a valid model type."
+echo "Please specify a valid model type, not" $MODEL_TYPE
 fi

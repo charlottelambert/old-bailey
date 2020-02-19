@@ -5,7 +5,9 @@
 #SBATCH --ntasks=1
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=clambert@vassar.edu
-#SBATCH -c 64
+#SBATCH -p emc
+
+MODEL_TYPE=${1:-dtm}
 
 echo Running: $SLURM_ARRAY_TASK_ID
 uname -a
@@ -13,6 +15,6 @@ date
 
 export DTM_PATH=/home/clambert/dtm/dtm/main
 
-./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --model_type=dtm --year_split=100 --vis --num_topics=30 --num_iterations=1000
+./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/dtm-test --model_type=$MODEL_TYPE --year_split=100 --vis --num_topics=30 --num_iterations=10
 
 echo Finished: `date`
