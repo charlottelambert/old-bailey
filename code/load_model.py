@@ -2,6 +2,7 @@
 import gensim, sys, argparse
 from gensim.models.ldamodel import LdaModel
 from gensim.models.wrappers.dtmmodel import DtmModel
+from gensim.models.ldaseqmodel import LdaSeqModel
 
 def main(args):
     f = sys.argv[1]
@@ -30,6 +31,21 @@ def main(args):
 
                 print("Topic", str(topic_id) + ", time slice", str(time) + ':', end=' ')
                 for weight, word in top_words:
+                    print(word, end=' ')
+                print()
+            print()
+    elif args.lda_type == "ldaseq":
+        loaded_model = LdaSeqModel.load(args.model)
+        # maybe use dtm_coherence?
+        print(loaded_model.num_topics)
+        print(loaded_model.time_slice)
+        for topic_id in range(loaded_model.num_topics):
+            for time in range(len(loaded_model.time_slice)):
+                top_words = loaded_model.print_topic(topic=topic_id, time=time, top_terms=20)
+#                top_words = loaded_model.show_topic(topic_id, time, topn=10)
+
+                print("Topic", str(topic_id) + ", time slice", str(time) + ':', end=' ')
+                for word, weight in top_words:
                     print(word, end=' ')
                 print()
             print()

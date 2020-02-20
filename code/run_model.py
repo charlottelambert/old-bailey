@@ -63,9 +63,6 @@ def model_on_directory(args):
 
     if not os.path.exists(pre):
         os.makedirs(pre)
-    # else:
-    #     os.makedirs(pre)
-    #     make a dir like time/1 or time/2
 
     print(timestamp() + " Model will be saved to", pre, file=sys.stderr)
 
@@ -128,8 +125,8 @@ def model_on_directory(args):
         elif args.model_type == "ldaseq":
             # Run the model
             model = LdaSeqModel(corpus=corpus, num_topics=args.num_topics,
-                id2word=dictionary, time_slice=time_slices, prefix=pre,
-                lda_sequence_max_iter=args.num_iterations)
+                id2word=dictionary, time_slice=time_slices,
+                lda_inference_max_iter=args.num_iterations)
 
         if args.vis:
             print(timestamp() + " About to visualize...", file=sys.stderr)
