@@ -136,7 +136,8 @@ def model_on_directory(args):
                                                doc_topic_dists=doc_topic,
                                                doc_lengths=doc_lengths,
                                                vocab=vocab,
-                                               term_frequency=term_frequency)
+                                               term_frequency=term_frequency,
+                                               sort_topics=True)
                 pyLDAvis.save_html(vis_wrapper, pre + "time_slice_" + str(slice) + ".html")
                 print(timestamp() + " Prepared time slice", slice, "for pyLDAvis...", file=sys.stderr)
             #
@@ -157,7 +158,11 @@ def model_on_directory(args):
     f.close()
 
     print(timestamp() + " Done.", file=sys.stderr)
-
+    if args.model_type == "ldaseq":
+        top_words = []
+        for t in range(len(time_slices)):
+            top_words.append(model.print_topics(time=t, top_terms=20))
+        return top_words
     return model.print_topics(num_topics=-1, num_words=20)
 # _________________________________________________________________________
 
