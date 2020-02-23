@@ -9,7 +9,7 @@
 #
 ###############################################################################
 
-import sys, argparse, os, re, enchant
+import sys, argparse, os, re, enchant, json
 from tqdm import tqdm
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
@@ -51,7 +51,7 @@ def fix_hyphens(input):
 
     return out.split()
 
-def tokenize_file(args, file, output_dir, d):
+def tokenize_file(args, file, output_dir, d, bigrams):
     output = []
     with open(file, "r") as f:
         for line in f:
@@ -76,8 +76,7 @@ def tokenize_file(args, file, output_dir, d):
             # Spelling correction
             updated_tokens = []
             for i, tok in enumerate(tokens):
-
-                spell_checked = spell_correct(args, d, tok).split()
+                spell_checked = spell_correct(args, d, tok, bigrams).split()
                 updated_tokens += spell_checked
                 # print(spell_checked)
                 # if not spell_checked[0] == tok:
@@ -135,17 +134,16 @@ def tokenize_file(args, file, output_dir, d):
 # Eventually, we jsut want to run this on each word, might need a way to speed
 # this up, parallel?
 # gonna have millions of tokens, need to be more efficient!
-def spell_correct(args, d, word):
+def spell_correct(args, d, word, bigrams):
     # If the line is a valid word, continue
     if word == "" or d.check(word):
         return word
 
     # Split word by non-alphanumeric characters
-    split_word = re.split("[^A-Za-z0-9_]", word)
+    split_word = re.split("[^A-Za-z0-9_(\w'\w)]", word)
 
     split_word = [w for w in split_word if not w == '']
     corrected_word = split_word
-
     for i, sub_word in enumerate(split_word):
         # If sub_word is valid, don't change anything
         if d.check(sub_word):
@@ -154,15 +152,29 @@ def spell_correct(args, d, word):
             # Suggest corrections for sub_line
             suggestions = d.suggest(sub_word)
             # See if any of them are reasonable
-            # TODO: WANT THE MOST PROBABLE SUGGESTIONS! "houses i" vs "houses si"!
+            options = []
             for opt in suggestions:
                 l = opt.split()
                 if len(l) == 2 and "".join(l) == sub_word:
-                    corrected_word[i] = opt
+                    options.append(opt)
                     break
+            # Find the most probable option
+            best = (sub_word, 0)
+            for opt in options:
+                try:
+                    # Check if option is a bigram that appears in corpus
+                    if bigrams[opt] > best[1]:
+                        best = (opt, bigrams[opt])
+                except KeyError:
+                    continue
+            corrected_word[i] = best[0]
+
     return " ".join(corrected_word)
 
 def main(args):
+    with open(args.corpus_bigrams) as json_file:
+        bigrams = json.load(json_file)
+
     if args.test:
         print("starting test")
         d = enchant.Dict("en_GB") # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
@@ -172,7 +184,7 @@ def main(args):
             # for i in tqdm(range(len(lines))):
                 # line = lines[i].rstrip()
             for line in lines:
-                corrections = spell_correct(args, d, line.rstrip()).split()
+                corrections = spell_correct(args, d, line.rstrip(), bigrams).split()
                 if corrections[0] != line:
                     print(line.rstrip(),":", " ".join(corrections))
 
@@ -219,7 +231,7 @@ def main(args):
             exit(0)
 
         # Tokenize single file
-        output = tokenize_file(args, args.filepath, output_dir, d)
+        output = tokenize_file(args, args.filepath, output_dir, d, bigrams)
         # Write output to new file
         with open(output_file, "w+") as f:
             f.write('\n'.join(output))
@@ -237,7 +249,7 @@ def main(args):
                 continue
 
             # Tokenize single file
-            output = tokenize_file(args, file, output_dir, d)
+            output = tokenize_file(args, file, output_dir, d, bigrams)
             # Write output to new file
             with open(output_file, "w+") as f:
                 f.write('\n'.join(output))
@@ -255,6 +267,7 @@ if __name__ == '__main__':
     # parser.add_argument('--no_proper_nouns', default=False, action="store_true", help='whether or not to discard all proper nouns')
     parser.add_argument('--street_sub', default=False, action="store_true", help='whether or not to substitute street names with generic string')
     parser.add_argument('--lemma', default=False, action="store_true", help='whether or not to lemmatize all text')
-    parser.add_argument('--test', default=False, action="store_true", help='testing wordninja')
+    parser.add_argument('--test', default=False, action="store_true", help='testing spellcheck')
+    parser.add_argument('--corpus_bigrams', type=str, default="/work/clambert/thesis-data/corpus_bigrams.json", help='path to json file containing dictionary of all corpus bigrams')
     args = parser.parse_args()
     main(args)
