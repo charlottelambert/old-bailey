@@ -63,10 +63,10 @@ def tokenize_file(args, file, output_dir, d, bigrams):
                 line = line.lower()
 
             # Fix apostrophe escapes:
-            line = line.replace("\\\'", "'")
+            # line = line.replace("\\\'", "'")
 
             # Tokenize line
-            tokens = word_tokenize(line)
+            tokens = [word.replace("\\", "") for word in word_tokenize(line)]
 
             # Join $ to names
             for i, tok in enumerate(tokens):
@@ -140,9 +140,9 @@ def spell_correct(args, d, word, bigrams):
         return word
 
     # Split word by non-alphanumeric characters
-    split_word = re.split("[^A-Za-z0-9_(\w'\w)]", word)
+    split_word = re.split("([^A-Za-z0-9_(\w'\w)])|(^')", word)
 
-    split_word = [w for w in split_word if not w == '']
+    split_word = [w for w in split_word if not w == '' and not w == None]
     corrected_word = split_word
     for i, sub_word in enumerate(split_word):
         # If sub_word is valid, don't change anything
