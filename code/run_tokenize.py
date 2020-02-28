@@ -76,11 +76,16 @@ def tokenize_file(args, file, output_dir, d, bigrams):
             # Spelling correction
             updated_tokens = []
             for i, tok in enumerate(tokens):
-                spell_checked = spell_correct(args, d, tok, bigrams).split()
-                updated_tokens += spell_checked
-                # print(spell_checked)
-                # if not spell_checked[0] == tok:
-                #     print(tok,":", " ".join(spell_checked))
+                # Split word by non-alphanumeric characters
+                split_word = re.split("([^A-Za-z0-9_(\w'\w)])|(^')|('$)", tok)
+                split_word = [w for w in split_word if not w == None and len(w) > 2]
+                if args.disable_spell_check:
+                    updated_tokens += split_word
+                    continue
+                    
+                for sub in split_word:
+                    spell_checked = spell_correct(args, d, sub, bigrams).split()
+                    updated_tokens += spell_checked
             tokens = updated_tokens
 
             if args.bigrams and not args.stats:
@@ -136,40 +141,29 @@ def tokenize_file(args, file, output_dir, d, bigrams):
 # gonna have millions of tokens, need to be more efficient!
 def spell_correct(args, d, word, bigrams):
     # If the line is a valid word, continue
-    if word == "" or d.check(word):
+    if word == "" or word[0].isupper() or d.check(word):
         return word
+    else:
+        # Suggest corrections for sub_line
+        suggestions = d.suggest(word)
+        # See if any of them are reasonable
+        options = []
+        for opt in suggestions:
+            l = opt.split()
+            if len(l) == 2 and "".join(l) == word:
+                options.append(opt)
+                break
+        # Find the most probable option
+        best = (word, 0)
+        for opt in options:
+            try:
+                # Check if option is a bigram that appears in corpus
+                if bigrams[opt] > best[1]:
+                    best = (opt, bigrams[opt])
+            except KeyError:
+                continue
 
-    # Split word by non-alphanumeric characters
-    split_word = re.split("([^A-Za-z0-9_(\w'\w)])|(^')", word)
-
-    split_word = [w for w in split_word if not w == '' and not w == None]
-    corrected_word = split_word
-    for i, sub_word in enumerate(split_word):
-        # If sub_word is valid, don't change anything
-        if d.check(sub_word):
-            continue
-        else:
-            # Suggest corrections for sub_line
-            suggestions = d.suggest(sub_word)
-            # See if any of them are reasonable
-            options = []
-            for opt in suggestions:
-                l = opt.split()
-                if len(l) == 2 and "".join(l) == sub_word:
-                    options.append(opt)
-                    break
-            # Find the most probable option
-            best = (sub_word, 0)
-            for opt in options:
-                try:
-                    # Check if option is a bigram that appears in corpus
-                    if bigrams[opt] > best[1]:
-                        best = (opt, bigrams[opt])
-                except KeyError:
-                    continue
-            corrected_word[i] = best[0]
-
-    return " ".join(corrected_word)
+    return best[0]
 
 def main(args):
     with open(args.corpus_bigrams) as json_file:
@@ -177,18 +171,35 @@ def main(args):
 
     if args.test:
         print("starting test")
+        enchant.set_param("enchant.myspell.dictionary.path", args.myspell_path)
         d = enchant.Dict("en_GB") # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
-
+        change_set = set()
         with open(args.filepath) as f:
             lines = f.read().split()
             # for i in tqdm(range(len(lines))):
                 # line = lines[i].rstrip()
             for line in lines:
-                corrections = spell_correct(args, d, line.rstrip(), bigrams).split()
-                if corrections[0] != line:
-                    print(line.rstrip(),":", " ".join(corrections))
+                tokens = [word.replace("\\", "") for word in word_tokenize(line.rstrip())]
 
-        print("done")
+                # Join $ to names
+                for i, tok in enumerate(tokens):
+                    if tok == '$':
+                        tokens[i:i+2] = [''.join(tokens[i:i+2])]
+
+                # Spelling correction
+                updated_tokens = []
+                for i, tok in enumerate(tokens):
+                    # Split word by non-alphanumeric characters
+                    split_word = re.split("([^A-Za-z0-9_(\w'\w)])|(^')|('$)", tok)
+                    split_word = [w for w in split_word if not w == None and len(w) > 2]
+                    for sub in split_word:
+                        spell_checked = spell_correct(args, d, sub, bigrams).split()
+                        updated_tokens += spell_checked
+
+                        if spell_checked[0] != sub:
+                            change_set.add(sub + ": " + " ".join(spell_checked))
+
+        print("\n".join(change_set))
         exit(0)
 
     if args.lemma:
@@ -219,6 +230,7 @@ def main(args):
     if not args.filepath:
         print(timestamp() + " Tokenizing data to", suffix, file=sys.stderr)
 
+    enchant.set_param("enchant.myspell.dictionary.path", args.myspell_path)
     d = enchant.Dict("en_GB") # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
 
     # If processing one file, don't loop!
@@ -269,5 +281,8 @@ if __name__ == '__main__':
     parser.add_argument('--lemma', default=False, action="store_true", help='whether or not to lemmatize all text')
     parser.add_argument('--test', default=False, action="store_true", help='testing spellcheck')
     parser.add_argument('--corpus_bigrams', type=str, default="/work/clambert/thesis-data/corpus_bigrams.json", help='path to json file containing dictionary of all corpus bigrams')
+    parser.add_argument('--myspell_path', type=str, default="/home/clambert/.local/lib/python3.6/site-packages/enchant/share/enchant/myspell")
+    parser.add_argument('--disable_spell_check', default=False, action="store_true", help='whether or not to disable spell check')
+    # /System/Volumes/Data/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/enchant/share/enchant/myspell
     args = parser.parse_args()
     main(args)
