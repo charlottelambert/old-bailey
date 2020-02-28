@@ -25,7 +25,7 @@ def get_order(file):
         return base[2:]
     return base
 
-def get_year(file):
+def get_year(file, include_month=False):
     """
         Get the year a file refers to.
 
@@ -34,7 +34,11 @@ def get_year(file):
         returns year in int format
     """
     offset = 2 if os.path.basename(file)[:2] == "OA" else 0
-    return int(os.path.basename(file)[0 + offset:4 + offset])
+    year = int(os.path.basename(file)[0 + offset:4 + offset])
+    if include_month:
+        month = int(os.path.basename(file)[4 + offset:6 + offset])
+        return (year, month)
+    return year
 
 def order_files(args, ret_dict=True):
     """
