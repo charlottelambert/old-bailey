@@ -2,7 +2,18 @@
 import nltk, json, os, sys, operator
 from nltk.tokenize import word_tokenize, sent_tokenize
 from tqdm import tqdm
+from utils import *
 
+def valid_file(filename):
+    """
+        Determine if a file is within the valid range to construct bigrams,
+        meaning between 1674 and October 1834 during which all proceedings and
+        ordinary's accounts were manually typed.
+    """
+    year = get_year(filename, include_month=True)
+    if year[0] < 1834: return True
+    if year[0] == 1834 and year[1] < 10: return True
+    return False
 
 def make_bigram_dict(bigram_dict, text):
     words = [word.replace("\\", "") for sent in sent_tokenize(text) for word in word_tokenize(sent)]
@@ -27,6 +38,9 @@ if os.path.isfile(sys.argv[1]):
 else:
     files = [os.path.join(sys.argv[1], f) for f in os.listdir(sys.argv[1])
              if (os.path.isfile(os.path.join(sys.argv[1], f)) and f.endswith('.txt'))]
+    # Want only 1674 through Oct 1834
+    files = [file for file in files if valid_file(file)]
+
     bigram_dict = {}
     for i in tqdm(range(len(files))):
         file = files[i]
