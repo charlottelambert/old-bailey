@@ -78,6 +78,11 @@ def main(args):
     f.write(u)
     f.close()
     print(timestamp() + " Wrote unigram dictionary to", uni_out, file=sys.stderr)
+    pwl_out = os.path.join(prefix, "unigram_pwl.txt")
+    with open(pwl_out, "w") as f:
+        f.write("\n".join(word for word, freq in unigram_dict.items()))
+    print(timestamp() + " Wrote personal word list of unigrams to", pwl_out, file=sys.stderr)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
