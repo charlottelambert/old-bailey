@@ -9,7 +9,7 @@
 #
 ###############################################################################
 
-import sys, argparse, os, re, enchant, json
+import sys, argparse, os, re, enchant, json, nltk
 from tqdm import tqdm
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
@@ -62,9 +62,6 @@ def tokenize_file(args, file, output_dir, d, bigrams):
             if args.lower and not args.stats:
                 line = line.lower()
 
-            # Fix apostrophe escapes:
-            # line = line.replace("\\\'", "'")
-
             # Tokenize line
             tokens = [word.replace("\\", "") for word in word_tokenize(line)]
 
@@ -82,12 +79,13 @@ def tokenize_file(args, file, output_dir, d, bigrams):
                 if args.disable_spell_check:
                     updated_tokens += split_word
                     continue
-                    
+
                 for sub in split_word:
                     spell_checked = spell_correct(args, d, sub, bigrams).split()
                     updated_tokens += spell_checked
             tokens = updated_tokens
 
+            # Turn into bigrams if flag is true
             if args.bigrams and not args.stats:
                 tokens = make_bigrams(tokens)
                 output.append(" ".join(tokens))
@@ -102,8 +100,6 @@ def tokenize_file(args, file, output_dir, d, bigrams):
 
             if not args.stats:
                 # First, remove trailing hyphens and slashes
-                # dash_pattern = r'([^‒–—―\-\\]*)([‒–—―\-\\]+)$' # FIX THIS: ITS REMOVING ALL TRAILING PUNCT
-                # tokens = [re.sub(dash_pattern, '\\1', x) for x in tokens]
                 sub_pattern = '\A([\W_]*)([A-Za-z0-9]+|[A-Za-z0-9]+[\W_]+[A-Za-z0-9]+)([\W_]*)$'
                 tokens = [re.sub(sub_pattern, "\\2", x) for x in tokens]
                 # Keep all words containing at least one letter
@@ -165,6 +161,36 @@ def spell_correct(args, d, word, bigrams):
 
     return best[0]
 
+def merge_words(args, input):
+    """
+        Go through the text and for every pair of words, check if they're in
+        the unigram list (args.pwl_path) when you remove the space. If so, make
+        the change.
+    """
+    output = []
+    # Create dictionary (personal word list) out of unigrams
+    pwl = enchant.request_pwl_dict(args.pwl_path)
+
+    # Compile list of bigrams
+    bg = nltk.bigrams(input)
+    skip = False
+    for b in bg:
+        # Indicates last bigram was merged, don't want to consider this bigram
+        if skip:
+            skip = False
+            continue
+        merged = "".join(b)
+        if pwl.check(merged):
+            output.append(merged)
+            skip = True
+        else:
+            output.append(b[0])
+    # If we ended on a non-valid merge, append the last unigram
+    if not skip:
+        output.append(b[1])
+
+    return output
+
 def main(args):
     with open(args.corpus_bigrams) as json_file:
         bigrams = json.load(json_file)
@@ -172,7 +198,7 @@ def main(args):
     if args.test:
         print("starting test")
         enchant.set_param("enchant.myspell.dictionary.path", args.myspell_path)
-        d = enchant.Dict("en_GB") # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
+        d = enchant.DictWithPWL("en_GB", args.pwl_path) # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
         change_set = set()
         with open(args.filepath) as f:
             lines = f.read().split()
@@ -231,7 +257,7 @@ def main(args):
         print(timestamp() + " Tokenizing data to", suffix, file=sys.stderr)
 
     enchant.set_param("enchant.myspell.dictionary.path", args.myspell_path)
-    d = enchant.Dict("en_GB") # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
+    d = enchant.DictWithPWL("en_GB", args.pwl_path) # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
 
     # If processing one file, don't loop!
     if args.filepath:
@@ -244,6 +270,11 @@ def main(args):
 
         # Tokenize single file
         output = tokenize_file(args, args.filepath, output_dir, d, bigrams)
+
+        # Merge words if flag is set to true
+        if args.merge_words:
+            output = merge_words(args, output)
+
         # Write output to new file
         with open(output_file, "w+") as f:
             f.write('\n'.join(output))
@@ -276,13 +307,14 @@ if __name__ == '__main__':
     parser.add_argument('--bigrams', default=False, action="store_true", help='whether or not to convert data to bigrams')
     parser.add_argument('--lower', default=False, action="store_true", help='whether or not to lowercase all text')
     parser.add_argument('--stats', default=False, action="store_true", help='whether or not to process text for finding statistics (calc_stats.py)')
-    # parser.add_argument('--no_proper_nouns', default=False, action="store_true", help='whether or not to discard all proper nouns')
     parser.add_argument('--street_sub', default=False, action="store_true", help='whether or not to substitute street names with generic string')
     parser.add_argument('--lemma', default=False, action="store_true", help='whether or not to lemmatize all text')
     parser.add_argument('--test', default=False, action="store_true", help='testing spellcheck')
     parser.add_argument('--corpus_bigrams', type=str, default="/work/clambert/thesis-data/corpus_bigrams.json", help='path to json file containing dictionary of all corpus bigrams')
     parser.add_argument('--myspell_path', type=str, default="/home/clambert/.local/lib/python3.6/site-packages/enchant/share/enchant/myspell")
     parser.add_argument('--disable_spell_check', default=False, action="store_true", help='whether or not to disable spell check')
+    parser.add_argument('--pwl_path', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt/unigram_pwl.txt")
+    parser.add_argument('--merge_words', default=False, action="store_true", help='whether or not to merge words into words present in unigram list')
     # /System/Volumes/Data/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/enchant/share/enchant/myspell
     args = parser.parse_args()
     main(args)
