@@ -161,35 +161,39 @@ def spell_correct(args, d, word, bigrams):
 
     return best[0]
 
-def merge_words(args, input):
+def merge_words(args, pwl, input, bigrams):
     """
         Go through the text and for every pair of words, check if they're in
         the unigram list (args.pwl_path) when you remove the space. If so, make
         the change.
     """
     output = []
-    # Create dictionary (personal word list) out of unigrams
-    pwl = enchant.request_pwl_dict(args.pwl_path)
 
     # Compile list of bigrams
     bg = nltk.bigrams(input)
     skip = False
+    store = ""
     for b in bg:
         # Indicates last bigram was merged, don't want to consider this bigram
-        if skip:
+        if skip or (b[0] == '' or b[1] == ''): # or b in bigrams
             skip = False
             continue
         merged = "".join(b)
         if pwl.check(merged):
+            print(merged)
             output.append(merged)
             skip = True
         else:
             output.append(b[0])
+            store = b[1]
     # If we ended on a non-valid merge, append the last unigram
     if not skip:
-        output.append(b[1])
+        output.append(store)
 
     return output
+
+# do we want to merge anything that isn't a proper noun?
+# it's not working, it's merging mostly bad things
 
 def main(args):
     with open(args.corpus_bigrams) as json_file:
@@ -267,17 +271,19 @@ def main(args):
         output_file = os.path.join(output_dir, os.path.basename(args.filepath))
         if not args.overwrite and os.path.exists(output_file):
             exit(0)
-
         # Tokenize single file
         output = tokenize_file(args, args.filepath, output_dir, d, bigrams)
-
         # Merge words if flag is set to true
         if args.merge_words:
-            output = merge_words(args, output)
+            # Create dictionary (personal word list) out of unigrams
+            pwl = enchant.request_pwl_dict(args.pwl_path)
+
+            for i,line in enumerate(output):
+                output[i] = " ".join(merge_words(args, pwl, line.split(), bigrams))
 
         # Write output to new file
         with open(output_file, "w+") as f:
-            f.write('\n'.join(output))
+            f.write("\n".join(output))
         exit(0)
     else:
         # Compile list of files to tokenize
