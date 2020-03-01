@@ -180,7 +180,6 @@ def merge_words(args, pwl, input, bigrams):
             continue
         merged = "".join(b)
         if pwl.check(merged):
-            print(merged)
             output.append(merged)
             skip = True
         else:
@@ -220,7 +219,7 @@ def main(args):
                 updated_tokens = []
                 for i, tok in enumerate(tokens):
                     # Split word by non-alphanumeric characters
-                    split_word = re.split("([^A-Za-z0-9_(\w'\w)])|(^')|('$)", tok)
+                    split_word = re.split("([^A-Za-z0-9_(\w'\w)])|(^'+)|('+$)", tok)
                     split_word = [w for w in split_word if not w == None and len(w) > 2]
                     for sub in split_word:
                         spell_checked = spell_correct(args, d, sub, bigrams).split()
