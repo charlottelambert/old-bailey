@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, html
-import os, argparse
+import sys, html, re, os, argparse
 import xml.etree.ElementTree as ET
 from tqdm import tqdm
 from tei_reader import TeiReader
@@ -76,9 +75,10 @@ def encode_annotations(args, xml_path):
                 ready_for_date = True
             elif ready_for_date and elem.tag == "date":
                 # Get the date, format is DD.MM.YYYY
-                date = elem.attrib["modern"].split(".")
+                date = re.split("[./]", elem.attrib["modern"])
                 # Create filename from date to make later processing easier
-                filename = "".join(date[::-1]) + "_" + os.path.splitext(os.path.basename(xml_path))[0] + ".txt"
+                id = os.path.splitext(os.path.basename(xml_path))[0]
+                filename = "".join(date[::-1]) + "_" + id + ".txt"
                 ready_for_date = False
             # Don't include ID numbers within document
             elif elem.tag == "img":
