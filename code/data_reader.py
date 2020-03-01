@@ -75,7 +75,7 @@ def encode_annotations(args, xml_path):
                 ready_for_date = True
             elif ready_for_date and elem.tag == "date":
                 # Get the date, format is DD.MM.YYYY
-                date = re.split("[./]", elem.attrib["modern"])
+                date = re.split("[./]", elem.attrib["modern"].rstrip())
                 # Create filename from date to make later processing easier
                 id = os.path.splitext(os.path.basename(xml_path))[0]
                 filename = "".join(date[::-1]) + "_" + id + ".txt"
