@@ -5,17 +5,8 @@ import os, argparse
 import xml.etree.ElementTree as ET
 from tqdm import tqdm
 from tei_reader import TeiReader
-
 from bs4 import BeautifulSoup
-# Can't figure out how to access the individual elements
-# def tei_encode_annotation(args, xml_path):
-#     reader = TeiReader()
-#     xml_content = reader.read_file(xml_path)
-#     print(list(list(xml_content.documents)[0].attributes))
-    # print(xml_content.documents)
-    # print(len(xml_content.attributes))
-    # for o in xml_content.divisions:
-    #     print("HI" + o)
+
 
 def encode_name(args, elem):
     """
@@ -72,15 +63,33 @@ def encode_annotations(args, xml_path):
         Returns string of content of xml_path file with modified annotations (if needed)
     """
     annotations = ["persName"] # Fix this to take in as an argument
-
+    ready_for_date = False
+    skip = True
     # Define XML tree from xmlFile
     xml_tree = ET.parse(xml_path)
     root = xml_tree.getroot()
+    for elem in root.iter():
+        # Additional work needed to process london lives corpus
+        if args.london_lives:
+            # Extract date
+            if elem.tag == "elementDate":
+                ready_for_date = True
+            elif ready_for_date and elem.tag == "date":
+                # Get the date, format is DD.MM.YYYY
+                date = elem.attrib["modern"].split(".")
+                # Create filename from date to make later processing easier
+                filename = "".join(date[::-1]) + "_" + os.path.splitext(os.path.basename(xml_path))[0] + ".txt"
+                ready_for_date = False
+            # Don't include ID numbers within document
+            elif elem.tag == "img":
+                skip = False
+                elem.text = None
+            elif skip:
+                elem.text = ""
+                continue
 
-    # Replace relevant pieces of text with annotations if necessary
-    if args.encode_annotations_general or args.encode_annotations_specific:
-        # Go through each element in the xmlTree
-        for elem in root.iter():
+        # Replace relevant pieces of text with annotations if necessary
+        if args.encode_annotations_general or args.encode_annotations_specific:
             if elem.tag in annotations:
                 if elem.tag == "persName":
                     # Get information from subelements
@@ -90,12 +99,14 @@ def encode_annotations(args, xml_path):
                 # Replace info in element with new info
                 elem.clear()
                 elem.text = annotated_element
-
+        elem.text = " " if not elem.text else elem.text + " "
     # Find root of tree, convert to string, and return
     text_from_xml = str(ET.tostring(root, encoding='ASCII', method='text'))
     text_from_xml = html.unescape(text_from_xml)
-    return text_from_xml.replace('\\n', '\n') # Fixes issue printing "\n"
 
+    if args.london_lives:
+        return text_from_xml.replace('\\n', '\n'), filename # Fixes issue printing "\n"
+    return text_from_xml.replace('\\n', '\n') # Fixes issue printing "\n"
 
 def main(args):
     if not args.corpus_XML_dir:
@@ -103,7 +114,14 @@ def main(args):
         sys.exit(1)
     args.corpus_XML_dir = os.path.join(args.corpus_XML_dir, '')
 
-    input_files = [os.path.join(args.corpus_XML_dir, f) for f in os.listdir(args.corpus_XML_dir) if os.path.isfile(os.path.join(args.corpus_XML_dir, f))]
+    if args.london_lives:
+        input_files = []
+        for root, _, files in os.walk(args.corpus_XML_dir, topdown=False):
+            input_files += [os.path.join(root, f) for f in files
+                            if f[-4:] == ".xml"]
+    else:
+        input_files = [os.path.join(args.corpus_XML_dir, f) for f in os.listdir(args.corpus_XML_dir)
+        if os.path.isfile(os.path.join(args.corpus_XML_dir, f))]
 
     # Define name of output directory
     base_name = os.path.dirname(args.corpus_XML_dir).rstrip("/") + "-txt"
@@ -121,21 +139,30 @@ def main(args):
         file = input_files[i]
 
         # Change to txt file
-        filename = os.path.splitext(os.path.basename(file))[0] + ".txt"
-        file_path = os.path.join(txt_output_dir, filename)
-        if os.path.exists(file_path) and not args.overwrite:
-            continue
-        # Write text to txt file
-        with open(file_path, "w+") as txt_file:
-            try:
-                # Get string version of xml
-                text_from_xml = encode_annotations(args, file)[2:-1]
-                txt_file.write(text_from_xml)
-            except UnicodeDecodeError:
-                print("UnicodeDecodeError reading " + file + ". Skipping...")
+        if not args.london_lives:
+            filename = os.path.splitext(os.path.basename(file))[0] + ".txt"
+            file_path = os.path.join(txt_output_dir, filename)
+            if os.path.exists(file_path) and not args.overwrite:
                 continue
-            except ET.ParseError:
-                print("ParseError reading " + file + ". Skipping...")
+        # Write text to txt file
+        try:
+            # Get string version of xml
+            if args.london_lives:
+                text_from_xml, filename = encode_annotations(args, file)
+                text_from_xml = text_from_xml[2:-1]
+                file_path = os.path.join(txt_output_dir, filename)
+                if os.path.exists(file_path) and not args.overwrite:
+                    continue
+            else:
+                text_from_xml = encode_annotations(args, file)[2:-1]
+
+            with open(file_path, "w+") as txt_file:
+                txt_file.write(text_from_xml)
+        except UnicodeDecodeError:
+            print("UnicodeDecodeError reading " + file + ". Skipping...")
+            continue
+        except ET.ParseError:
+            print("ParseError reading " + file + ". Skipping...")
 
 
 if __name__ == '__main__':
@@ -144,5 +171,6 @@ if __name__ == '__main__':
     parser.add_argument('--encode_annotations_general', default=False, action="store_true", help='whether or not to encode general version of annotations in text')
     parser.add_argument('--encode_annotations_specific', default=False, action="store_true", help='whether or not to encode specific version of annotations in text')
     parser.add_argument('--overwrite', default=False, action="store_true", help='whether or not to overwrite old files with the same names')
+    parser.add_argument('--london_lives', default=False, action="store_true", help='whether or not input is London Lives corpus')
     args = parser.parse_args()
     main(args)
