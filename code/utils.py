@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, argparse, natsort
+import os, argparse, natsort, sys
 from datetime import datetime
 
 c_dict =    {
@@ -33,12 +33,16 @@ def get_year(file, include_month=False):
 
         returns year in int format
     """
-    offset = 2 if os.path.basename(file)[:2] == "OA" else 0
-    year = int(os.path.basename(file)[0 + offset:4 + offset])
-    if include_month:
-        month = int(os.path.basename(file)[4 + offset:6 + offset])
-        return (year, month)
-    return year
+    try:
+        offset = 2 if os.path.basename(file)[:2] == "OA" else 0
+        year = int(os.path.basename(file)[0 + offset:4 + offset])
+        if include_month:
+            month = int(os.path.basename(file)[4 + offset:6 + offset])
+            return (year, month)
+        return year
+    except ValueError:
+        print(timestamp() + " Skipping invalid file", file, file=sys.stderr)
+        return -1
 
 def order_files(args, ret_dict=True):
     """
@@ -56,6 +60,7 @@ def order_files(args, ret_dict=True):
     files_dict = {start_year:[]}
     for file in files:
         cur_year = get_year(file)
+        if cur_year == -1: continue
         if cur_year - start_year >= args.year_split:
             start_year = cur_year
             files_dict[start_year] = []
