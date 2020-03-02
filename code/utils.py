@@ -48,7 +48,8 @@ def order_files(args, ret_dict=True):
         output: dictionary of format {"YYYY":[file0,file1,...], "YYYY+args.year_split":[file0,file1,...]}
     """
     files = [os.path.join(args.corpus_dir, f) for f in os.listdir(args.corpus_dir)
-             if (os.path.isfile(os.path.join(args.corpus_dir, f)) and f.endswith('.txt'))]
+             if (os.path.isfile(os.path.join(args.corpus_dir, f))
+                 and re.match(".*[0-9]{8}", f) and f.endswith('.txt'))]
 
     files = natsort.natsorted(files, key=lambda x: get_order(x))  # Sort in ascending numeric order
     start_year = get_year(files[0])
