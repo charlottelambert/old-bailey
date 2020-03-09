@@ -17,7 +17,6 @@ from nltk.util import ngrams
 from utils import *
 from nltk.corpus import stopwords
 
-lemmatizer = ""
 stop_words = set(stopwords.words('english'))
 
 def contractions(token_list):
@@ -110,6 +109,7 @@ def tokenize_file(args, file, output_dir, d, bigrams):
                 # Also remove words of length < 2
                 # Lemmatize if necessary
                 if args.lemma:
+                    lemmatizer = WordNetLemmatizer()
                     tokens = [lemmatizer.lemmatize(x) for x in tokens if len(x) > 2 and re.search('[a-zA-Z]', x)]
                 else:
                     tokens = [x for x in tokens if len(x) > 2 and re.search('[a-zA-Z]', x)]
@@ -239,9 +239,6 @@ def main(args):
 
         print("\n".join(change_set))
         exit(0)
-
-    if args.lemma:
-        lemmatizer = WordNetLemmatizer()
 
     # Define additional info to add to output path
     suffix = "-tok"
