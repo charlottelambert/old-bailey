@@ -15,6 +15,9 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.util import ngrams
 from utils import *
+from nltk.corpus import stopwords
+
+stop_words = set(stopwords.words('english'))
 
 def contractions(token_list):
     # Remove all asterisks and replace contractions
@@ -63,7 +66,7 @@ def tokenize_file(args, file, output_dir, d, bigrams):
                 line = line.lower()
 
             # Tokenize line
-            tokens = [word.replace("\\", "") for word in word_tokenize(line)]
+            tokens = [word.replace("\\", "") for word in word_tokenize(line) if word not in stop_words]
 
             # Join $ to names
             for i, tok in enumerate(tokens):
@@ -138,8 +141,10 @@ def tokenize_file(args, file, output_dir, d, bigrams):
 def spell_correct(args, d, word, bigrams):
     # If the line is a valid word, continue
     if word == "" or word[0].isupper() or d.check(word):
+        # print("Is a word:", word)
         return word
     else:
+        # print("not a word:", word)
         # Suggest corrections for sub_line
         suggestions = d.suggest(word)
         # See if any of them are reasonable
@@ -215,12 +220,15 @@ def main(args):
                     if tok == '$':
                         tokens[i:i+2] = [''.join(tokens[i:i+2])]
 
-                # Spelling correction
                 updated_tokens = []
                 for i, tok in enumerate(tokens):
                     # Split word by non-alphanumeric characters
-                    split_word = re.split("([^A-Za-z0-9_(\w'\w)])|(^'+)|('+$)", tok)
+                    split_word = re.split("([^A-Za-z0-9_(\w'\w)])|(^')|('$)", tok)
                     split_word = [w for w in split_word if not w == None and len(w) > 2]
+                    if args.disable_spell_check:
+                        updated_tokens += split_word
+                        continue
+
                     for sub in split_word:
                         spell_checked = spell_correct(args, d, sub, bigrams).split()
                         updated_tokens += spell_checked
@@ -315,10 +323,10 @@ if __name__ == '__main__':
     parser.add_argument('--street_sub', default=False, action="store_true", help='whether or not to substitute street names with generic string')
     parser.add_argument('--lemma', default=False, action="store_true", help='whether or not to lemmatize all text')
     parser.add_argument('--test', default=False, action="store_true", help='testing spellcheck')
-    parser.add_argument('--corpus_bigrams', type=str, default="/work/clambert/thesis-data/corpus_bigrams.json", help='path to json file containing dictionary of all corpus bigrams')
+    parser.add_argument('--corpus_bigrams', type=str, default="/work/clambert/thesis-data/OB_LL-txt/corpus_bigrams.json", help='path to json file containing dictionary of all corpus bigrams')
     parser.add_argument('--myspell_path', type=str, default="/home/clambert/.local/lib/python3.6/site-packages/enchant/share/enchant/myspell")
     parser.add_argument('--disable_spell_check', default=False, action="store_true", help='whether or not to disable spell check')
-    parser.add_argument('--pwl_path', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt/unigram_pwl.txt")
+    parser.add_argument('--pwl_path', type=str, default="/work/clambert/thesis-data/OB_LL-txt/unigram_pwl.txt")
     parser.add_argument('--merge_words', default=False, action="store_true", help='whether or not to merge words into words present in unigram list')
     # /System/Volumes/Data/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/enchant/share/enchant/myspell
     args = parser.parse_args()
