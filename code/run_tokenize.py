@@ -17,6 +17,7 @@ from nltk.util import ngrams
 from utils import *
 from nltk.corpus import stopwords
 
+lemmatizer = ""
 stop_words = set(stopwords.words('english'))
 
 def contractions(token_list):
