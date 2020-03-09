@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, argparse, natsort, sys
+import os, argparse, natsort, sys, re
 from datetime import datetime
 
 c_dict =    {
