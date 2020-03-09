@@ -10,6 +10,8 @@ def valid_file(filename):
         meaning between 1674 and October 1834 during which all proceedings and
         ordinary's accounts were manually typed.
     """
+    # All files from London Lives should be true
+    if len(filename) > 14: return True
     year = get_year(filename, include_month=True)
     if year[0] < 1834: return True
     if year[0] == 1834 and year[1] < 10: return True
@@ -36,7 +38,7 @@ def main(args):
     prefix = os.path.dirname(args.corpus_dir) if args.file else args.corpus_dir
     uni_out = os.path.join(prefix, "corpus_unigrams.json")
     bi_out = os.path.join(prefix, "corpus_bigrams.json")
-
+    print(bi_out)
     if os.path.isfile(bi_out) and not args.overwrite:
         print("Bigram file already exists. Include overwrite flag to recompute bigrams.", file=sys.stderr)
         exit(1)
