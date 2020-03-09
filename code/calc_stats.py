@@ -96,6 +96,7 @@ def stats_for_file(file, stats_dict):
             line = line.replace("/", " ")
             # all_tokens: all words in line (excluding just punctuation)
             all_tokens = [tok for tok in line.split() if re.search('[a-zA-Z]', tok)]
+            backup = [tok for tok in line.split() if re.search('[a-zA-Z]', tok)]
 
             # If only looking for unique words, don't add any that have already been processed
             if args.unique:
@@ -132,7 +133,7 @@ def stats_for_file(file, stats_dict):
             stats_dict['latin'] += len(latin_words_found)
 
             stats_dict['unk'] += len(all_tokens)
-            unk_words.update(all_tokens)
+            unk_words.update([word for word in backup if word.lower() in all_tokens])
             try:
                 assert stats_dict["modern_english"] + stats_dict["latin"] + stats_dict["old_english"] + stats_dict["proper_nouns"] + stats_dict["unk"] == stats_dict["total"]
                 assert stats_dict["lower"] + stats_dict["upper"] + stats_dict["mixed"] == stats_dict["total"]
@@ -265,7 +266,9 @@ def main(args):
 
             doc_idx += 1
     print(timestamp() + " Wrote statistics to", stats_path, file=sys.stderr)
-    print("\n".join(list(unk_words)))
+    sorted = list(unk_words)
+    sorted.sort()
+    print("\n".join(sorted))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
