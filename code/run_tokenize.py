@@ -54,7 +54,7 @@ def fix_hyphens(input):
 
     return out.split()
 
-def tokenize_file(args, file, output_dir, d, bigrams):
+def tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams):
     output = []
     with open(file, "r") as f:
         for line in f:
@@ -84,7 +84,7 @@ def tokenize_file(args, file, output_dir, d, bigrams):
                     continue
 
                 for sub in split_word:
-                    spell_checked = spell_correct(args, d, sub, bigrams).split()
+                    spell_checked = spell_correct(args, gb, gb_and_pwl, sub, bigrams).split()
                     updated_tokens += spell_checked
             tokens = updated_tokens
 
@@ -305,7 +305,7 @@ def main(args):
                 continue
 
             # Tokenize single file
-            output = tokenize_file(args, file, output_dir, d, bigrams)
+            output = tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams)
             # Write output to new file
             with open(output_file, "w+") as f:
                 f.write('\n'.join(output))
