@@ -187,7 +187,8 @@ def model_on_directory(args):
     # Dynamic models only need to be run once
     elif args.model_type in ["dtm", "ldaseq"]:
         files = []
-        files += [file_list for year, file_list in files_dict.items()]
+        for year, file_list in files_dict.items():
+            files += file_list
 
         model_for_year(args, None, files, pre, time_slices)
     print(timestamp() + " Done.", file=sys.stderr)
