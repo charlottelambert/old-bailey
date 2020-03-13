@@ -205,7 +205,7 @@ def find_basic_stats(args, files_dict):
 
 def main(args):
     # Order files by year
-    files_dict = order_files(args)
+    files_dict, _ = order_files(args)
 
     if args.basic_stats:
         find_basic_stats(args, files_dict)

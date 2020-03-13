@@ -49,31 +49,7 @@ def get_ngrams(args, texts):
                         texts[idx].append(token) # Scale bigrams
     return texts
 
-def model_on_directory(args):
-    # Types of valid models to run
-    type_list = ["lda", "multicore", "dtm", "ldaseq"]
-    if args.model_type not in type_list:
-        print("\"" + args.model_type + "\" is not a valid model type. Please specify a valid model type (" + ", ".join(type_list) + ").", sys.stderr)
-        sys.exit(1)
-
-    # Prefix for running lda (modify if files should go to a different directory)
-    # FORMAT: "/work/clambert/models/model_type/YYYYMMDD/HH-MM-SS"
-    suffix = "-" + args.suffix if args.suffix else ""
-    pre = args.save_model_dir + args.model_type + "/" + time.strftime("%Y%m%d") + "/" + time.strftime("%H-%M-%S") + suffix +"/"
-
-    if not os.path.exists(pre):
-        os.makedirs(pre)
-
-    print(timestamp() + " Model will be saved to", pre, file=sys.stderr)
-
-    print_params(pre, args)
-
-    print(timestamp() + " Reading corpus.", file=sys.stderr)
-
-#    files = [f for f in os.listdir(args.corpus_dir)
-#             if os.path.isfile(os.path.join(args.corpus_dir, f))]
-    files, time_slices = order_files(args, ret_dict=False)
-    print(timestamp() + " Time slices:", time_slices)
+def compile_tokens(args, files):
     # Compile list of lists of tokens
     texts = []
     print(timestamp() + " Compiling tokens.", file=sys.stderr)
@@ -89,6 +65,54 @@ def model_on_directory(args):
 
     # If we want to include a mix of unigrams and bigrams or just bigrams
     texts = get_ngrams(args, texts)
+    return texts
+
+def run_lda(args, corpus, dictionary, workers, pre):
+    MALLET_PATH = os.environ.get("MALLET_PATH", "~/Mallet/bin/mallet")
+    lda = gensim.models.wrappers.LdaMallet
+    model = lda(MALLET_PATH, corpus, num_topics=args.num_topics,
+                   id2word=dictionary, optimize_interval=args.optimize_interval,
+                   workers=workers, iterations=args.num_iterations,
+                   prefix=pre)
+
+
+def run_multicore(args, corpus, dictionary, passes, alpha, workers, pre):
+    lda = gensim.models.ldamulticore.LdaMulticore
+    ldamodel = lda(corpus, num_topics=args.num_topics,
+                   id2word=dictionary, passes=200, alpha=20, workers=8,
+                   prefix=pre)
+
+def run_dtm(args, corpus, dictionary, time_slices, pre):
+    DTM_PATH = os.environ.get('DTM_PATH', None)
+    if not DTM_PATH:
+        raise ValueError("You need to set the DTM path.")
+    # Run the model
+    model = DtmModel(DTM_PATH, corpus=corpus, num_topics=args.num_topics,
+        id2word=dictionary, time_slices=time_slices, prefix=pre,
+        lda_sequence_max_iter=args.num_iterations)
+    return model
+
+def run_ldaseq(args, corpus, dictionary, time_slices):
+    # Run the model
+    model = LdaSeqModel(corpus=corpus, num_topics=args.num_topics,
+        id2word=dictionary, time_slice=time_slices,
+        lda_inference_max_iter=args.num_iterations)
+
+def pylda_vis(args, model, corpus, time_slices, pre):
+    print(timestamp() + " About to visualize...", file=sys.stderr)
+    for slice in range(len(time_slices)):
+        doc_topic, topic_term, doc_lengths, term_frequency, vocab = model.dtm_vis(time=slice, corpus=corpus)
+        vis_wrapper = pyLDAvis.prepare(topic_term_dists=topic_term,
+                                       doc_topic_dists=doc_topic,
+                                       doc_lengths=doc_lengths,
+                                       vocab=vocab,
+                                       term_frequency=term_frequency,
+                                       sort_topics=True)
+        pyLDAvis.save_html(vis_wrapper, pre + "time_slice_" + str(slice) + ".html")
+        print(timestamp() + " Prepared time slice", slice, "for pyLDAvis...", file=sys.stderr)
+
+def model_for_year(args, year, files, pre, time_slices):
+    texts = compile_tokens(args, files)
 
     print(timestamp() + " Building dictionary.", file=sys.stderr)
 
@@ -101,76 +125,70 @@ def model_on_directory(args):
 
     # Run the specified model
     if args.model_type == "multicore":
-        lda = gensim.models.ldamulticore.LdaMulticore
-        ldamodel = lda(corpus, num_topics=args.num_topics,
-                       id2word=dictionary, passes=200, alpha=20, workers=8,
-                       prefix=pre)
+        run_multicore(args, corpus, dictionary, 200, 20, 8, pre)
     elif args.model_type == "lda":
-        MALLET_PATH = os.environ.get("MALLET_PATH", "~/Mallet/bin/mallet")
-        lda = gensim.models.wrappers.LdaMallet
-        model = lda(MALLET_PATH, corpus, num_topics=args.num_topics,
-                       id2word=dictionary, optimize_interval=args.optimize_interval,
-                       workers=12, iterations=args.num_iterations,
-                       prefix=pre)
+        run_lda(args, corpus, dictionary, 12, pre)
     else:
         if args.model_type == "dtm": # Dynamic Topic Model
-            # Find path to DTM binary
-            DTM_PATH = os.environ.get('DTM_PATH', None)
-            if not DTM_PATH:
-                raise ValueError("You need to set the DTM path.")
-            # Run the model
-            model = DtmModel(DTM_PATH, corpus=corpus, num_topics=args.num_topics,
-                id2word=dictionary, time_slices=time_slices, prefix=pre,
-                lda_sequence_max_iter=args.num_iterations)
+            run_dtm(args, corpus, dictionary, time_slices, pre)
         elif args.model_type == "ldaseq":
-            # Run the model
-            model = LdaSeqModel(corpus=corpus, num_topics=args.num_topics,
-                id2word=dictionary, time_slice=time_slices,
-                lda_inference_max_iter=args.num_iterations)
+            run_ldaseq(args, corpus, dictionary, time_slices)
 
         if args.vis:
-            print(timestamp() + " About to visualize...", file=sys.stderr)
-            for slice in range(len(time_slices)):
-                doc_topic, topic_term, doc_lengths, term_frequency, vocab = model.dtm_vis(time=slice, corpus=corpus)
-                vis_wrapper = pyLDAvis.prepare(topic_term_dists=topic_term,
-                                               doc_topic_dists=doc_topic,
-                                               doc_lengths=doc_lengths,
-                                               vocab=vocab,
-                                               term_frequency=term_frequency,
-                                               sort_topics=True)
-                pyLDAvis.save_html(vis_wrapper, pre + "time_slice_" + str(slice) + ".html")
-                print(timestamp() + " Prepared time slice", slice, "for pyLDAvis...", file=sys.stderr)
-            #
-            #    data = {'topic_term_dists': data_input['phi'],
-            # 'doc_topic_dists': data_input['theta'],
-            # 'doc_lengths': data_input['doc.length'],
-            # 'vocab': data_input['vocab'],
-            # 'term_frequency': data_input['term.frequency']}
+            pylda_vis(args, model, corpus, time_slices, pre)
 
-    # Save model with timestamp
-    model.save(pre + "model")
-
-    f = open(pre + "file_ordering.txt", "w+")
-    text = ""
-    for filename in files:
-        text += filename + " "
-    f.write(text[:-1])
-    f.close()
-
-    print(timestamp() + " Done.", file=sys.stderr)
+    save_model_files(pre, year, model, files, year)
     if args.model_type == "ldaseq":
         top_words = []
         for t in range(len(time_slices)):
             top_words.append(model.print_topics(time=t, top_terms=20))
         return top_words
     return model.print_topics(num_topics=-1, num_words=20)
+
+def save_model_files(pre, year, model, files):
+    # Save model with timestamp
+    model.save(pre + "model-" + year)
+
+    f = open(pre + "file_ordering" + "-" + year + ".txt", "w+")
+    text = ""
+    for filename in files:
+        text += filename + " "
+    f.write(text[:-1])
+    f.close()
+
+def model_on_directory(args):
+    # Types of valid models to run
+    type_list = ["lda", "multicore", "dtm", "ldaseq"]
+    if args.model_type not in type_list:
+        print("\"" + args.model_type + "\" is not a valid model type. Please specify a valid model type (" + ", ".join(type_list) + ").", sys.stderr)
+        sys.exit(1)
+
+    # Prefix for running lda (modify if files should go to a different directory)
+    # FORMAT: "/work/clambert/models/model_type/YYYYMMDD/HH-MM-SS"
+    suffix = "-" + args.suffix if args.suffix else ""
+    pre = args.save_model_dir + args.model_type + "/" + time.strftime("%Y%m%d") + "/" + time.strftime("%H-%M-%S") + suffix +"/"
+
+    if not os.path.exists(pre):
+        os.makedirs(pre)
+
+    print(timestamp() + " Model(s) will be saved to", pre, file=sys.stderr)
+    print_params(pre, args)
+    
+    print(timestamp() + " Reading corpus.", file=sys.stderr)
+    files_dict, time_slices = order_files(args)
+    print(timestamp() + " Time slices:", time_slices)
+    for year, files in files_dict.keys():
+        print(model_for_year(args, year, files, pre, time_slices))
+
+    print(timestamp() + " Done.", file=sys.stderr)
+
 # _________________________________________________________________________
 
 def main(args):
     arg_dict = vars(args)
     print(timestamp() + " Starting...")
     print(str(arg_dict))
-    print(model_on_directory(args))
+    model_on_directory(args)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

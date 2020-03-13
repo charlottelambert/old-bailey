@@ -44,20 +44,28 @@ def get_year(file, include_month=False):
         print(timestamp() + " Skipping invalid file", file, file=sys.stderr)
         return -1
 
-def order_files(args, ret_dict=True):
+def order_files(args):
     """
         Sort a list of input files by years.
 
         input: args
         output: dictionary of format {"YYYY":[file0,file1,...], "YYYY+args.year_split":[file0,file1,...]}
+                and time slices:: [a, b, c]
     """
     files = [os.path.join(args.corpus_dir, f) for f in os.listdir(args.corpus_dir)
              if (os.path.isfile(os.path.join(args.corpus_dir, f))
                  and re.match(".*[0-9]{8}", f) and f.endswith('.txt'))]
 
     files = natsort.natsorted(files, key=lambda x: get_order(x))  # Sort in ascending numeric order
+
     start_year = get_year(files[0])
     files_dict = {start_year:[]}
+
+    # Indicate no year split
+    if args.year_split == -1:
+        files_dict[start_year] = files
+        return [files_dict, len(files)]
+
     for file in files:
         cur_year = get_year(file)
         if cur_year == -1: continue
@@ -65,8 +73,4 @@ def order_files(args, ret_dict=True):
             start_year = cur_year
             files_dict[start_year] = []
         files_dict[start_year].append(file)
-    if ret_dict:
-        return files_dict
-    else:
-        # [ordered_file_list, [docs_per_slice]]
-        return [files, [len(files_dict[chunk]) for chunk in files_dict]]
+    return [files_dict, [len(file_list) for year, file_list in files_dict.keys()]]
