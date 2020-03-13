@@ -74,13 +74,14 @@ def run_lda(args, corpus, dictionary, workers, pre):
                    id2word=dictionary, optimize_interval=args.optimize_interval,
                    workers=workers, iterations=args.num_iterations,
                    prefix=pre)
-
+    return model
 
 def run_multicore(args, corpus, dictionary, passes, alpha, workers, pre):
     lda = gensim.models.ldamulticore.LdaMulticore
     ldamodel = lda(corpus, num_topics=args.num_topics,
                    id2word=dictionary, passes=200, alpha=20, workers=8,
                    prefix=pre)
+    return model
 
 def run_dtm(args, corpus, dictionary, time_slices, pre):
     DTM_PATH = os.environ.get('DTM_PATH', None)
@@ -97,6 +98,7 @@ def run_ldaseq(args, corpus, dictionary, time_slices):
     model = LdaSeqModel(corpus=corpus, num_topics=args.num_topics,
         id2word=dictionary, time_slice=time_slices,
         lda_inference_max_iter=args.num_iterations)
+    return model
 
 def pylda_vis(args, model, corpus, time_slices, pre):
     print(timestamp() + " About to visualize...", file=sys.stderr)
@@ -125,14 +127,14 @@ def model_for_year(args, year, files, pre, time_slices):
 
     # Run the specified model
     if args.model_type == "multicore":
-        run_multicore(args, corpus, dictionary, 200, 20, 8, pre)
+        model = run_multicore(args, corpus, dictionary, 200, 20, 8, pre)
     elif args.model_type == "lda":
-        run_lda(args, corpus, dictionary, 12, pre)
+        model = run_lda(args, corpus, dictionary, 12, pre)
     else:
         if args.model_type == "dtm": # Dynamic Topic Model
-            run_dtm(args, corpus, dictionary, time_slices, pre)
+            model = run_dtm(args, corpus, dictionary, time_slices, pre)
         elif args.model_type == "ldaseq":
-            run_ldaseq(args, corpus, dictionary, time_slices)
+            model = run_ldaseq(args, corpus, dictionary, time_slices)
 
         if args.vis:
             pylda_vis(args, model, corpus, time_slices, pre)
@@ -146,10 +148,11 @@ def model_for_year(args, year, files, pre, time_slices):
     return model.print_topics(num_topics=-1, num_words=20)
 
 def save_model_files(pre, year, model, files):
+    append = "" if not year else "-" + year
     # Save model with timestamp
-    model.save(pre + "model-" + year)
+    model.save(pre + "model" + append)
 
-    f = open(pre + "file_ordering" + "-" + year + ".txt", "w+")
+    f = open(pre + "file_ordering" + append + ".txt", "w+")
     text = ""
     for filename in files:
         text += filename + " "
@@ -177,9 +180,16 @@ def model_on_directory(args):
     print(timestamp() + " Reading corpus.", file=sys.stderr)
     files_dict, time_slices = order_files(args)
     print(timestamp() + " Time slices:", time_slices)
-    for year, files in files_dict.items():
-        print(model_for_year(args, year, files, pre, time_slices))
+    # Loop for some model types
+    if args.model_type in ["lda", "multicore"]:
+        for year, files in files_dict.items():
+            print(model_for_year(args, year, files, pre, time_slices))
+    # Dynamic models only need to be run once
+    elif args.model_type in ["dtm", "ldaseq"]:
+        files = []
+        files += [file_list for year, file_list in files_dict.items()]
 
+        model_for_year(args, None, files, pre, time_slices)
     print(timestamp() + " Done.", file=sys.stderr)
 
 # _________________________________________________________________________
