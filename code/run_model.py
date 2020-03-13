@@ -173,11 +173,11 @@ def model_on_directory(args):
 
     print(timestamp() + " Model(s) will be saved to", pre, file=sys.stderr)
     print_params(pre, args)
-    
+
     print(timestamp() + " Reading corpus.", file=sys.stderr)
     files_dict, time_slices = order_files(args)
     print(timestamp() + " Time slices:", time_slices)
-    for year, files in files_dict.keys():
+    for year, files in files_dict.items():
         print(model_for_year(args, year, files, pre, time_slices))
 
     print(timestamp() + " Done.", file=sys.stderr)

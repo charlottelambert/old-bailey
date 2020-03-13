@@ -73,4 +73,4 @@ def order_files(args):
             start_year = cur_year
             files_dict[start_year] = []
         files_dict[start_year].append(file)
-    return [files_dict, [len(file_list) for year, file_list in files_dict.keys()]]
+    return [files_dict, [len(file_list) for year, file_list in files_dict.items()]]
