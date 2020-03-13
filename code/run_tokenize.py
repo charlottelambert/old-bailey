@@ -139,15 +139,15 @@ def tokenize_file(args, file, output_dir, d, bigrams):
 # Eventually, we jsut want to run this on each word, might need a way to speed
 # this up, parallel?
 # gonna have millions of tokens, need to be more efficient!
-def spell_correct(args, d, word, bigrams):
+def spell_correct(args, gb, gb_and_pwl, word, bigrams):
     # If the line is a valid word, continue
-    if word == "" or word[0].isupper() or d.check(word):
+    if word == "" or word[0].isupper() or gb.check(word):
         # print("Is a word:", word)
         return word
     else:
         # print("not a word:", word)
         # Suggest corrections for sub_line
-        suggestions = d.suggest(word)
+        suggestions = gb_and_pwl.suggest(word)
         # See if any of them are reasonable
         options = []
         for opt in suggestions:
@@ -207,7 +207,8 @@ def main(args):
     if args.test:
         print("starting test")
         enchant.set_param("enchant.myspell.dictionary.path", args.myspell_path)
-        d = enchant.DictWithPWL("en_GB", args.pwl_path) # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
+        gb = enchant.DictWithPWL("en_GB") #, args.pwl_path) # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
+        gb_and_pwl = enchant.DictWithPWL("en_GB", args.pwl_path) # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
         change_set = set()
         with open(args.filepath) as f:
             lines = f.read().split()
@@ -231,7 +232,7 @@ def main(args):
                         continue
 
                     for sub in split_word:
-                        spell_checked = spell_correct(args, d, sub, bigrams).split()
+                        spell_checked = spell_correct(args, gb, gb_and_pwl, sub, bigrams).split()
                         updated_tokens += spell_checked
 
                         if spell_checked[0] != sub:
@@ -266,7 +267,8 @@ def main(args):
         print(timestamp() + " Tokenizing data to", suffix, file=sys.stderr)
 
     enchant.set_param("enchant.myspell.dictionary.path", args.myspell_path)
-    d = enchant.DictWithPWL("en_GB", args.pwl_path) # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
+    gb = enchant.DictWithPWL("en_GB") #, args.pwl_path) # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
+    gb_and_pwl = enchant.DictWithPWL("en_GB", args.pwl_path) # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
 
     # If processing one file, don't loop!
     if args.filepath:
@@ -277,7 +279,7 @@ def main(args):
         if not args.overwrite and os.path.exists(output_file):
             exit(0)
         # Tokenize single file
-        output = tokenize_file(args, args.filepath, output_dir, d, bigrams)
+        output = tokenize_file(args, args.filepath, output_dir, gb, gb_and_pwl, bigrams)
         # Merge words if flag is set to true
         if args.merge_words:
             # Create dictionary (personal word list) out of unigrams
