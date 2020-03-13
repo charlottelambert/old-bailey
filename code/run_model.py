@@ -139,7 +139,7 @@ def model_for_year(args, year, files, pre, time_slices):
         if args.vis:
             pylda_vis(args, model, corpus, time_slices, pre)
 
-    save_model_files(pre, year, model, files, year)
+    save_model_files(pre, year, model, files)
     if args.model_type == "ldaseq":
         top_words = []
         for t in range(len(time_slices)):
@@ -148,7 +148,7 @@ def model_for_year(args, year, files, pre, time_slices):
     return model.print_topics(num_topics=-1, num_words=20)
 
 def save_model_files(pre, year, model, files):
-    append = "" if not year else "-" + year
+    append = "" if not year else "-" + str(year)
     # Save model with timestamp
     model.save(pre + "model" + append)
 
