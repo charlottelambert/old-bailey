@@ -3,6 +3,9 @@ import nltk, json, os, sys, operator, argparse, copy
 from nltk.tokenize import word_tokenize, sent_tokenize
 from tqdm import tqdm
 from utils import *
+from nltk.corpus import stopwords
+
+stop_words = set(stopwords.words('english'))
 
 def valid_file(filename):
     """
@@ -18,7 +21,7 @@ def valid_file(filename):
     return False
 
 def make_ngram_dicts(unigram_dict, bigram_dict, text):
-    words = [word.replace("\\", "") for sent in sent_tokenize(text) for word in word_tokenize(sent)]
+    words = [word.replace("\\", "") for sent in sent_tokenize(text) for word in word_tokenize(sent) if word not in stop_words]
 
     words = filter(lambda w: w not in ',-;?.():!', words)
     uni_words = list(copy.deepcopy(words))
