@@ -10,7 +10,7 @@
 
 import sys, os, click, csv, gensim, time, argparse, pyLDAvis
 from os import listdir
-import custom_stop_words as stop
+# import custom_stop_words as stop
 from gensim import corpora, models
 from gensim.test.utils import get_tmpfile
 from gensim.corpora import MalletCorpus, Dictionary, bleicorpus
@@ -59,8 +59,8 @@ def compile_tokens(args, files):
             text = f.read().lower().replace("\n", " ").split(" ")
 
             # Changed: Also remove stop words from Mallet version
-            stop_words = stop.modified_stop_words
-            text = [word for word in text if word not in stop_words]
+            # stop_words = stop.modified_stop_words
+            # text = [word for word in text if word not in stop_words]
             texts.append(text)
 
     # If we want to include a mix of unigrams and bigrams or just bigrams
@@ -119,9 +119,9 @@ def model_for_year(args, year, files, pre, time_slices):
     print(timestamp() + " Building dictionary.", file=sys.stderr)
 
     dictionary = corpora.Dictionary(texts)
-    if not args.mixed_ngrams:
-        # Filter extremes if not doing only bigrams
-        dictionary.filter_extremes(no_below=50, no_above=0.90)
+    # if not args.mixed_ngrams:
+    #     # Filter extremes if not doing only bigrams
+    #     dictionary.filter_extremes(no_below=50, no_above=0.90)
 
     corpus = [dictionary.doc2bow(text) for text in texts]
 
