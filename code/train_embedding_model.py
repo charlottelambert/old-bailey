@@ -206,7 +206,7 @@ def main(args):
             os.makedirs(pre)
 
         # Order files by year
-        files_dict = order_files(args)
+        files_dict, _ = order_files(args)
 
         print(timestamp(), "Data will be saved to directory " + pre, file=sys.stderr)
         model_dict = {}

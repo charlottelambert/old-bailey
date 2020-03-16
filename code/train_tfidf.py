@@ -94,7 +94,7 @@ def before_train(args):
 
     print(timestamp() + " Collecting files...", file=sys.stderr)
 
-    files_dict = order_files(args)
+    files_dict, _ = order_files(args)
     documents = []
     for first_year, files in files_dict.items():
         joined_docs = []
