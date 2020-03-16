@@ -14,37 +14,23 @@ from train_tfidf import *
 english_words = KeywordProcessor()
 latin_words = KeywordProcessor()
 
-data_list = ["modern_english", "old_english", "latin", "proper_nouns", "upper", "lower", "mixed", "unk", "total"]
+data_list = ["modern_english", "old_english", "latin", "proper_nouns", "upper",
+             "lower", "mixed", "unk", "total", "num_entities"]
 
 unk_words = set()
 
-def load_models_old(args):
-    model_dict = {}
-    files = [os.path.join(args.tfidf_model_dir_path, f) for f in os.listdir(args.tfidf_model_dir_path)
-             if (os.path.isfile(os.path.join(args.tfidf_model_dir_path, f)))]
-    all_models = [path for path in files if "model" in os.path.basename(path)]
-    # print("ALL",all_models)
-    for model in all_models:
-        # print(model)
-        if model == "model":
-            print("Please re-run train_tfidf.py and provide new path.", file=sys.stderr)
-            exit(1)
+# Calculate number of named entities
+def find_entities(all_tokens, num_entities=0):
+    tagged_sent = pos_tag(all_tokens)
+    found_entities = nltk.ne_chunk(tagged_sent, binary=True)
+    named_entities = []
+    for element in found_entities:
         try:
-            year = int(os.path.basename(model).split("-")[1])
-        except:
-            print("Error with naming of file " + model + ". Files should be in format model-YYYY,", file=sys.stderr)
-            exit(1)
-        # cur_year_files = [path for path in files if path.endswith(str(year))]
-        try:
-            corpus = mm = MmCorpus(os.path.join(args.tfidf_model_dir_path, "corpus-" + str(year)))
-            tfidf = models.TfidfModel.load(os.path.join(args.tfidf_model_dir_path, "model-" + str(year)))
-            mydict = corpora.Dictionary.load(os.path.join(args.tfidf_model_dir_path, "dictionary-" + str(year)))
-        except FileNotFoundError:
-            print("Tf-idf model directory path must contain model, corpus, and dictionary with year as suffix.", file=sys.stderr)
-            exit(1)
-
-        model_dict[year] = {"corpus":corpus, "model":tfidf, "dictionary":mydict}
-    return model_dict
+            if element.label() == "NE": named_entities.append(element)
+        except AttributeError:
+            continue
+    num_entities += len(named_entities)
+    return tagged_sent, num_entities
 
 def load_models(args):
     try:
@@ -76,6 +62,19 @@ def update_tok_lists(all_tokens, list_to_check):
         else:
             new_all.append(all_tokens[i].lower()) # Lowercase because it isn't a proper noun anymore
     return [new_all, out]
+
+# Get output of row
+def get_stat_output(args, first_year, stats_dict, top_words):
+    ret = [first_year]
+    for count in data_list:
+        # This tag isn't a percentage
+        if count == "num_entities": ret.append(stats_dict[count])
+        elif count == "top_" + str(args.num_top_words) + "_words":
+            ret.append(", ".join(top_words))
+        # Divide percentages by total
+        else: ret.append(round(stats_dict[count]/stats_dict["total"], 4))
+
+    return ret
 
 def stats_for_file(file, stats_dict):
     """
@@ -115,7 +114,8 @@ def stats_for_file(file, stats_dict):
                     stats_dict['mixed'] += 1
 
             # propernouns: all proper nouns in the line
-            tagged_sent = pos_tag(all_tokens)
+            tagged_sent, stats_dict['num_entities'] = find_entities(all_tokens, num_entities=stats_dict['num_entities'])
+
             tagged_nnp = [pair[0] for pair in tagged_sent if pair[1] == 'NNP']
 
             all_tokens, propernouns = update_tok_lists(all_tokens, tagged_nnp)
@@ -211,6 +211,14 @@ def main(args):
         find_basic_stats(args, files_dict)
         exit(0)
 
+    # Calculate number of named entities in BNC
+    if args.bnc_entities:
+        with open(args.bnc_path, "r") as f:
+            tokens = f.read().split("\n")
+        tagged_tokens, num_entities = find_entities(tokens)
+        print(num_entities)
+        exit(0)
+
     # If we have a model to load, add fields to data_list and load model
     data_list.append("top_" + str(args.num_top_words) + "_words")
 
@@ -260,15 +268,16 @@ def main(args):
 
             if valid:
                 top_words = get_top_words(args, doc_idx, tfidf, corpus, mydict)
-                tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list] + [", ".join(top_words)])
+                tsv_writer.writerow(get_stat_output(args, first_year, stats_dict, top_words))
                 # else:
                 #     tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
 
             doc_idx += 1
     print(timestamp() + " Wrote statistics to", stats_path, file=sys.stderr)
-    sorted = list(unk_words)
-    sorted.sort()
-    print("\n".join(sorted))
+    if args.print_unk:
+        sorted = list(unk_words)
+        sorted.sort()
+        print("\n".join(sorted))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -281,5 +290,9 @@ if __name__ == '__main__':
     parser.add_argument('--unique', default=False, action='store_true', help='whether or not to count only unique words')
     parser.add_argument('--tfidf_model_dir_path', type=str, default = "", help='path to tfidf model directory containing model to load.')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
+    parser.add_argument('--count_entities', default=False, action='store_true', help='whether or not to count named entities in corpus and bnc')
+    parser.add_argument('--print_unk', default=False, action='store_true', help='whether or not to print out unknown words')
+    parser.add_argument('--bnc_path', type=str, default="/work/clambert/thesis-data/bnc_lexicon.txt", help='path for calculating bnc entities')
+    parser.add_argument('--bnc_entities', default=False, action='store_true', help='whether or not to calculate BNC entities')
     args = parser.parse_args()
     main(args)
