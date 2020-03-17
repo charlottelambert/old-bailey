@@ -76,7 +76,6 @@ def run_lda(args, corpus, pre, dictionary=None, workers=None):
                        id2word=dictionary, optimize_interval=args.optimize_interval,
                        workers=workers, iterations=args.num_iterations,
                        prefix=pre)
-        return model
     else:
         rand_prefix = hex(random.randint(0, 0xffffff))[2:] + '-'
         prefix = os.path.join(tempfile.gettempdir(), rand_prefix)
@@ -87,8 +86,7 @@ def run_lda(args, corpus, pre, dictionary=None, workers=None):
         corpus.export(mallet_corpus, abstract=False, form='text')
         model = Mallet(MALLET_PATH, mallet_corpus, num_topics=args.num_topics,
                        iters=args.num_iterations, bigrams=args.bigrams_only, prefix=pre)
-        print(timestamp(),"Done!",file=sys.stderr)
-        exit(0)
+    return model
 
 def run_multicore(args, corpus, dictionary, passes, alpha, workers, pre):
     lda = gensim.models.ldamulticore.LdaMulticore
@@ -161,6 +159,9 @@ def model_for_year(args, year, files, pre, time_slices):
         if args.vis:
             pylda_vis(args, model, corpus, time_slices, pre)
 
+    if not args.gensim:
+        return model
+
     save_model_files(pre, year, model, files)
     if args.model_type == "ldaseq":
         top_words = []
@@ -205,7 +206,14 @@ def model_on_directory(args):
     # Loop for some model types
     if args.model_type in ["lda", "multicore"]:
         for year, files in files_dict.items():
-            print(model_for_year(args, year, files, pre, time_slices))
+            if len(files_dict.items()) == 1:
+                year = ""
+                temp_pre = pre
+            else:
+                temp_pre = os.path.join(pre, str(year) + "/")
+            if not os.path.exists(temp_pre):
+                os.makedirs(temp_pre)
+            print(model_for_year(args, year, files, temp_pre, time_slices))
     # Dynamic models only need to be run once
     elif args.model_type in ["dtm", "ldaseq"]:
         files = []
