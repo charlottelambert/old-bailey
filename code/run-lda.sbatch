@@ -17,12 +17,19 @@ export JAVA_OPTIONS="-Xms4G -Xmx8G"
 export MALLET_PATH=lda-tools/ext/mallet/bin/mallet
 export PYTHONPATH=/home/clambert/thesis/code/lda-tools/lib:$PYTHONPATH
 
+# unigrams:
 # ./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=-1
 # time slices
 #./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=100
 
-# bigrams, no year split
+# bigrams:
 #./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=-1
 # time slices
-./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=100
+#./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=100
+
+# OB + LL:
+./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=100 --year_split=-1
+# time slices
+#./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=100
+
 echo Finished: `date`
