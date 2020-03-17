@@ -68,9 +68,9 @@ def compile_tokens(args, files):
     texts = get_ngrams(args, texts)
     return texts
 
-def run_lda(args, corpus, dictionary=None, workers=None, pre):
+def run_lda(args, corpus, pre, dictionary=None, workers=None):
+    MALLET_PATH = os.environ.get("MALLET_PATH", "lda-tools/ext/mallet/bin/mallet")
     if args.wrapper:
-        MALLET_PATH = os.environ.get("MALLET_PATH", "~/Mallet/bin/mallet")
         lda = gensim.models.wrappers.LdaMallet
         model = lda(MALLET_PATH, corpus, num_topics=args.num_topics,
                        id2word=dictionary, optimize_interval=args.optimize_interval,
@@ -148,7 +148,7 @@ def model_for_year(args, year, files, pre, time_slices):
     if args.model_type == "multicore":
         model = run_multicore(args, corpus, dictionary, 200, 20, 8, pre)
     elif args.model_type == "lda" and args.wrapper:
-        model = run_lda(args, corpus, dictionary=dictionary, workers=12, pre)
+        model = run_lda(args, corpus, pre, dictionary=dictionary, workers=12)
     elif args.model_type == "lda":
         model = run_lda(args, corpus, pre)
     else:
@@ -198,7 +198,7 @@ def model_on_directory(args):
     print(timestamp() + " Model(s) will be saved to", pre, file=sys.stderr)
     print_params(pre, args)
 
-    print(timestamp() + " Reading corpus.", file=sys.stderr)
+    print(timestamp() + " Processing corpus.", file=sys.stderr)
     files_dict, time_slices = order_files(args)
     print(timestamp() + " Time slices:", time_slices)
     # Loop for some model types
@@ -226,6 +226,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--unigrams_only', default=False, action="store_true", help='whether or not to only include unigrams')
+    parser.add_argument('--bigrams_only', default=False, action="store_true", help='whether or not to only include bigrams')
     parser.add_argument('--mixed_ngrams', default=False, action="store_true", help='whether or not to include both unigrams and bigrams')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsPapers-txt-tok", help='directory containing corpus')
     parser.add_argument('--model_type', type=str, default="lda", help='type of model to run') # Include dynamic here?
