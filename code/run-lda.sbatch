@@ -16,6 +16,10 @@ export JAVA_OPTIONS="-Xms4G -Xmx8G"
 export MALLET_PATH=~/Mallet/bin/mallet
 export PYTHONPATH=/home/clambert/thesis/code/lda-tools/lib:$PYTHONPATH
 
-./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=-1
+# ./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=-1
+# time slices
+#./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=100
 
+# bigrams, no year split
+./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=-1
 echo Finished: `date`
