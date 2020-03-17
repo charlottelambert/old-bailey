@@ -8,7 +8,7 @@
 #
 ###############################################################################
 
-import sys, os, click, csv, gensim, time, argparse, pyLDAvis, tempfile
+import sys, os, click, csv, gensim, time, argparse, pyLDAvis, tempfile, random
 # import custom_stop_words as stop
 from gensim import corpora, models
 from gensim.test.utils import get_tmpfile
@@ -68,26 +68,27 @@ def compile_tokens(args, files):
     texts = get_ngrams(args, texts)
     return texts
 
-def run_lda(args, corpus, dictionary=None, workers=None, pre):
-    if args.wrapper:
-        MALLET_PATH = os.environ.get("MALLET_PATH", "~/Mallet/bin/mallet")
+def run_lda(args, corpus, pre, dictionary=None, workers=None):
+    MALLET_PATH = os.environ.get("MALLET_PATH", "lda-tools/ext/mallet/bin/mallet")
+    if args.gensim:
         lda = gensim.models.wrappers.LdaMallet
         model = lda(MALLET_PATH, corpus, num_topics=args.num_topics,
                        id2word=dictionary, optimize_interval=args.optimize_interval,
                        workers=workers, iterations=args.num_iterations,
                        prefix=pre)
+        return model
     else:
-        # rand_prefix = hex(random.randint(0, 0xffffff))[2:] + '-'
-        # prefix = os.path.join(tempfile.gettempdir(), rand_prefix)
+        rand_prefix = hex(random.randint(0, 0xffffff))[2:] + '-'
+        prefix = os.path.join(tempfile.gettempdir(), rand_prefix)
 
         print('Generating topic model.')
-        mallet_corpus = pre + 'corpus'
+        mallet_corpus = prefix + 'corpus'
         os.makedirs(mallet_corpus)
         corpus.export(mallet_corpus, abstract=False, form='text')
         model = Mallet(MALLET_PATH, mallet_corpus, num_topics=args.num_topics,
-                       iters=args.num_iterations, bigrams=args.bigrams_only)
-
-    return model
+                       iters=args.num_iterations, bigrams=args.bigrams_only, prefix=pre)
+        print(timestamp(),"Done!",file=sys.stderr)
+        exit(0)
 
 def run_multicore(args, corpus, dictionary, passes, alpha, workers, pre):
     lda = gensim.models.ldamulticore.LdaMulticore
@@ -132,7 +133,7 @@ def model_for_year(args, year, files, pre, time_slices):
     #     # Filter extremes if not doing only bigrams
     #     dictionary.filter_extremes(no_below=50, no_above=0.90)
 
-    if args.wrapper:
+    if args.gensim:
         texts = compile_tokens(args, files)
 
         print(timestamp() + " Building dictionary.", file=sys.stderr)
@@ -147,8 +148,8 @@ def model_for_year(args, year, files, pre, time_slices):
     # Run the specified model
     if args.model_type == "multicore":
         model = run_multicore(args, corpus, dictionary, 200, 20, 8, pre)
-    elif args.model_type == "lda" and args.wrapper:
-        model = run_lda(args, corpus, dictionary=dictionary, workers=12, pre)
+    elif args.model_type == "lda" and args.gensim:
+        model = run_lda(args, corpus, pre, dictionary=dictionary, workers=12)
     elif args.model_type == "lda":
         model = run_lda(args, corpus, pre)
     else:
@@ -198,7 +199,7 @@ def model_on_directory(args):
     print(timestamp() + " Model(s) will be saved to", pre, file=sys.stderr)
     print_params(pre, args)
 
-    print(timestamp() + " Reading corpus.", file=sys.stderr)
+    print(timestamp() + " Processing corpus.", file=sys.stderr)
     files_dict, time_slices = order_files(args)
     print(timestamp() + " Time slices:", time_slices)
     # Loop for some model types
@@ -226,6 +227,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--unigrams_only', default=False, action="store_true", help='whether or not to only include unigrams')
+    parser.add_argument('--bigrams_only', default=False, action="store_true", help='whether or not to only include bigrams')
     parser.add_argument('--mixed_ngrams', default=False, action="store_true", help='whether or not to include both unigrams and bigrams')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsPapers-txt-tok", help='directory containing corpus')
     parser.add_argument('--model_type', type=str, default="lda", help='type of model to run') # Include dynamic here?
@@ -234,7 +236,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_iterations', type=int, default=1000, help='number of topics to find')
     parser.add_argument('--year_split', type=int, default=100, help='Number of years per time slice')
     parser.add_argument('--vis', default=False, action='store_true', help='whether or not to visualize')
-    parser.add_argument('--wrapper', default=False, action='store_true', help='whether or not to use gensim\'s lda mallet wrapper')
+    parser.add_argument('--gensim', default=False, action='store_true', help='whether or not to use gensim\'s lda mallet wrapper')
     parser.add_argument('--seed', type=int, default=0, help='random seed to make deterministic')
     parser.add_argument('--suffix', type=str, default="", help="suffix to add to model directory if exists")
     args = parser.parse_args()
