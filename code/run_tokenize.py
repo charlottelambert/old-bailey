@@ -100,22 +100,26 @@ def tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams):
                 mod_tokens += tokens[i].split() #fix_hyphens(tokens[i])
             tokens = mod_tokens
 
+            # Replace split contractions with full words
+            tokens = contractions(tokens)
 
             if not args.stats:
                 # First, remove trailing hyphens and slashes
                 sub_pattern = '\A([\W_]*)([A-Za-z0-9]+|[A-Za-z0-9]+[\W_]+[A-Za-z0-9]+)([\W_]*)$'
                 tokens = [re.sub(sub_pattern, "\\2", x) for x in tokens]
+
                 # Keep all words containing at least one letter
                 # Also remove words of length < 2
                 # Lemmatize if necessary
                 if args.lemma:
                     lemmatizer = WordNetLemmatizer()
-                    tokens = [lemmatizer.lemmatize(x) for x in tokens if len(x) > 2 and word not in stop_words and re.search('[a-zA-Z]', x)]
+                    tokens = [lemmatizer.lemmatize(x) for x in tokens
+                              if len(x) > 2 and x.lower() not in stop_words
+                              and re.search('[a-zA-Z]', x)]
                 else:
-                    tokens = [x for x in tokens if len(x) > 2 and x not in stop_words and re.search('[a-zA-Z]', x)]
-
-            # Replace split contractions with full words
-            tokens = contractions(tokens)
+                    tokens = [x for x in tokens if len(x) > 2
+                              and x.lower() not in stop_words
+                              and re.search('[a-zA-Z]', x)]
 
             # If tokenizing text in order to find useful stats, do extra
             # processing and return without removing words
@@ -196,9 +200,6 @@ def merge_words(args, pwl, input, bigrams):
         output.append(store)
 
     return output
-
-# do we want to merge anything that isn't a proper noun?
-# it's not working, it's merging mostly bad things
 
 def main(args):
     with open(args.corpus_bigrams) as json_file:
@@ -289,7 +290,7 @@ def main(args):
                 output[i] = " ".join(merge_words(args, pwl, line.split(), bigrams))
 
         # Write output to new file
-        with open(output_file, "w+") as f:
+        with open(output_file, "w") as f:
             f.write("\n".join(output))
         exit(0)
     else:
@@ -307,7 +308,7 @@ def main(args):
             # Tokenize single file
             output = tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams)
             # Write output to new file
-            with open(output_file, "w+") as f:
+            with open(output_file, "w") as f:
                 f.write('\n'.join(output))
         print(timestamp() + " Tokenization done.", file=sys.stderr)
 
