@@ -112,7 +112,7 @@ def tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams):
                     lemmatizer = WordNetLemmatizer()
                     tokens = [lemmatizer.lemmatize(x) for x in tokens if len(x) > 2 and word not in stop_words and re.search('[a-zA-Z]', x)]
                 else:
-                    tokens = [x for x in tokens if len(x) > 2 and word not in stop_words and re.search('[a-zA-Z]', x)]
+                    tokens = [x for x in tokens if len(x) > 2 and x not in stop_words and re.search('[a-zA-Z]', x)]
 
             # Replace split contractions with full words
             tokens = contractions(tokens)
