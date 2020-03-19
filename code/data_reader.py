@@ -156,7 +156,7 @@ def main(args):
             else:
                 text_from_xml = encode_annotations(args, file)[2:-1]
 
-            with open(file_path, "w+") as txt_file:
+            with open(file_path, "w") as txt_file:
                 txt_file.write(text_from_xml)
         except UnicodeDecodeError:
             print("UnicodeDecodeError reading " + file + ". Skipping...")

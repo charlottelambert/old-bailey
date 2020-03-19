@@ -175,7 +175,7 @@ def save_model_files(pre, year, model, files):
     # Save model with timestamp
     model.save(pre + "model" + append)
 
-    f = open(pre + "file_ordering" + append + ".txt", "w+")
+    f = open(pre + "file_ordering" + append + ".txt", "w")
     text = ""
     for filename in files:
         text += filename + " "
