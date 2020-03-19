@@ -66,7 +66,7 @@ def tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams):
                 line = line.lower()
 
             # Tokenize line
-            tokens = [word.replace("\\", "") for word in word_tokenize(line) if word not in stop_words]
+            tokens = [word.replace("\\", "") for word in word_tokenize(line)]
 
             # Join $ to names
             for i, tok in enumerate(tokens):
@@ -110,9 +110,9 @@ def tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams):
                 # Lemmatize if necessary
                 if args.lemma:
                     lemmatizer = WordNetLemmatizer()
-                    tokens = [lemmatizer.lemmatize(x) for x in tokens if len(x) > 2 and re.search('[a-zA-Z]', x)]
+                    tokens = [lemmatizer.lemmatize(x) for x in tokens if len(x) > 2 and word not in stop_words and re.search('[a-zA-Z]', x)]
                 else:
-                    tokens = [x for x in tokens if len(x) > 2 and re.search('[a-zA-Z]', x)]
+                    tokens = [x for x in tokens if len(x) > 2 and word not in stop_words and re.search('[a-zA-Z]', x)]
 
             # Replace split contractions with full words
             tokens = contractions(tokens)
