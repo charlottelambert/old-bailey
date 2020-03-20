@@ -3,15 +3,19 @@ import sys, re, argparse, os
 from tqdm import tqdm
 from bs4 import BeautifulSoup
 from utils import c_dict
+from utils import *
 
 # Extract words from one XML file and compile
-def update_bnc_words(xml_path):
+def update_bnc_words(xml_path, out_path):
     with open(xml_path) as f:
         content = f.read()
 
     xml_content = BeautifulSoup(content, features="lxml")
-    xml_content = xml_content.text.split()
+    xml_content = xml_content.text
+    with open(out_path, "w") as f:
+        f.write(xml_content)
 
+    xml_content = xml_content.split()
     bnc_words = set()
     for raw_word in xml_content:
         # Remove trailing single quotes
@@ -36,11 +40,20 @@ def main(args):
 
     files = [os.path.join(args.xml_base_path, f) for f in os.listdir(args.xml_base_path)
              if (os.path.isfile(os.path.join(args.xml_base_path, f)) and f.endswith('.xml'))]
+
+    bnc_tok_dir = args.xml_base_path.rstrip("/") + "-tok"
+
+    if not os.path.exists(bnc_tok_dir):
+        os.makedirs(bnc_tok_dir)
+    print(timestamp() + " Writing data to", bnc_tok_dir)
+
     # Iterate over each file in the sub directories
     for i in tqdm(range(len(files))):
         xml_path = files[i]
+        out_path = os.path.join(bnc_tok_dir, os.path.basename(xml_path))
         # Extract the words from that path
-        bnc_words.update(update_bnc_words(xml_path))
+        bnc_words.update(update_bnc_words(xml_path, out_path))
+
 
     # Create directory for output file if doesn't exist
     if not os.path.exists(os.path.dirname(args.save_lexicon_path)):
@@ -54,7 +67,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--xml_base_path', type=str, default="/work/jgordon/tmp/bnc/text", help='base directory for all BNC xml files')
+    parser.add_argument('--xml_base_path', type=str, default="/work/clambert/thesis-data/bnc-text", help='base directory for all BNC xml files')
     parser.add_argument('--save_lexicon_path', type=str, default="/work/clambert/thesis-data/bnc_lexicon.txt", help='output file path')
     args = parser.parse_args()
     main(args)
