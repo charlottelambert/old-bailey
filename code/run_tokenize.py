@@ -244,12 +244,13 @@ def main(args):
 
     # Define additional info to add to output path
     suffix = "-tok"
+    sp_str = "-no_sp" if args.disable_spell_check else ""
     bigram_str = "-bi" if args.bigrams else ""
     lower_str = "-lower" if args.lower else ""
     lemma_str = "-lemma" if args.lemma else ""
     street_str = "-streets" if args.street_sub else ""
 
-    suffix += bigram_str + lower_str + lemma_str + street_str
+    suffix += sp_str + bigram_str + lower_str + lemma_str + street_str
 
     if args.stats:
         suffix = "-stats"
