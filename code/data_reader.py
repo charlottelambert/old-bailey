@@ -85,8 +85,9 @@ def encode_annotations(args, xml_path):
                 skip = False
                 elem.text = None
             elif skip:
-                elem.text = ""
+                elem.text = " "
                 continue
+            elem.text = " " if not elem.text else elem.text + " "
 
         # Replace relevant pieces of text with annotations if necessary
         if args.encode_annotations_general or args.encode_annotations_specific:
