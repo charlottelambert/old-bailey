@@ -50,7 +50,7 @@ def main(args):
     # Iterate over each file in the sub directories
     for i in tqdm(range(len(files))):
         xml_path = files[i]
-        out_path = os.path.join(bnc_tok_dir, os.path.basename(xml_path))
+        out_path = os.path.join(bnc_tok_dir, os.path.basename(xml_path)[:-4] + ".txt") 
         # Extract the words from that path
         bnc_words.update(update_bnc_words(xml_path, out_path))
 
