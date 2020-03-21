@@ -131,7 +131,7 @@ def model_for_year(args, year, files, pre, time_slices):
     #     # Filter extremes if not doing only bigrams
     #     dictionary.filter_extremes(no_below=50, no_above=0.90)
 
-    if args.gensim:
+    if args.gensim or args.model_type != "lda":
         texts = compile_tokens(args, files)
 
         print(timestamp() + " Building dictionary.", file=sys.stderr)
