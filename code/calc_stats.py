@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-import os, argparse, csv, sys, copy, natsort, re, nltk
+import os, argparse, csv, sys, copy, natsort, re, nltk, json
 from tqdm import tqdm
 from nltk.corpus import words
 from flashtext import KeywordProcessor
 import inflection as inf
-from nltk.tag import pos_tag
+from nltk.tag import pos_tag, pos_tag_sents
 from utils import *
 from gensim import models, corpora
 from gensim.corpora.mmcorpus import MmCorpus
 import numpy as np
 from train_tfidf import *
+from joblib import Parallel, delayed
 
 english_words = KeywordProcessor()
 latin_words = KeywordProcessor()
@@ -93,9 +94,14 @@ def stats_for_file(file, stats_dict):
     with open(file) as f:
         for line in f:
             line = line.replace("/", " ")
+
             # all_tokens: all words in line (excluding just punctuation)
             all_tokens = [tok for tok in line.split() if re.search('[a-zA-Z]', tok)]
             backup = [tok for tok in line.split() if re.search('[a-zA-Z]', tok)]
+
+            if args.count_entities:
+                # propernouns: all proper nouns in the line
+                tagged_sent, stats_dict['num_entities'] = find_entities(all_tokens, num_entities=stats_dict['num_entities'])
 
             # If only looking for unique words, don't add any that have already been processed
             if args.unique:
@@ -112,9 +118,6 @@ def stats_for_file(file, stats_dict):
                     stats_dict['lower'] += 1
                 else:
                     stats_dict['mixed'] += 1
-
-            # propernouns: all proper nouns in the line
-            tagged_sent, stats_dict['num_entities'] = find_entities(all_tokens, num_entities=stats_dict['num_entities'])
 
             tagged_nnp = [pair[0] for pair in tagged_sent if pair[1] == 'NNP']
 
@@ -203,20 +206,41 @@ def find_basic_stats(args, files_dict):
 
     # Then, find how many words (tokens and types) there are for each year chunk
 
+def helper(file):
+    num_words = 0
+    num_entities = 0
+    with open(file, "r") as f:
+        lines = [line.split() for line in f]
+        for line in lines:
+            tagged_tokens, cur_entities = find_entities(line)
+            num_words += len(line)
+            num_entities += cur_entities
+    return num_words, num_entities
+
 def main(args):
+    # Calculate number of named entities in BNC
+    if args.bnc_entities:
+        # compile files into list
+        print(timestamp(), "Finding entities for bnc files in directory", args.bnc_dir)
+        files = [os.path.join(args.bnc_dir, f) for f in os.listdir(args.bnc_dir)
+                 if (os.path.isfile(os.path.join(args.bnc_dir, f)))] # and f.endswith('.txt'))]
+
+
+        element_run = Parallel(n_jobs=-1)(delayed(helper)(files[i]) for i in tqdm(range(len(files))))
+
+        for ret in element_run:
+            num_words = sum([ret[0] for ret in element_run])
+            num_entities = sum([ret[1] for ret in element_run])
+        print(timestamp(), "Done! Number of entities in BNC:", num_entities)
+        print("Total number of tokens:", num_words)
+        print("Percent of entites in all text:", (num_entities/num_words) * 100, "%")
+        exit(0)
+
     # Order files by year
     files_dict, _ = order_files(args)
 
     if args.basic_stats:
         find_basic_stats(args, files_dict)
-        exit(0)
-
-    # Calculate number of named entities in BNC
-    if args.bnc_entities:
-        with open(args.bnc_path, "r") as f:
-            tokens = f.read().split("\n")
-        tagged_tokens, num_entities = find_entities(tokens)
-        print(num_entities)
         exit(0)
 
     # If we have a model to load, add fields to data_list and load model
@@ -292,7 +316,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--count_entities', default=False, action='store_true', help='whether or not to count named entities in corpus and bnc')
     parser.add_argument('--print_unk', default=False, action='store_true', help='whether or not to print out unknown words')
-    parser.add_argument('--bnc_path', type=str, default="/work/clambert/thesis-data/bnc_lexicon.txt", help='path for calculating bnc entities')
+    parser.add_argument('--bnc_dir', type=str, default="/work/clambert/thesis-data/bnc-text-tok", help='path for calculating bnc entities')
     parser.add_argument('--bnc_entities', default=False, action='store_true', help='whether or not to calculate BNC entities')
     args = parser.parse_args()
     main(args)
