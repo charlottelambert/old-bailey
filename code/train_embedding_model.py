@@ -12,7 +12,7 @@ from wordcloud import WordCloud
 import pandas as pd
 from gensim.models import KeyedVectors
 
-word_list = ["sentence", "punishment", "guilt", "murder", "vote", "woman", "man", "innocent", "London", "crime", "female", "slave", "chattle", "foreigner", "foreign",  "theft", "robbery", "rape", "thievery", "larceny", "burglary", "assault", "hanging", "prison", "convict"]
+word_list = ["sentence", "punishment", "guilt", "murder", "vote", "woman", "man", "innocent", "london", "crime", "female", "slave", "chattle", "foreigner", "foreign",  "theft", "robbery", "rape", "thievery", "larceny", "burglary", "assault", "hanging", "prison", "convict"]
 word_list.sort()
 
 def gen_wordcloud(args, pre, first_year, neighbor_dict):
@@ -192,8 +192,9 @@ def main(args):
             pre = os.path.dirname(model_path)
     else:
         if args.pretrained:
+            print(timestamp(), "Loading pretrained model from", args.pretrained)
             pretrained_model = KeyedVectors.load_word2vec_format(args.pretrained) #, binary=True, norm_only=True)
-
+            print(timestamp(), "Model loaded.")
             # Figure out how to actually applyt his model to my own corpus,
             # but this loading works (takes 10 mins though)
             # print(timestamp(), "Pretrained model loaded from", args.pretrained, file=sys.stderr)
@@ -253,7 +254,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-dh", help='directory containing corpus')
+    parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok", help='directory containing corpus')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--load_model_dir', type=str, help='path to directory containing models to load and visualize.')
     parser.add_argument('--pretrained', type=str, help='path to pretrained model (use /work/clambert/models/pretrained/wiki-news-300d-1M.vec).')
