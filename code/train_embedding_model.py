@@ -246,7 +246,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok", help='directory containing corpus')
+    parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-lower-lemma", help='directory containing corpus')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--load_model_dir', type=str, help='path to directory containing models to load and visualize.')
     parser.add_argument('--pretrained', type=str, help='path to pretrained model (use /work/clambert/models/pretrained/GoogleNews-vectors-negative300.bin).')
