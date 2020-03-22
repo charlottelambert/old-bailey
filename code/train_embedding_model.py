@@ -191,17 +191,6 @@ def main(args):
             print(timestamp(), "Model loaded from " + model_path, file=sys.stderr)
             pre = os.path.dirname(model_path)
     else:
-        if args.pretrained:
-            print(timestamp(), "Loading pretrained model from", args.pretrained)
-            pretrained_model = KeyedVectors.load_word2vec_format(args.pretrained) #, binary=True, norm_only=True)
-            print(timestamp(), "Model loaded.")
-            # Figure out how to actually applyt his model to my own corpus,
-            # but this loading works (takes 10 mins though)
-            # print(timestamp(), "Pretrained model loaded from", args.pretrained, file=sys.stderr)
-            # # make this do what the rest of this chunk of the else-block does
-            #
-            # exit(0)
-
         pre = args.save_model_dir + model_base + time.strftime("%Y-%m-%d") + "/" + time.strftime("%H-%M-%S") + "/"
         if not os.path.exists(pre):
             os.makedirs(pre)
@@ -212,32 +201,35 @@ def main(args):
         print(timestamp(), "Data will be saved to directory " + pre, file=sys.stderr)
         model_dict = {}
         for first_year, file_list in files_dict.items():
-            model = embedding_model(min_count=1)#, size=100, window=20)#, workers=4)
-
             print(timestamp(), "Building corpus...", file=sys.stderr)
             corpus = build_corpus(files=file_list)
-
-            print(timestamp(), "Building vocab...", file=sys.stderr)
             if args.pretrained:
-                model.build_vocab([list(pretrained_model.vocab.keys())], update=True)
-                model.intersect_word2vec_format(args.pretrained) # lockf=1.0)
+                print(timestamp(), "Initializing model with corpus...", file=sys.stderr)
+                model = embedding_model(corpus, size=300) #, min_count=1)#, size=100, window=20)#, workers=4)
+                print(timestamp(), "Intersecting with pretrained model", file=sys.stderr)
+                model.intersect_word2vec_format(args.pretrained,
+                                    lockf=1.0,
+                                    binary=True)
+                msg = "Retraining model..."
+                print("Similarity between \'murder\' and \'murther\':",model.similarity('murder', 'murther'))
             else:
+                model = embedding_model(min_count=1)#, size=100, window=20)#, workers=4)
+                print(timestamp(), "Building vocab...", file=sys.stderr)
                 model.build_vocab(corpus)
+                msg = "Training model..."
             # Filter out top words (need to filter to 10000 if using projector.tensorflow)
             if args.filter_top_words: # Should this only happen with word2vec and not fasttext?
                 print(timestamp(), "Extracting top " + str(args.filter_top_words) + " words...", file=sys.stderr)
                 model = filter_top_words(model, args.filter_top_words)
 
-            print(timestamp(), "Training model...", file=sys.stderr)
-            model.train(corpus, total_examples=model.corpus_count, epochs=model.epochs)
+            print(timestamp(), msg, file=sys.stderr)
+            model.train(corpus, total_examples=model.corpus_count, epochs=args.epochs)
             model_path = os.path.join(pre, str(first_year)) + ".model"
             model.save(model_path)
             model_dict[first_year] = {"model": model, "model_path": model_path}
             print(timestamp(), "Model saved to", model_path, file=sys.stderr)
         dump_w2v(model_dict=model_dict)
         print("model dict:", model_dict)
-
-
 
     # Find nearest n neighbors
     if args.find_n_neighbors or args.plot_neighbors:
@@ -257,10 +249,11 @@ if __name__ == '__main__':
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok", help='directory containing corpus')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--load_model_dir', type=str, help='path to directory containing models to load and visualize.')
-    parser.add_argument('--pretrained', type=str, help='path to pretrained model (use /work/clambert/models/pretrained/wiki-news-300d-1M.vec).')
+    parser.add_argument('--pretrained', type=str, help='path to pretrained model (use /work/clambert/models/pretrained/GoogleNews-vectors-negative300.bin).')
     parser.add_argument('--plot_neighbors', default=False, action="store_true", help='whether or not to visualize and plot data.')
     parser.add_argument('--filter_top_words', type=int, default=10000, help='number of words to include in model (take the most common words)')
     parser.add_argument('--find_n_neighbors', type=int, default=0, help='how many nearest neighbors to find')
+    parser.add_argument('--epochs', type=int, default=100, help='how many nearest neighbors to find')
     parser.add_argument('--year_split', type=int, default=100, help='number of years to include in each chunk of corpus (run tf-idf over each chunk)')
     parser.add_argument('-f', action='store_true', help='use fasttext model instead of word2vec')
     args = parser.parse_args()
