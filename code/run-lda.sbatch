@@ -3,7 +3,6 @@
 #SBATCH --job-name=lda
 #SBATCH --output=../logs/lda_%A_%a.out
 #SBATCH --ntasks=1
-#SBATCH --time=96:00:00
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=clambert@vassar.edu
 #SBATCH -p emc
@@ -23,9 +22,13 @@ export PYTHONPATH=/home/clambert/thesis/code/lda-tools/lib:$PYTHONPATH
 #./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=100
 
 # bigrams:
-./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=-1
+# ./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=-1
 # time slices
 #./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=100
+
+# topical n-grams
+./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-tng --num_topics=30 --year_split=-1 --topical_n_grams
+
 
 # OB + LL:
 #./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=100 --year_split=-1

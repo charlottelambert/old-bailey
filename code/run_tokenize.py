@@ -17,7 +17,7 @@ from nltk.util import ngrams
 from utils import *
 from nltk.corpus import stopwords
 
-stop_words = set(stopwords.words('english'))
+stop_words = []
 
 def contractions(token_list):
     # Remove all asterisks and replace contractions
@@ -205,6 +205,9 @@ def main(args):
     with open(args.corpus_bigrams) as json_file:
         bigrams = json.load(json_file)
 
+    if not args.disable_stopwords:
+        stop_words = set(stopwords.words('english'))
+
     if args.test:
         print("starting test")
         enchant.set_param("enchant.myspell.dictionary.path", args.myspell_path)
@@ -249,6 +252,7 @@ def main(args):
     lower_str = "-lower" if args.lower else ""
     lemma_str = "-lemma" if args.lemma else ""
     street_str = "-streets" if args.street_sub else ""
+    stop_str = "-tng" if args.disable_stopwords else "" # tng = topical ngrams
 
     suffix += sp_str + bigram_str + lower_str + lemma_str + street_str
 
@@ -330,6 +334,7 @@ if __name__ == '__main__':
     parser.add_argument('--disable_spell_check', default=False, action="store_true", help='whether or not to disable spell check')
     parser.add_argument('--pwl_path', type=str, default="/work/clambert/thesis-data/OB_LL-txt/unigram_pwl.txt")
     parser.add_argument('--merge_words', default=False, action="store_true", help='whether or not to merge words into words present in unigram list')
+    parser.add_argument('--disable_stopwords', default=False, action="store_true", help='whether or not to disable stop word removal')
     # /System/Volumes/Data/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/enchant/share/enchant/myspell
     args = parser.parse_args()
     main(args)

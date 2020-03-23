@@ -85,7 +85,9 @@ def run_lda(args, corpus, pre, dictionary=None, workers=None):
         os.makedirs(mallet_corpus)
         corpus.export(mallet_corpus, abstract=False, form='text')
         model = Mallet(MALLET_PATH, mallet_corpus, num_topics=args.num_topics,
-                       iters=args.num_iterations, bigrams=args.bigrams_only, prefix=pre)
+                       iters=args.num_iterations, bigrams=args.bigrams_only,
+                       topical_n_grams=args.topical_n_grams,
+                       remove_stopwords=(not args.topical_n_grams), prefix=pre)
     return model
 
 def run_multicore(args, corpus, dictionary, passes, alpha, workers, pre):
@@ -247,5 +249,6 @@ if __name__ == '__main__':
     parser.add_argument('--gensim', default=False, action='store_true', help='whether or not to use gensim\'s lda mallet wrapper')
     parser.add_argument('--seed', type=int, default=0, help='random seed to make deterministic')
     parser.add_argument('--suffix', type=str, default="", help="suffix to add to model directory if exists")
+    parser.add_argument('--topical_n_grams', default=False, action='store_true', help='whether or not to run topical_n_grams')
     args = parser.parse_args()
     main(args)
