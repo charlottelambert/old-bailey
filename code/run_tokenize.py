@@ -254,7 +254,7 @@ def main(args):
     street_str = "-streets" if args.street_sub else ""
     stop_str = "-tng" if args.disable_stopwords else "" # tng = topical ngrams
 
-    suffix += sp_str + bigram_str + lower_str + lemma_str + street_str
+    suffix += sp_str + bigram_str + lower_str + lemma_str + street_str + stop_str
 
     if args.stats:
         suffix = "-stats"
