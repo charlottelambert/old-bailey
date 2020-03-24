@@ -88,12 +88,6 @@ def tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams):
                     updated_tokens += spell_checked
             tokens = updated_tokens
 
-            # Turn into bigrams if flag is true
-            if args.bigrams and not args.stats:
-                tokens = make_bigrams(tokens)
-                output.append(" ".join(tokens))
-                continue
-
             # Handle issue with dashes appearing at start of word
             mod_tokens = []
             for i in range(len(tokens)):
@@ -126,6 +120,10 @@ def tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams):
             if args.stats:
                 output.append(" ".join(tokens))
                 continue
+
+            # Turn into bigrams if flag is true
+            if args.bigrams and not args.stats:
+                tokens = make_bigrams(tokens)
 
             finished = " ".join(tokens)
 
