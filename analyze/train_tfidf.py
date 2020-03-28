@@ -4,13 +4,13 @@ from gensim.utils import simple_preprocess
 import argparse, os, sys, time, natsort
 from tqdm import tqdm
 from gensim.corpora.mmcorpus import MmCorpus
-from utils import *
 from sklearn.feature_extraction.text import TfidfVectorizer
 from string import punctuation
 from nltk.corpus import stopwords
 import numpy as np
 # from nltk import word_tokenize
-
+sys.path.append('../')
+from utils import *
 
 def build_vocab(documents):
     # build the vocabulary in one pass

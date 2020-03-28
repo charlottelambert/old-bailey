@@ -2,3 +2,5 @@ writing
 code/*.ipynb
 .ipynb*
 ignore
+topic-modeling/lda-tools
+__pycache__

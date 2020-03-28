@@ -6,11 +6,12 @@ from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import numpy as np
-from utils import *
 from dump_w2v import dump_w2v
 from wordcloud import WordCloud
 import pandas as pd
 from gensim.models import KeyedVectors
+sys.path.append('../')
+from utils import *
 
 word_list = ["sentence", "punishment", "guilt", "murder", "vote", "woman", "man", "innocent", "london", "crime", "female", "slave", "chattle", "foreigner", "foreign",  "theft", "robbery", "rape", "thievery", "larceny", "burglary", "assault", "hanging", "prison", "convict"]
 word_list.sort()

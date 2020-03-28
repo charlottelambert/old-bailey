@@ -2,8 +2,9 @@
 import nltk, json, os, sys, operator, argparse, copy
 from nltk.tokenize import word_tokenize, sent_tokenize
 from tqdm import tqdm
-from utils import *
 from nltk.corpus import stopwords
+sys.path.append('../')
+from utils import *
 
 stop_words = set(stopwords.words('english'))
 

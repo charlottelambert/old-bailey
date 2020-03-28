@@ -14,11 +14,13 @@ from gensim.corpora import MalletCorpus, Dictionary
 from gensim.models.phrases import Phrases, Phraser
 from gensim.models.wrappers.dtmmodel import DtmModel
 from gensim.models.ldaseqmodel import LdaSeqModel
-from utils import *
 from mallet import Mallet
 from techknacq.corpus import Corpus
 from gensim.models.coherencemodel import CoherenceModel
 from vis_topic_mallet import get_topics
+sys.path.append('../')
+from utils import *
+
 # TAKEN OUT OF RUN-LDA.SBATCH, PUT BACK IF RUNNING OUT OF MEMORY
 # #SBATCH -c 64
 # export JAVA_OPTIONS="-Xms4G -Xmx8G"

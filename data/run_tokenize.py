@@ -14,8 +14,9 @@ from tqdm import tqdm
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.util import ngrams
-from utils import *
 from nltk.corpus import stopwords
+sys.path.append('../')
+from utils import *
 
 stop_words = []
 

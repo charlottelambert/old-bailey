@@ -5,13 +5,14 @@ from nltk.corpus import words
 from flashtext import KeywordProcessor
 import inflection as inf
 from nltk.tag import pos_tag, pos_tag_sents
-from utils import *
 from gensim import models, corpora
 from gensim.corpora.mmcorpus import MmCorpus
 import numpy as np
 from train_tfidf import *
 from joblib import Parallel, delayed
 import collections, functools, operator
+sys.path.append('../')
+from utils import *
 
 english_words = KeywordProcessor()
 latin_words = KeywordProcessor()

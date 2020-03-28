@@ -2,6 +2,7 @@
 
 import gensim
 import sys, os
+sys.path.append('../')
 from utils import *
 
 def dump_w2v(model_paths=None, model_dict=None):
