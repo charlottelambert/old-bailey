@@ -48,12 +48,18 @@ def read_weighted_keys(keyfile):
         word_weights[int(topicnum)] = weighted_words
     return word_weights
 
-def get_topics(keyfile):
-    topics = []
+def get_topics(keyfile, ret_dict=False):
+    """
+        Takes in a file object and returns a list of topics
+    """
+    topics = {} if ret_dict else []
     r = csv.reader(keyfile, delimiter='\t')
     for row in r:
         cur_topics = [x for (x, y) in zip(row[1::2], row[2::2])]
-        topics.append(cur_topics)
+        if ret_dict:
+            topics[row[0]] = cur_topics
+        else:
+            topics.append(cur_topics)
         # word_weights[int(topicnum)] = weighted_words
     return topics
 
