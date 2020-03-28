@@ -23,6 +23,7 @@ def main():
         weighted_keys2 = open(sys.argv[2], 'r')
     except:
         print("Please input two paths to weighted_keys.txt files.", file=sys.stderr)
+
     print("Done!", file=sys.stderr)
     # Extract topics from each model
     print("Getting topics...", file=sys.stderr, end=' ')
@@ -69,19 +70,28 @@ def main():
     print("Done!", file=sys.stderr)
 
     print("-"*50, file=sys.stderr)
-    most_sim_ids = sorted_diffs[0][0]
-    most_sim_weight = sorted_diffs[0][1]
-    print("Most similar topics:", str(most_sim_ids) + "; difference:", most_sim_weight, "\n", file=sys.stderr)
-
-    print_similarities(most_sim_ids, t1_list, t2_list)
-
+    n_most = 2
+    print("Words in the", n_most, "most similar topics:", file=sys.stderr)
     print("-"*50, file=sys.stderr)
-    least_sim_ids = sorted_diffs[-1][0]
-    least_sim_weight = sorted_diffs[-1][1]
-    print("Least similar topics:", str(least_sim_ids) + "; difference:", least_sim_weight, "\n", file=sys.stderr)
+    for i in range(n_most):
+        sim_ids = sorted_diffs[i][0]
+        most_sim_weight = sorted_diffs[i][1]
+        print(str(i) + ": Topic similarity between:", str(sim_ids) + "; difference:", most_sim_weight, "\n", file=sys.stderr)
 
-    print_similarities(least_sim_ids, t1_list, t2_list)
-    print("="*50, file=sys.stderr)
+        print_similarities(sim_ids, t1_list, t2_list)
+
+        print("-"*50, file=sys.stderr)
+    n_least = n_most
+    print("Words in the", n_least, "least similar topics:", file=sys.stderr)
+    print("-"*50, file=sys.stderr)
+
+    for i in range( -n_least, 0, 1):
+        least_sim_ids = sorted_diffs[-1][0]
+        least_sim_weight = sorted_diffs[-1][1]
+        print(str(i) + ": Topic similarity between:", str(least_sim_ids) + "; difference:", least_sim_weight, "\n", file=sys.stderr)
+
+        print_similarities(least_sim_ids, t1_list, t2_list)
+        print("-"*50, file=sys.stderr)
 
 
 if __name__ == '__main__':
