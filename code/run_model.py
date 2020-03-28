@@ -8,23 +8,25 @@
 #
 ###############################################################################
 
-import sys, os, click, csv, gensim, time, argparse, pyLDAvis, tempfile, random
-# import custom_stop_words as stop
+import sys, os, csv, gensim, time, argparse, pyLDAvis, tempfile, random
 from gensim import corpora, models
-from gensim.test.utils import get_tmpfile
-from gensim.corpora import MalletCorpus, Dictionary, bleicorpus
+from gensim.corpora import MalletCorpus, Dictionary
 from gensim.models.phrases import Phrases, Phraser
 from gensim.models.wrappers.dtmmodel import DtmModel
 from gensim.models.ldaseqmodel import LdaSeqModel
 from utils import *
 from mallet import Mallet
 from techknacq.corpus import Corpus
-
+from gensim.models.coherencemodel import CoherenceModel
+from vis_topic_mallet import get_topics
 # TAKEN OUT OF RUN-LDA.SBATCH, PUT BACK IF RUNNING OUT OF MEMORY
 # #SBATCH -c 64
 # export JAVA_OPTIONS="-Xms4G -Xmx8G"
 
-# https://markroxor.github.io/gensim/static/notebooks/ldaseqmodel.html
+def calc_coherence(model, corpus):
+    cm = CoherenceModel(model=model, corpus=corpus, coherence='u_mass')
+    coherence = cm.get_coherence()
+    print(timestamp(),"Topic coherence:", coherence)
 
 def print_params(pre, args):
     # Print out arguments used to file
@@ -132,13 +134,13 @@ def model_for_year(args, year, files, pre, time_slices):
     # if not args.mixed_ngrams:
     #     # Filter extremes if not doing only bigrams
     #     dictionary.filter_extremes(no_below=50, no_above=0.90)
+    texts = compile_tokens(args, files)
 
+    print(timestamp() + " Building dictionary.", file=sys.stderr)
+
+    dictionary = corpora.Dictionary(texts)
     if args.gensim or args.model_type != "lda":
-        texts = compile_tokens(args, files)
 
-        print(timestamp() + " Building dictionary.", file=sys.stderr)
-
-        dictionary = corpora.Dictionary(texts)
         print(timestamp() + " Reading corpus.", file=sys.stderr)
         corpus = [dictionary.doc2bow(text) for text in texts]
     else:
@@ -160,8 +162,15 @@ def model_for_year(args, year, files, pre, time_slices):
 
         if args.vis:
             pylda_vis(args, model, corpus, time_slices, pre)
-
-    if not args.gensim:
+    if args.coherence:
+        if args.gensim:
+            calc_coherence(model, corpus)
+        # else:
+        #     weight_path = os.path.join(pre, "weighted-keys.txt")
+        #     topics = get_topics(weight_path)
+        #     print(topics)
+        #     calc_coherence(corpus, topics=topics, dictionary=dictionary)
+    if not args.gensim and args.model_type == "lda":
         return model
 
     save_model_files(pre, year, model, files)
@@ -216,6 +225,7 @@ def model_on_directory(args):
             if not os.path.exists(temp_pre):
                 os.makedirs(temp_pre)
             print(model_for_year(args, year, files, temp_pre, time_slices))
+
     # Dynamic models only need to be run once
     elif args.model_type in ["dtm", "ldaseq"]:
         files = []
@@ -250,5 +260,6 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=0, help='random seed to make deterministic')
     parser.add_argument('--suffix', type=str, default="", help="suffix to add to model directory if exists")
     parser.add_argument('--topical_n_grams', default=False, action='store_true', help='whether or not to run topical_n_grams')
+    parser.add_argument('--coherence', default=False, action='store_true', help='whether or not to calculate topic coherence')
     args = parser.parse_args()
     main(args)
