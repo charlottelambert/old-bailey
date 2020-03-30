@@ -62,7 +62,7 @@ def order_files(args):
     files_dict = {start_year:[]}
 
     # Indicate no year split
-    if args.year_split == -1:
+    if not "year_split" in args or args.year_split == -1:
         files_dict[start_year] = files
         return [files_dict, len(files)]
 
