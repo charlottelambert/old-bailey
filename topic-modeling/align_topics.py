@@ -37,16 +37,27 @@ def get_diffs(t1_list, t2_list, slices):
 
     return diffs
 
-def compare_topics(n_most, n_least, sorted_diffs, t1_list, t2_list):
-
+def compare_topics(n_most, n_least, triples, topic_lists):
     print("Words in the", n_most, "most similar topics:")
     print("-"*50)
+    seen_list = {0:[], 1:[], 2:[]}
+    acc = 0
     for i in range(n_most):
-        sim_ids = sorted_diffs[i][0]
-        most_sim_weight = sorted_diffs[i][1]
-        print(str(i) + ": Topic similarity between:", str(sim_ids) + "; difference:", most_sim_weight, "\n")
+        skip = False
+        triple, score = triples[i]
+        for j in range(len(triple)):
+            if triple[j] == "-1": continue
+            if triple[j] in seen_list[j]:
+                triples[i] = -1
+                skip = True
+                break
+        if skip: continue
+        else:
+            for j in range(len(triple)): seen_list[j].append(triple[j])
 
-        print_similarities(sim_ids, t1_list, t2_list)
+        print(str(acc) + ": Topic similarity between:", str(triple) + "; difference:", score, "\n")
+        print_similarities(triple, topic_lists)
+        acc += 1
 
         print("-"*50)
 
@@ -54,24 +65,24 @@ def compare_topics(n_most, n_least, sorted_diffs, t1_list, t2_list):
     print("-"*50)
 
     for i in range( -n_least, 0, 1):
-        least_sim_ids = sorted_diffs[-1][0]
-        least_sim_weight = sorted_diffs[-1][1]
-        print(str(i) + ": Topic similarity between:", str(least_sim_ids) + "; difference:", least_sim_weight, "\n")
+        triple, score = triples[i]
+        print(str(i) + ": Topic similarity between:", str(triple) + "; difference:", score, "\n")
 
-        print_similarities(least_sim_ids, t1_list, t2_list)
+        print_similarities(triple, topic_lists)
         print("-"*50)
 
-def print_similarities(topic_ids, t1_list, t2_list):
-    id1 = int(topic_ids[0].split("_")[0])
-    list0 = ", ".join([" ".join(pair[0].split("_")) for pair in t1_list[id1]])
+def print_similarities(triple, topic_lists):
+    for time_slice, id in enumerate(triple):
+        if id == "-1":
+            print("No topic for time slice", time_slice)
+            continue
+        topic = int(id.split("_")[0])
+        words = topic_lists[time_slice][topic]
 
-    print("Words in topic", topic_ids[0] + ":", list0)
-    print("-"*50)
+        topic_list = ", ".join([pair[0] for pair in words])
+        print("Words in time slice", time_slice, "; topic", str(topic) + ":", topic_list)
+        print("-"*50)
 
-    id2 = int(topic_ids[1].split("_")[0])
-    list1 = ", ".join([" ".join(pair[0].split("_")) for pair in t2_list[id2]])
-
-    print("Words in topic", topic_ids[1] + ":", list1)
 
 def main(args):
     # Extract topics from each model
@@ -107,13 +118,8 @@ def main(args):
     print("Done!", file=sys.stderr)
 
     print("-"*50)
-    n_most = 30
-    n_least = 0
     topic_alignments = {}
     for pair, sorted_diffs in diff_dict.items():
-        # print(diff_dict)
-        # exit(0)
-        # topic_alignments[pair] = [sorted_diffs[i][0] for i in range(len(sorted_diffs))]
         new_alignments_1 = []
         new_alignments_2 = []
         order = []
@@ -126,12 +132,6 @@ def main(args):
             new_alignments_2.append(topic_pair[1])
         topic_alignments[pair] = order
 
-        # print("Comparing time slice", pair[0], "and time slice", pair[1])
-        # compare_topics(n_most, n_least, sorted_diffs, topic_lists[pair[0]], topic_lists[pair[1]])
-        # print()
-        # print("-"*50)
-        # print()
-
     all_alignments = []
     for label, alignments in topic_alignments.items():
         all_alignments += alignments
@@ -140,34 +140,47 @@ def main(args):
     for topic_pair, score in all_alignments:
         nested[topic_pair[0]].update({topic_pair[1]:score})
 
-    # print(nested)
-
     triples = {}
+    seen_list = {0:[], 1:[], 2:[]}
     for head_topic, matches in nested.items():
+        if head_topic in seen_list[0]: continue
 
         if len(matches) == 2:
             # Look at both matches
             for match, score in matches.items():
+                if match in seen_list[1]: continue
                 # If first match also has entry in nested
                 if match in nested.keys():
                     third = list(nested[match].keys())[0]
+                    if third in seen_list[2]: continue
                     # Want the value of match to be the other match in matches
                     if third in matches:
                         triple = (head_topic, match, third)
                         triple_score = score + nested[match][third] + matches[third]
                         triples[triple] = triple_score
+                        for j in range(len(triple)): seen_list[j].append(triple[j])
                         break
                 else: continue
         else:
             item = list(matches.keys())[0]
             head_posn = int(head_topic.split("_")[1])
             item_posn = int(item.split("_")[1])
-            triple = [-1]*3
+            if item in seen_list[item_posn]: continue
+            triple = ["-1"]*3
             triple[head_posn] = head_topic
             triple[item_posn] = item
             triples[tuple(triple)] = matches[item]
+            seen_list[head_posn].append(head_topic)
+            seen_list[item_posn].append(item)
 
     triples = sorted(triples.items(), key=lambda item: item[1])
+    print("Comparing time slice", pair[0], "and time slice", pair[1])
+    n_most = 300
+    n_least = 0
+    compare_topics(n_most, n_least, triples, topic_lists)
+    print("-"*50)
+
+
     print("\n".join([str(item) for item in triples]))
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
