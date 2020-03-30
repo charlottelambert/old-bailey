@@ -14,7 +14,7 @@ date
 export JAVA_OPTIONS="-Xms4G -Xmx8G"
 # export MALLET_PATH=~/Mallet/bin/mallet
 export MALLET_PATH=lda-tools/ext/mallet/bin/mallet
-export PYTHONPATH=/home/clambert/thesis/code/lda-tools/lib:$PYTHONPATH
+export PYTHONPATH=/home/clambert/thesis/topic-modeling/lda-tools/lib:$PYTHONPATH
 
 #./run_model.py --gensim --unigrams_only --corpus_dir=/work/clambert/thesis-data/dtm-test --num_topics=13 --year_split=-1 --coherence --num_iterations=5
 # unigrams:

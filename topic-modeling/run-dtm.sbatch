@@ -14,7 +14,7 @@ uname -a
 date
 
 export MALLET_PATH=lda-tools/ext/mallet/bin/mallet
-export PYTHONPATH=/home/clambert/thesis/code/lda-tools/lib:$PYTHONPATH
+export PYTHONPATH=/home/clambert/thesis/topic-modeling/lda-tools/lib:$PYTHONPATH
 export DTM_PATH=/home/clambert/dtm/dtm/main
 
 # ./run_model.py --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-bi-tng --model_type=$MODEL_TYPE --year_split=100 --vis --num_topics=30 --num_iterations=1000
