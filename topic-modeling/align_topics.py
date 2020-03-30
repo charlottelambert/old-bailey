@@ -1,52 +1,24 @@
 #!/usr/bin/env python3
-import sys, os
+import sys, os, argparse
 from vis_topic_mallet import get_topics, read_weighted_keys
 # It's possible to automatically align the topics from the different models, and that might be worth doing. Since every word is in every topic (even though its weight might be 0), you can compute the difference between topics by doing for each word w:
 
-def print_similarities(topic_ids, t1_list, t2_list):
-    id1 = int(topic_ids[0].split("_")[0])
-    list0 = ", ".join([" ".join(pair[0].split("_")) for pair in t1_list[id1]])
-
-    print("Words in topic", topic_ids[0] + ":", list0, file=sys.stderr)
-    print("-"*50, file=sys.stderr)
-
-    id2 = int(topic_ids[1].split("_")[0])
-    list1 = ", ".join([" ".join(pair[0].split("_")) for pair in t2_list[id2]])
-
-    print("Words in topic", topic_ids[1] + ":", list1, file=sys.stderr)
-
-def main():
-    print("Reading inputs...", file=sys.stderr, end=' ')
-    # Load models
-    try:
-        weighted_keys1 = open(sys.argv[1], 'r')
-        weighted_keys2 = open(sys.argv[2], 'r')
-    except:
-        print("Please input two paths to weighted_keys.txt files.", file=sys.stderr)
-
-    print("Done!", file=sys.stderr)
-    # Extract topics from each model
-    print("Getting topics...", file=sys.stderr, end=' ')
-    # t1_list = get_topics(weighted_keys1, ret_dict=True)
-    # t2_list = get_topics(weighted_keys2, ret_dict=True)
-    t1_list = read_weighted_keys(weighted_keys1)
-    t2_list = read_weighted_keys(weighted_keys2)
-    print("Done! Number of topics 1:", len(t1_list), "; Number of topics 2:", len(t2_list), file=sys.stderr)
-
-    print("Comparing topic differences...", file=sys.stderr, end=' ')
+def get_diffs(t1_list, t2_list, slices):
+    print("Comparing topic differences...", end=' ')
     diffs = {}
     for id1, t1 in t1_list.items():
+        # Dictionary mapping words to weights in this topic
         t1_dict = {pair[0]:pair[1] for pair in t1}
+        # List of words in this topic
         t1_words = list(t1_dict.keys())
 
         for id2, t2 in t2_list.items():
-            key = (str(id1) + "_1", str(id2) + "_2")
-            # Symmetric, avoid computing diffs that exist
-            if key in diffs or key[::-1] in diffs:
-                continue
-
+            # Dictionary mapping words to weights in this topic
             t2_dict = {pair[0]:pair[1] for pair in t2}
+            # List of words in this topic
             t2_words = list(t2_dict.keys())
+
+            key = (str(id1) + "_" + slices[0], str(id2)+ "_" + slices[1])
 
             # Only go through the words present in these two topics
             mini_vocab = set(list(t1_words + t2_words))
@@ -62,44 +34,145 @@ def main():
                     t2_val = 0
 
                 diffs[key] += abs(t1_val - t2_val)
-    print("Done!", file=sys.stderr)
-    print("="*50, file=sys.stderr)
-    print("Ranking topics by similarity...", file=sys.stderr, end=' ')
-    sorted_diffs = sorted(diffs.items(), key =
-                 lambda kv:(kv[1], kv[0]))
-    print("Done!", file=sys.stderr)
 
-    print("-"*50, file=sys.stderr)
-    n_most = 2
-    print("Words in the", n_most, "most similar topics:", file=sys.stderr)
-    print("-"*50, file=sys.stderr)
+    return diffs
+
+def compare_topics(n_most, n_least, sorted_diffs, t1_list, t2_list):
+
+    print("Words in the", n_most, "most similar topics:")
+    print("-"*50)
     for i in range(n_most):
         sim_ids = sorted_diffs[i][0]
         most_sim_weight = sorted_diffs[i][1]
-        print(str(i) + ": Topic similarity between:", str(sim_ids) + "; difference:", most_sim_weight, "\n", file=sys.stderr)
+        print(str(i) + ": Topic similarity between:", str(sim_ids) + "; difference:", most_sim_weight, "\n")
 
         print_similarities(sim_ids, t1_list, t2_list)
 
-        print("-"*50, file=sys.stderr)
-    n_least = n_most
-    print("Words in the", n_least, "least similar topics:", file=sys.stderr)
-    print("-"*50, file=sys.stderr)
+        print("-"*50)
+
+    print("Words in the", n_least, "least similar topics:")
+    print("-"*50)
 
     for i in range( -n_least, 0, 1):
         least_sim_ids = sorted_diffs[-1][0]
         least_sim_weight = sorted_diffs[-1][1]
-        print(str(i) + ": Topic similarity between:", str(least_sim_ids) + "; difference:", least_sim_weight, "\n", file=sys.stderr)
+        print(str(i) + ": Topic similarity between:", str(least_sim_ids) + "; difference:", least_sim_weight, "\n")
 
         print_similarities(least_sim_ids, t1_list, t2_list)
-        print("-"*50, file=sys.stderr)
+        print("-"*50)
 
+def print_similarities(topic_ids, t1_list, t2_list):
+    id1 = int(topic_ids[0].split("_")[0])
+    list0 = ", ".join([" ".join(pair[0].split("_")) for pair in t1_list[id1]])
 
+    print("Words in topic", topic_ids[0] + ":", list0)
+    print("-"*50)
+
+    id2 = int(topic_ids[1].split("_")[0])
+    list1 = ", ".join([" ".join(pair[0].split("_")) for pair in t2_list[id2]])
+
+    print("Words in topic", topic_ids[1] + ":", list1)
+
+def main(args):
+    # Extract topics from each model
+    print("Getting topics...", file=sys.stderr, end=' ')
+    # Open weighted key files
+    weighted_keys1 = open(args.weighted_keys_1, 'r')
+    weighted_keys2 = open(args.weighted_keys_2, 'r')
+    weighted_keys3 = open(args.weighted_keys_3, 'r')
+    weighted_keys = [weighted_keys1, weighted_keys2, weighted_keys3]
+    # Extract topics and weights
+    topic_lists = []
+    for wk in weighted_keys:
+        topic_lists.append(read_weighted_keys(wk))
+    # Close open files
+    for wk in weighted_keys:
+        wk.close()
+    len_list = [str(len(t_list)) for t_list in topic_lists]
+    print("Done!", file=sys.stderr)
+    print("Number of topics in each time slice:", " ".join(len_list))
+
+    # Collect diffs for each pair of time slices
+    diff_dict = {(0,1):{}, (1,2):{}, (0,2):{}}
+    for i, j in diff_dict.keys():
+        diff_dict[(i,j)] = get_diffs(topic_lists[i], topic_lists[j], (str(i),str(j)))
+
+    print("Done!", file=sys.stderr)
+    print("="*50)
+
+    print("Ranking topics by similarity...", file=sys.stderr, end=' ')
+    for k, v in diff_dict.items():
+        diff_dict[k] = sorted(v.items(), key =
+                     lambda kv:(kv[1], kv[0]))
+    print("Done!", file=sys.stderr)
+
+    print("-"*50)
+    n_most = 30
+    n_least = 0
+    topic_alignments = {}
+    for pair, sorted_diffs in diff_dict.items():
+        # print(diff_dict)
+        # exit(0)
+        # topic_alignments[pair] = [sorted_diffs[i][0] for i in range(len(sorted_diffs))]
+        new_alignments_1 = []
+        new_alignments_2 = []
+        order = []
+        # Remove any topic pairs that include topics already assigned a most similar topic
+        for topic_pair, similarity in sorted_diffs:
+            if topic_pair[0] in new_alignments_1: continue
+            if topic_pair[1] in new_alignments_2: continue
+            order.append((topic_pair, similarity))
+            new_alignments_1.append(topic_pair[0])
+            new_alignments_2.append(topic_pair[1])
+        topic_alignments[pair] = order
+
+        # print("Comparing time slice", pair[0], "and time slice", pair[1])
+        # compare_topics(n_most, n_least, sorted_diffs, topic_lists[pair[0]], topic_lists[pair[1]])
+        # print()
+        # print("-"*50)
+        # print()
+
+    all_alignments = []
+    for label, alignments in topic_alignments.items():
+        all_alignments += alignments
+
+    nested = {item[0]:{} for item, score in all_alignments}
+    for topic_pair, score in all_alignments:
+        nested[topic_pair[0]].update({topic_pair[1]:score})
+
+    # print(nested)
+
+    triples = {}
+    for head_topic, matches in nested.items():
+
+        if len(matches) == 2:
+            # Look at both matches
+            for match, score in matches.items():
+                # If first match also has entry in nested
+                if match in nested.keys():
+                    third = list(nested[match].keys())[0]
+                    # Want the value of match to be the other match in matches
+                    if third in matches:
+                        triple = (head_topic, match, third)
+                        triple_score = score + nested[match][third] + matches[third]
+                        triples[triple] = triple_score
+                        break
+                else: continue
+        else:
+            item = list(matches.keys())[0]
+            head_posn = int(head_topic.split("_")[1])
+            item_posn = int(item.split("_")[1])
+            triple = [-1]*3
+            triple[head_posn] = head_topic
+            triple[item_posn] = item
+            triples[tuple(triple)] = matches[item]
+
+    triples = sorted(triples.items(), key=lambda item: item[1])
+    print("\n".join([str(item) for item in triples]))
 if __name__ == '__main__':
-    main()
-# (And since it's symmetric, avoid computing both Diff[T1, T2] and Diff[T2, T1])
-
-# Then each topic is best aligned with the topic it has the lowest difference with.
-
-# But, even if you do this, showing it for every topic and every time slice will be too much. You might want to show as tables, say, the n topics with the best alignment you get across the n time slices (i.e., lowest average difference across time slices) and the highest variation (topics that don't align well across time slices).
-
-# These could be shown as tables where there are, say, 5 rows for the top 5 words and n columns for the n time slices.
+    parser = argparse.ArgumentParser()
+    parser.add_argument('weighted_keys_1', type=str, help='path to first weighted_keys.txt file to load')
+    parser.add_argument('weighted_keys_3', type=str, help='path to second weighted_keys.txt file to load')
+    parser.add_argument('weighted_keys_2', type=str, help='path to third weighted_keys.txt file to load')
+    args = parser.parse_args()
+    main(args)
