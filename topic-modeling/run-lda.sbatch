@@ -18,7 +18,7 @@ export PYTHONPATH=/home/clambert/thesis/topic-modeling/lda-tools/lib:$PYTHONPATH
 
 #./run_model.py --gensim --unigrams_only --corpus_dir=/work/clambert/thesis-data/dtm-test --num_topics=13 --year_split=-1 --coherence --num_iterations=5
 # unigrams:
-./run_model.py --gensim --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=-1 --coherence
+#./run_model.py --gensim --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=-1 --coherence
 # time slices
 #./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=100
 
@@ -34,6 +34,6 @@ export PYTHONPATH=/home/clambert/thesis/topic-modeling/lda-tools/lib:$PYTHONPATH
 # OB + LL:
 #./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=100 --year_split=-1
 # time slices
-#./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=100 --year_split=100
+./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=100 --year_split=100
 
 echo Finished: `date`
