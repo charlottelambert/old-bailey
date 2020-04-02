@@ -42,6 +42,7 @@ def compare_topics(n_most, n_least, triples, topic_lists):
     print("-"*50)
     seen_list = {0:[], 1:[], 2:[]}
     acc = 0
+    n_most = min(n_most,len(triples))
     for i in range(n_most):
         skip = False
         triple, score = triples[i]
@@ -79,7 +80,7 @@ def print_similarities(triple, topic_lists):
         topic = int(id.split("_")[0])
         words = topic_lists[time_slice][topic]
 
-        topic_list = ", ".join([pair[0] for pair in words])
+        topic_list = ", ".join([" ".join(pair[0].split("_")) for pair in words])
         print("Words in time slice", time_slice, "; topic", str(topic) + ":", topic_list)
         print("-"*50)
 
@@ -185,7 +186,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('weighted_keys_1', type=str, help='path to first weighted_keys.txt file to load')
-    parser.add_argument('weighted_keys_3', type=str, help='path to second weighted_keys.txt file to load')
-    parser.add_argument('weighted_keys_2', type=str, help='path to third weighted_keys.txt file to load')
+    parser.add_argument('weighted_keys_2', type=str, help='path to second weighted_keys.txt file to load')
+    parser.add_argument('weighted_keys_3', type=str, help='path to third weighted_keys.txt file to load')
     args = parser.parse_args()
     main(args)
