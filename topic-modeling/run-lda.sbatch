@@ -16,24 +16,27 @@ export JAVA_OPTIONS="-Xms4G -Xmx8G"
 export MALLET_PATH=lda-tools/ext/mallet/bin/mallet
 export PYTHONPATH=/home/clambert/thesis/topic-modeling/lda-tools/lib:$PYTHONPATH
 
-#./run_model.py --gensim --unigrams_only --corpus_dir=/work/clambert/thesis-data/dtm-test --num_topics=13 --year_split=-1 --coherence --num_iterations=5
+TOPICS=${1:-30}
+SUFFIX=${2:-}
+
+#./run_model.py --gensim --unigrams_only --corpus_dir=/work/clambert/thesis-data/dtm-test --num_topics=$TOPICS --year_split=-1 --coherence --num_iterations=5 --suffix=$SUFFIX
 # unigrams:
-#./run_model.py --gensim --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=-1 --coherence
+./run_model.py --gensim --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
 # time slices
-#./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=100
+#./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=100
 
 # bigrams:
-# ./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=-1
+# ./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=-1
 # time slices
-#./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=30 --year_split=100
+#./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=100
 
 # topical n-grams
-#./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-tng --num_topics=30 --year_split=-1 --topical_n_grams
+#./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-tng --num_topics=$TOPICS --year_split=-1 --topical_n_grams
 
 
 # OB + LL:
-# ./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=100 --year_split=-1
+# ./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=$TOPICS --year_split=-1
 # time slices
-./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=100 --year_split=100
+# ./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=$TOPICS --year_split=100
 
 echo Finished: `date`

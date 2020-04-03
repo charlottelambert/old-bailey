@@ -2,9 +2,21 @@
 
 MODEL_TYPE=${1:-lda}
 
-if [ "$MODEL_TYPE" == "lda" ]
+if [ "$MODEL_TYPE" == "lda-test" ]
 then
+TOPIC_ARR=(20 45 70 100)
+declare -i SUFFIX=0
+
+for topic in ${TOPIC_ARR[@]};
+do sbatch run-lda.sbatch $topic $SUFFIX
+SUFFIX=$(( SUFFIX + 1 ))
+done;
+
+elif [ "$MODEL_TYPE" == "lda" ]
+then
+
 sbatch run-lda.sbatch
+
 elif [[ "$MODEL_TYPE" == "dtm" || "$MODEL_TYPE" == "ldaseq" ]];
 then
 sbatch run-dtm.sbatch $MODEL_TYPE
