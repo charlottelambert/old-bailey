@@ -20,14 +20,14 @@ TOPICS=${1:-30}
 SUFFIX=${2:-}
 echo Suffix: $SUFFIX
 
-# ./run_model.py --gensim --unigrams_only --corpus_dir=/work/clambert/thesis-data/dtm-test --num_topics=$TOPICS --year_split=-1 --coherence --num_iterations=5 --suffix=$SUFFIX
+# ./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/dtm-test --num_topics=$TOPICS --year_split=-1 --coherence --num_iterations=5 --suffix=$SUFFIX
 # unigrams:
-# ./run_model.py --gensim --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
+./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
 # time slices
 # ./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
 # bigrams:
-./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
+# ./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
 # time slices
 #./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
