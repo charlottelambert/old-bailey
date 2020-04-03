@@ -18,6 +18,7 @@ export PYTHONPATH=/home/clambert/thesis/topic-modeling/lda-tools/lib:$PYTHONPATH
 
 TOPICS=${1:-30}
 SUFFIX=${2:-}
+echo Suffix: $SUFFIX
 
 # ./run_model.py --gensim --unigrams_only --corpus_dir=/work/clambert/thesis-data/dtm-test --num_topics=$TOPICS --year_split=-1 --coherence --num_iterations=5 --suffix=$SUFFIX
 # unigrams:
