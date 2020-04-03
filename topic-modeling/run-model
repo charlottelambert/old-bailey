@@ -8,8 +8,9 @@ TOPIC_ARR=(20 45 70 100)
 declare -i SUFFIX=0
 
 for topic in ${TOPIC_ARR[@]};
-echo "Number of topics: " $topic
-do sbatch run-lda.sbatch $topic $SUFFIX
+do echo "Number of topics: " $topic
+sbatch run-lda.sbatch $topic $SUFFIX
+
 SUFFIX=$(( SUFFIX + 1 ))
 done;
 
