@@ -7,6 +7,7 @@ sys.path.append('..')
 from utils import *
 import math
 from tqdm import tqdm
+from optparse import OptionParser
 
 # https://www.overleaf.com/project/5e66a0594ea6e50001c76ffd
 def vector_coherence(model, T):
@@ -68,60 +69,66 @@ def D(corpus, word, second_word=None):
                 counts["both"] += 1
     return counts
 
-def load_docs(args):
+def load_docs(options):
     """
         Load documents and generate a corpus in particular format
     """
-    files_dict, time_slices = order_files(args)
-    corpus = Corpus(args.corpus_dir)
+    files_dict, time_slices = order_files(options)
+    corpus = Corpus(options.corpus_dir)
     new_corpus = {}
     for file, doc in corpus.docs.items():
         new_corpus[file] = set(doc.text().lower().split())
     return new_corpus
 
 
-def main(args):
-    # Extract topics from each model
-    print("Getting topics...", file=sys.stderr, end=' ')
-    # Open weighted key files
-    weighted_keys = open(args.weighted_keys, 'r')
-    # Extract topics and weights
-    topics = read_weighted_keys(weighted_keys)
-    print("Done!", file=sys.stderr)
-    if args.method == 'umass':
-        print("Generating corpus...", file=sys.stderr, end=' ')
-        # Generate corpus from documents
-        # export PYTHONPATH=/home/clambert/thesis/topic-modeling/lda-tools/lib:$PYTHONPATH
-        corpus = load_docs(args)
+def main(options, args):
+    for wk in args:
+        # Extract topics from each model
+        print("Getting topics...", file=sys.stderr, end=' ')
+        # Open weighted key files
+        weighted_keys = open(wk, 'r')
+        # Extract topics and weights
+        topics = read_weighted_keys(weighted_keys)
         print("Done!", file=sys.stderr)
+        if options.method == 'umass':
+            print("Generating corpus...", file=sys.stderr, end=' ')
+            # Generate corpus from documents
+            # export PYTHONPATH=/home/clambert/thesis/topic-modeling/lda-tools/lib:$PYTHONPATH
+            corpus = load_docs(options)
+            print("Done!", file=sys.stderr)
 
-        # print(D(corpus, "murther", second_word="murder"))
-        # NOW IMPLEMENT THAT MASS THING!!
-        # exit(0)
-    elif args.method == 'vectors':
-        print("Loading word2vec model from path", args.word2vec_model, file=sys.stderr, end=' ')
-        model = Word2Vec.load(args.word2vec_model)
+            # print(D(corpus, "murther", second_word="murder"))
+            # NOW IMPLEMENT THAT MASS THING!!
+            # exit(0)
+        elif options.method == 'vectors':
+            print("Loading word2vec model from path", options.word2vec_model, file=sys.stderr, end=' ')
+            model = Word2Vec.load(options.word2vec_model)
+            print("Done!", file=sys.stderr)
+            # print(model.wv.vocab)
+            # print(len(model.wv.vocab))
+            # exit(0)
+
+        print("Calculating coherence for", len(topics) ,"topics...", file=sys.stderr)
+        c_value = 0
+        for id, topic in tqdm(topics.items()):
+            if options.method == 'umass':
+                c_value += umass_coherence(topic, corpus)
+            elif options.method =='vectors':
+                c_value += vector_coherence(model, topic)
+        print("Weighted keys file:", wk)
+        print("Average topic coherence:", c_value / len(topics))
         print("Done!", file=sys.stderr)
-        # print(model.wv.vocab)
-        # print(len(model.wv.vocab))
-        # exit(0)
-
-    print("Calculating coherence for", len(topics) ,"topics...", file=sys.stderr)
-    c_value = 0
-    for id, topic in tqdm(topics.items()):
-        if args.method == 'umass':
-            c_value += umass_coherence(topic, corpus)
-        elif args.method =='vectors':
-            c_value += vector_coherence(model, topic)
-    print("Average topic coherence:", c_value / len(topics))
-    print("Done!", file=sys.stderr)
 
 # try: ./coherence /work/clambert/models/lda/20200317/10-42-35/weighted-keys.txt --method=vectors
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('weighted_keys', type=str, help='path to weighted_keys.txt file to load')
-    parser.add_argument('--corpus_dir', type=str, default='/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-lower', help='path to corpus path')
-    parser.add_argument('--method', type=str, default='umass', help='method to use when calculating coherence')
-    parser.add_argument('--word2vec_model', type=str, default='/work/clambert/models/word2vec/2020-04-01/09-45-23/1674.model', help='path to word2vec model to use in vector method')
-    args = parser.parse_args()
-    main(args)
+    # parser = argparse.ArgumentParser()
+    parser = OptionParser(usage="usage: %prog [options] weighted_keys1 weighted_keys2 ...")
+    # parser.add_option('weighted_keys', type=str, help='path to weighted_keys.txt file to load')
+    parser.add_option('--corpus_dir', type=str, default='/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-lower', help='path to corpus path')
+    parser.add_option('--method', type=str, default='umass', help='method to use when calculating coherence')
+    parser.add_option('--word2vec_model', type=str, default='/work/clambert/models/word2vec/2020-04-01/09-45-23/1674.model', help='path to word2vec model to use in vector method')
+    # args = parser.parse_args()
+    (options, args) = parser.parse_args()
+    if(len(args) < 1):
+        parser.error( "Must specify at least one weighted keys file" )
+    main(options, args)
