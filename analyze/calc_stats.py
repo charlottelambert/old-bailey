@@ -11,29 +11,34 @@ import numpy as np
 from train_tfidf import *
 from joblib import Parallel, delayed
 import collections, functools, operator
+from noun_counts import noun_counts
 sys.path.append('../')
 from utils import *
 
 english_words = KeywordProcessor()
 latin_words = KeywordProcessor()
 
-data_list = ["modern_english", "old_english", "latin", "proper_nouns", "upper",
-             "lower", "mixed", "unk", "total", "num_entities"]
-
 unk_words = set()
 
 # Calculate number of named entities
-def find_entities(all_tokens, num_entities=0):
+def find_entities(all_tokens, stats_dict):
+    # temp = [w.lower() for w in all_tokens]
+    ret_dict = {k:v for k, v in stats_dict.items()}
     tagged_sent = pos_tag(all_tokens)
+    tagged_nnp = [pair[0] for pair in tagged_sent if pair[1] == 'NNP']
+    ret_dict["proper_nouns"] += len(tagged_nnp)
+    # print(tagged_sent)
+    # exit(0)
     found_entities = nltk.ne_chunk(tagged_sent, binary=True)
+    # exit(0)
     named_entities = []
     for element in found_entities:
         try:
             if element.label() == "NE": named_entities.append(element)
         except AttributeError:
             continue
-    num_entities += len(named_entities)
-    return tagged_sent, num_entities
+    ret_dict["num_entities"] += len(named_entities)
+    return tagged_sent, ret_dict
 
 def load_models(args):
     try:
@@ -67,11 +72,12 @@ def update_tok_lists(all_tokens, list_to_check):
     return [new_all, out]
 
 # Get output of row
-def get_stat_output(args, first_year, stats_dict, top_words):
+def get_stat_output(args, first_year, stats_dict, top_words, data_list):
     ret = [first_year]
     for count in data_list:
         # This tag isn't a percentage
-        if count == "num_entities": ret.append(stats_dict[count])
+        if count == "num_entities" or count == "total" or count == "proper_nouns":
+            ret.append(stats_dict[count])
         elif count == "top_" + str(args.num_top_words) + "_words":
             ret.append(", ".join(top_words))
         # Divide percentages by total
@@ -101,16 +107,17 @@ def stats_for_file(file, stats_dict):
             all_tokens = [tok for tok in line.split() if re.search('[a-zA-Z]', tok)]
             backup = [tok for tok in line.split() if re.search('[a-zA-Z]', tok)]
 
-            if args.count_entities:
-                # propernouns: all proper nouns in the line
-                tagged_sent, stats_dict['num_entities'] = find_entities(all_tokens, num_entities=stats_dict['num_entities'])
-
             # If only looking for unique words, don't add any that have already been processed
             if args.unique:
                 all_tokens = list(set([tok for tok in all_tokens if tok not in words_seen]))
                 words_seen.update(all_tokens)
 
             stats_dict['total'] += len(all_tokens)
+            if args.count_entities:
+                # propernouns: all proper nouns in the line
+                tagged_sent, stats_dict = find_entities(all_tokens, stats_dict=stats_dict)
+                # print(stats_dict)
+                continue
 
             # Calculate capitalization statistics
             for word in all_tokens:
@@ -220,6 +227,10 @@ def entity_helper(file):
     return num_words, num_entities
 
 def main(args):
+
+    data_list = ["modern_english", "old_english", "latin", "proper_nouns", "upper",
+                 "lower", "mixed", "unk", "total", "num_entities"]
+
     # Calculate number of named entities in BNC
     if args.bnc_entities:
         # compile files into list
@@ -228,14 +239,17 @@ def main(args):
                  if (os.path.isfile(os.path.join(args.bnc_dir, f)))] # and f.endswith('.txt'))]
 
 
-        element_run = Parallel(n_jobs=-1)(delayed(entity_helper)(files[i]) for i in tqdm(range(len(files))))
+        element_run = Parallel(n_jobs=-1)(delayed(noun_counts)(files[i]) for i in tqdm(range(len(files))))
 
         for ret in element_run:
-            num_words = sum([ret[0] for ret in element_run])
-            num_entities = sum([ret[1] for ret in element_run])
-        print(timestamp(), "Done! Number of entities in BNC:", num_entities)
-        print("Total number of tokens:", num_words)
-        print("Percent of entites in all text:", (num_entities/num_words) * 100, "%")
+            num_proper_nouns = sum([ret[0] for ret in element_run])
+            num_other_nouns = sum([ret[1] for ret in element_run])
+            num_total = sum([ret[2] for ret in element_run])
+        print(timestamp(), "Done! Number of proper nouns in BNC:", num_proper_nouns)
+        print("Number of other nouns:", num_other_nouns)
+        print("Number of total words:", num_total)
+        print("Percent of proper nouns out of all nouns:", (num_proper_nouns/(num_proper_nouns + num_other_nouns)) * 100, "%")
+        print("Percent of proper nouns in all text:", (num_proper_nouns/num_total) * 100, "%")
         exit(0)
 
     # Order files by year
@@ -252,11 +266,11 @@ def main(args):
         # load all models with path "model-XXXX" and put in dictionary
         tfidf, corpus, mydict = load_models(args)
         print(timestamp() + " Successfully loaded model, corpus, and dictionary from directory", args.tfidf_model_dir_path, file=sys.stderr)
-    else:
+    elif not args.disable_tfidf:
         # If not passed in a saved tfidf mode, run it now and save the output
         pre, documents = before_train(args)
         tfidf, corpus, mydict = gensim_tfidf(args, pre, documents)
-
+    if args.count_entities: data_list = ["proper_nouns", "other_nouns", "num_entities", "total"]
     path_suff = ""
     if args.unique:
         path_suff += "-unique"
@@ -274,7 +288,7 @@ def main(args):
         english_words.add_keywords_from_list(words.words())
 
     # Initialize stats dict
-    # stats_dict = init_stats_dict(data_list)
+    stats_dict = init_stats_dict(data_list)
 
     # Make output path
     base_stats_dir = os.path.join(args.corpus_dir, "../stats_dir/")
@@ -288,18 +302,21 @@ def main(args):
         valid = 1
         doc_idx = 0
         for first_year, files in files_dict.items():
-            element_run = Parallel(n_jobs=-1)(delayed(stats_for_file)(files[i], init_stats_dict(data_list)) for i in tqdm(range(len(files))))
+            # element_run = Parallel(n_jobs=-1)(delayed(stats_for_file)(files[i], init_stats_dict(data_list)) for i in tqdm(range(len(files))))
 
-            # for i in tqdm(range(len(files))):
-            #     file_path = files[i]
-            #     stats_dict, valid = stats_for_file(file_path, stats_dict)
-            valid = element_run[-1][1]
-            stat_list = [el[0] for el in element_run]
+            for i in tqdm(range(len(files[:1]))):
+                file_path = files[i]
+                stats_dict, valid = stats_for_file(file_path, stats_dict)
+            # valid = element_run[-1][1]
+            # stat_list = [el[0] for el in element_run]
             # sum the values with same keys
-            stats_dict = dict(functools.reduce(operator.add, map(collections.Counter, stat_list)))
+            # stats_dict = dict(functools.reduce(operator.add, map(collections.Counter, stat_list)))
             if valid:
-                top_words = get_top_words(args, doc_idx, tfidf, corpus, mydict)
-                tsv_writer.writerow(get_stat_output(args, first_year, stats_dict, top_words))
+                if args.disable_tfidf:
+                    top_words = []
+                else:
+                    top_words = get_top_words(args, doc_idx, tfidf, corpus, mydict)
+                tsv_writer.writerow(get_stat_output(args, first_year, stats_dict, top_words, data_list))
                 # else:
                 #     tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
 
@@ -323,7 +340,8 @@ if __name__ == '__main__':
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--count_entities', default=False, action='store_true', help='whether or not to count named entities in corpus and bnc')
     parser.add_argument('--print_unk', default=False, action='store_true', help='whether or not to print out unknown words')
-    parser.add_argument('--bnc_dir', type=str, default="/work/clambert/thesis-data/bnc-text-tok", help='path for calculating bnc entities')
+    parser.add_argument('--bnc_dir', type=str, default="/work/clambert/thesis-data/parsed-bnc", help='path for calculating bnc entities')
     parser.add_argument('--bnc_entities', default=False, action='store_true', help='whether or not to calculate BNC entities')
+    parser.add_argument('--disable_tfidf',  default=False, action='store_true')
     args = parser.parse_args()
     main(args)
