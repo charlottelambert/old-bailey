@@ -166,18 +166,19 @@ def init_stats_dict(data):
     return stats_dict
 
 
-def graph_word_freqs(args, fd):
+def graph_word_freqs(args, fd, suffix):
     """
         Function to generate and save a plot of word frequencies in corpus.
 
         input:
             args: argument object
             fd: nltk.FreqDist object containing word frequencies from whole corpus
-
+            suffix (string): value to append to file path to distinguish each
+                  plot (from whole corpus and from each time slice)
     """
-    path = os.path.join(args.corpus_dir, "word_freqs.png")
+    path = os.path.join(args.corpus_dir, "word_freqs-" + suffix + ".png")
     plt.ion()
-    fd.plot(30, title="Word Frequencies", cumulative=False)
+    fd.plot(30, title="Word Frequencies: " + suffix, cumulative=False)
     plt.savefig(path)
     plt.ioff()
     plt.show()
@@ -213,6 +214,7 @@ def find_basic_stats(args, files_dict):
                     slice_fd.update(toks)
             # Update frequency distribution for whole corpus
             corpus_fd.update(slice_fd)
+            graph_word_freqs(args, slice_fd, str(start_year))
 
             stat_dict["num_tokens"].append(num_tokens)
             stat_dict["num_types"].append(len(types))
@@ -229,8 +231,8 @@ def find_basic_stats(args, files_dict):
             tsv_writer.writerow([row] + stat_dict[row])
 
     # Plot the word frequencies
-    graph_word_freqs(args, corpus_fd)
-    
+    graph_word_freqs(args, corpus_fd, "entire")
+
     print(timestamp() + " Done! Wrote basic statistics to", stats_path, file=sys.stderr)
 
 
