@@ -14,6 +14,7 @@ import collections, functools, operator
 from noun_counts import noun_counts
 sys.path.append('../')
 from utils import *
+import matplotlib.pyplot as plt
 
 english_words = KeywordProcessor()
 latin_words = KeywordProcessor()
@@ -165,7 +166,27 @@ def init_stats_dict(data):
     return stats_dict
 
 
+def graph_word_freqs(args, fd):
+    """
+        Function to generate and save a plot of word frequencies in corpus.
+
+        input:
+            args: argument object
+            fd: nltk.FreqDist object containing word frequencies from whole corpus
+
+    """
+    path = os.path.join(args.corpus_dir, "word_freqs.png")
+    plt.ion()
+    fd.plot(30, title="Word Frequencies", cumulative=False)
+    plt.savefig(path)
+    plt.ioff()
+    plt.show()
+    print(timestamp() + " Done! Saved word frequency plot to", path, file=sys.stderr)
+
 def find_basic_stats(args, files_dict):
+    """
+        Function finding basic statistics for all files in corpus.
+    """
     print(timestamp() + " Starting statistics calculation...", file=sys.stderr)
     # First, find out how many files there are per year chunk
     stats_path = os.path.join(args.corpus_dir, "basic_stats.tsv")
@@ -185,7 +206,7 @@ def find_basic_stats(args, files_dict):
                 file = files[i]
                 with open(file, "r") as f:
                     # Increment token count
-                    toks = f.read().split()
+                    toks = f.read().lower().split()
                     num_tokens += len(toks)
                     types.update(toks)
                     # Update frequency distribution for time slice
@@ -198,10 +219,6 @@ def find_basic_stats(args, files_dict):
             # most common will return: [(word, frequency)]
             stat_dict["most_common_word"].append(slice_fd.most_common(1)[0][0])
 
-            # item 1674 1774 1874
-            # num_documents x y z
-            # num_tokens
-            # num_types
         # Append stat values for entire corpus
         stat_dict["stat_name"].append("total")
         for row in stat_dict:
@@ -210,6 +227,10 @@ def find_basic_stats(args, files_dict):
             elif not row == "stat_name":
                 stat_dict[row].append(sum(stat_dict[row]))
             tsv_writer.writerow([row] + stat_dict[row])
+
+    # Plot the word frequencies
+    graph_word_freqs(args, corpus_fd)
+    
     print(timestamp() + " Done! Wrote basic statistics to", stats_path, file=sys.stderr)
 
 
