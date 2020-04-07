@@ -234,7 +234,7 @@ def find_basic_stats(args, files_dict):
             tsv_writer.writerow([row] + stat_dict[row])
 
     # Plot the word frequencies
-    graph_word_freqs(args, corpus_fd, "entire", save=True)
+    graph_word_freqs(args, corpus_fd, "corpus", save=True)
 
     print(timestamp() + " Done! Wrote basic statistics to", stats_path, file=sys.stderr)
 
@@ -261,11 +261,11 @@ def main(args):
     if args.bnc_entities or args.graph_bnc:
         # compile files into list
         files = [os.path.join(args.bnc_dir, f) for f in os.listdir(args.bnc_dir)
-                 if (os.path.isfile(os.path.join(args.bnc_dir, f)))] # and f.endswith('.txt'))]
+                 if (os.path.isfile(os.path.join(args.bnc_dir, f))) and f.endswith('.txt')]
 
         if args.graph_bnc:
             fd = bnc_fd(files)
-            graph_word_freqs(args, fd, "bnc", dir=args.bnc_dir)
+            graph_word_freqs(args, fd, "bnc", dir=args.bnc_dir, save=True)
             exit(0)
 
         print(timestamp(), "Finding entities for bnc files in directory", args.bnc_dir)
