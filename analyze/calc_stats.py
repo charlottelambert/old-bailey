@@ -11,7 +11,7 @@ import numpy as np
 from train_tfidf import *
 from joblib import Parallel, delayed
 import collections, functools, operator
-from noun_counts import noun_counts
+from analyze_utils import *
 sys.path.append('../')
 from utils import *
 import matplotlib.pyplot as plt
@@ -166,7 +166,7 @@ def init_stats_dict(data):
     return stats_dict
 
 
-def graph_word_freqs(args, fd, suffix):
+def graph_word_freqs(args, fd, suffix, dir="", save=False):
     """
         Function to generate and save a plot of word frequencies in corpus.
 
@@ -176,13 +176,16 @@ def graph_word_freqs(args, fd, suffix):
             suffix (string): value to append to file path to distinguish each
                   plot (from whole corpus and from each time slice)
     """
-    path = os.path.join(args.corpus_dir, "word_freqs-" + suffix + ".png")
+    pre = args.corpus_dir if not dir else dir
+    path = os.path.join(pre, "word_freqs-" + suffix + ".png")
     plt.ion()
-    fd.plot(30, title="Word Frequencies: " + suffix, cumulative=False)
-    plt.savefig(path)
+    fd.plot(30, title="Word Frequencies: " + suffix, cumulative=False, label=suffix)
+    plt.legend()
+    if save:
+        plt.savefig(path, bbox_inches="tight")
+        print(timestamp() + " Done! Saved word frequency plot to", path, file=sys.stderr)
     plt.ioff()
     plt.show()
-    print(timestamp() + " Done! Saved word frequency plot to", path, file=sys.stderr)
 
 def find_basic_stats(args, files_dict):
     """
@@ -213,7 +216,7 @@ def find_basic_stats(args, files_dict):
                     # Update frequency distribution for time slice
                     slice_fd.update(toks)
             # Update frequency distribution for whole corpus
-            corpus_fd.update(slice_fd)
+            corpus_fd.update({k:v for k, v in slice_fd.items() if re.search('\w', k)})
             graph_word_freqs(args, slice_fd, str(start_year))
 
             stat_dict["num_tokens"].append(num_tokens)
@@ -231,7 +234,7 @@ def find_basic_stats(args, files_dict):
             tsv_writer.writerow([row] + stat_dict[row])
 
     # Plot the word frequencies
-    graph_word_freqs(args, corpus_fd, "entire")
+    graph_word_freqs(args, corpus_fd, "entire", save=True)
 
     print(timestamp() + " Done! Wrote basic statistics to", stats_path, file=sys.stderr)
 
@@ -255,13 +258,17 @@ def main(args):
                  "lower", "mixed", "unk", "total", "num_entities"]
 
     # Calculate number of named entities in BNC
-    if args.bnc_entities:
+    if args.bnc_entities or args.graph_bnc:
         # compile files into list
-        print(timestamp(), "Finding entities for bnc files in directory", args.bnc_dir)
         files = [os.path.join(args.bnc_dir, f) for f in os.listdir(args.bnc_dir)
                  if (os.path.isfile(os.path.join(args.bnc_dir, f)))] # and f.endswith('.txt'))]
 
+        if args.graph_bnc:
+            fd = bnc_fd(files)
+            graph_word_freqs(args, fd, "bnc", dir=args.bnc_dir)
+            exit(0)
 
+        print(timestamp(), "Finding entities for bnc files in directory", args.bnc_dir)
         element_run = Parallel(n_jobs=-1)(delayed(noun_counts)(files[i]) for i in tqdm(range(len(files))))
 
         for ret in element_run:
@@ -281,6 +288,7 @@ def main(args):
     if args.basic_stats:
         find_basic_stats(args, files_dict)
         exit(0)
+
 
     # If we have a model to load, add fields to data_list and load model
     data_list.append("top_" + str(args.num_top_words) + "_words")
@@ -365,6 +373,7 @@ if __name__ == '__main__':
     parser.add_argument('--print_unk', default=False, action='store_true', help='whether or not to print out unknown words')
     parser.add_argument('--bnc_dir', type=str, default="/work/clambert/thesis-data/parsed-bnc", help='path for calculating bnc entities')
     parser.add_argument('--bnc_entities', default=False, action='store_true', help='whether or not to calculate BNC entities')
-    parser.add_argument('--disable_tfidf',  default=False, action='store_true')
+    parser.add_argument('--disable_tfidf', default=False, action='store_true')
+    parser.add_argument('--graph_bnc', default=False, action='store_true')
     args = parser.parse_args()
     main(args)
