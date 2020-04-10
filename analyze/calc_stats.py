@@ -21,26 +21,6 @@ latin_words = KeywordProcessor()
 
 unk_words = set()
 
-# Calculate number of named entities
-def find_entities(all_tokens, stats_dict):
-    # temp = [w.lower() for w in all_tokens]
-    ret_dict = {k:v for k, v in stats_dict.items()}
-    tagged_sent = pos_tag(all_tokens)
-    tagged_nnp = [pair[0] for pair in tagged_sent if pair[1] == 'NNP']
-    ret_dict["proper_nouns"] += len(tagged_nnp)
-    # print(tagged_sent)
-    # exit(0)
-    found_entities = nltk.ne_chunk(tagged_sent, binary=True)
-    # exit(0)
-    named_entities = []
-    for element in found_entities:
-        try:
-            if element.label() == "NE": named_entities.append(element)
-        except AttributeError:
-            continue
-    ret_dict["num_entities"] += len(named_entities)
-    return tagged_sent, ret_dict
-
 def load_models(args):
     try:
         tfidf = models.TfidfModel.load(os.path.join(args.tfidf_model_dir_path, "model"))
@@ -114,11 +94,6 @@ def stats_for_file(file, stats_dict):
                 words_seen.update(all_tokens)
 
             stats_dict['total'] += len(all_tokens)
-            if args.count_entities:
-                # propernouns: all proper nouns in the line
-                tagged_sent, stats_dict = find_entities(all_tokens, stats_dict=stats_dict)
-                # print(stats_dict)
-                continue
 
             # Calculate capitalization statistics
             for word in all_tokens:
@@ -166,7 +141,7 @@ def init_stats_dict(data):
     return stats_dict
 
 
-def graph_word_freqs(args, fd, suffix, dir="", save=False):
+def graph_word_freqs(args, fd, suffix, dir="", save=False, restart=False):
     """
         Function to generate and save a plot of word frequencies in corpus.
 
@@ -186,6 +161,7 @@ def graph_word_freqs(args, fd, suffix, dir="", save=False):
         print(timestamp() + " Done! Saved word frequency plot to", path, file=sys.stderr)
     plt.ioff()
     plt.show()
+    if restart: plt.clf()
 
 def find_basic_stats(args, files_dict):
     """
@@ -217,7 +193,7 @@ def find_basic_stats(args, files_dict):
                     slice_fd.update(toks)
             # Update frequency distribution for whole corpus
             corpus_fd.update({k:v for k, v in slice_fd.items() if re.search('\w', k)})
-            graph_word_freqs(args, slice_fd, str(start_year))
+            graph_word_freqs(args, slice_fd, str(start_year), save=True, restart=True)
 
             stat_dict["num_tokens"].append(num_tokens)
             stat_dict["num_types"].append(len(types))
@@ -234,23 +210,10 @@ def find_basic_stats(args, files_dict):
             tsv_writer.writerow([row] + stat_dict[row])
 
     # Plot the word frequencies
-    graph_word_freqs(args, corpus_fd, "corpus", save=True)
+    graph_word_freqs(args, corpus_fd, "corpus", save=True, restart=True)
 
     print(timestamp() + " Done! Wrote basic statistics to", stats_path, file=sys.stderr)
 
-
-    # Then, find how many words (tokens and types) there are for each year chunk
-
-def entity_helper(file):
-    num_words = 0
-    num_entities = 0
-    with open(file, "r") as f:
-        lines = [line.split() for line in f]
-        for line in lines:
-            tagged_tokens, cur_entities = find_entities(line)
-            num_words += len(line)
-            num_entities += cur_entities
-    return num_words, num_entities
 
 def main(args):
 
@@ -258,24 +221,25 @@ def main(args):
                  "lower", "mixed", "unk", "total", "num_entities"]
 
     # Calculate number of named entities in BNC
-    if args.bnc_entities or args.graph_bnc:
+    if args.graph_bnc or args.count_entities:
+        dir = args.corpus_dir if args.count_entities else args.bnc_dir
         # compile files into list
-        files = [os.path.join(args.bnc_dir, f) for f in os.listdir(args.bnc_dir)
-                 if (os.path.isfile(os.path.join(args.bnc_dir, f))) and f.endswith('.txt')]
+        files = [os.path.join(dir, f) for f in os.listdir(dir)
+                 if (os.path.isfile(os.path.join(dir, f))) and f.endswith('.txt')]
 
         if args.graph_bnc:
             fd = bnc_fd(files)
             graph_word_freqs(args, fd, "bnc", dir=args.bnc_dir, save=True)
             exit(0)
 
-        print(timestamp(), "Finding entities for bnc files in directory", args.bnc_dir)
+        print(timestamp(), "Finding entities for files in directory", dir)
         element_run = Parallel(n_jobs=-1)(delayed(noun_counts)(files[i]) for i in tqdm(range(len(files))))
 
         for ret in element_run:
             num_proper_nouns = sum([ret[0] for ret in element_run])
             num_other_nouns = sum([ret[1] for ret in element_run])
             num_total = sum([ret[2] for ret in element_run])
-        print(timestamp(), "Done! Number of proper nouns in BNC:", num_proper_nouns)
+        print(timestamp(), "Done! Number of proper nouns:", num_proper_nouns)
         print("Number of other nouns:", num_other_nouns)
         print("Number of total words:", num_total)
         print("Percent of proper nouns out of all nouns:", (num_proper_nouns/(num_proper_nouns + num_other_nouns)) * 100, "%")
@@ -289,7 +253,6 @@ def main(args):
         find_basic_stats(args, files_dict)
         exit(0)
 
-
     # If we have a model to load, add fields to data_list and load model
     data_list.append("top_" + str(args.num_top_words) + "_words")
 
@@ -301,7 +264,6 @@ def main(args):
         # If not passed in a saved tfidf mode, run it now and save the output
         pre, documents = before_train(args)
         tfidf, corpus, mydict = gensim_tfidf(args, pre, documents)
-    if args.count_entities: data_list = ["proper_nouns", "other_nouns", "num_entities", "total"]
     path_suff = ""
     if args.unique:
         path_suff += "-unique"
@@ -333,23 +295,16 @@ def main(args):
         valid = 1
         doc_idx = 0
         for first_year, files in files_dict.items():
-            # element_run = Parallel(n_jobs=-1)(delayed(stats_for_file)(files[i], init_stats_dict(data_list)) for i in tqdm(range(len(files))))
 
             for i in tqdm(range(len(files[:1]))):
                 file_path = files[i]
                 stats_dict, valid = stats_for_file(file_path, stats_dict)
-            # valid = element_run[-1][1]
-            # stat_list = [el[0] for el in element_run]
-            # sum the values with same keys
-            # stats_dict = dict(functools.reduce(operator.add, map(collections.Counter, stat_list)))
             if valid:
                 if args.disable_tfidf:
                     top_words = []
                 else:
                     top_words = get_top_words(args, doc_idx, tfidf, corpus, mydict)
                 tsv_writer.writerow(get_stat_output(args, first_year, stats_dict, top_words, data_list))
-                # else:
-                #     tsv_writer.writerow([first_year] + [round(stats_dict[count]/stats_dict["total"], 4) for count in data_list])
 
             doc_idx += 1
     print(timestamp() + " Wrote statistics to", stats_path, file=sys.stderr)
@@ -372,7 +327,7 @@ if __name__ == '__main__':
     parser.add_argument('--count_entities', default=False, action='store_true', help='whether or not to count named entities in corpus and bnc')
     parser.add_argument('--print_unk', default=False, action='store_true', help='whether or not to print out unknown words')
     parser.add_argument('--bnc_dir', type=str, default="/work/clambert/thesis-data/parsed-bnc", help='path for calculating bnc entities')
-    parser.add_argument('--bnc_entities', default=False, action='store_true', help='whether or not to calculate BNC entities')
+    # parser.add_argument('--bnc_entities', default=False, action='store_true', help='whether or not to calculate BNC entities')
     parser.add_argument('--disable_tfidf', default=False, action='store_true')
     parser.add_argument('--graph_bnc', default=False, action='store_true')
     args = parser.parse_args()
