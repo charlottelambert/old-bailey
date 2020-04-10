@@ -18,7 +18,7 @@ from nltk.corpus import stopwords
 sys.path.append('../')
 from utils import *
 
-stop_words = []
+stop_words = set(stopwords.words('english'))
 
 def contractions(token_list):
     # Remove all asterisks and replace contractions
@@ -54,6 +54,25 @@ def fix_hyphens(input):
     out = re.sub(r'([a-zA-z])([\—\-]+)([a-zA-z-])', '\\1 \\2 \\3', out)
 
     return out.split()
+
+def remove_unwanted(args, tokens):
+    # Keep all words containing at least one letter
+    # Also remove words of length < 2
+    # Lemmatize if necessary
+
+    if args.disable_stopwords: s = []
+    else: s = stop_words
+
+    if args.lemma:
+        lemmatizer = WordNetLemmatizer()
+        tokens = [lemmatizer.lemmatize(x) for x in tokens
+                  if len(x) > 2 and x.lower() not in s
+                  and re.search('[a-zA-Z]', x)]
+    else:
+        tokens = [x for x in tokens if len(x) > 2
+                  and x.lower() not in s
+                  and re.search('[a-zA-Z]', x)]
+    return tokens
 
 def tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams):
     output = []
@@ -103,18 +122,7 @@ def tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams):
                 sub_pattern = '\A([\W_]*)([A-Za-z0-9]+|[A-Za-z0-9]+[\W_]+[A-Za-z0-9]+)([\W_]*)$'
                 tokens = [re.sub(sub_pattern, "\\2", x) for x in tokens]
 
-                # Keep all words containing at least one letter
-                # Also remove words of length < 2
-                # Lemmatize if necessary
-                if args.lemma:
-                    lemmatizer = WordNetLemmatizer()
-                    tokens = [lemmatizer.lemmatize(x) for x in tokens
-                              if len(x) > 2 and x.lower() not in stop_words
-                              and re.search('[a-zA-Z]', x)]
-                else:
-                    tokens = [x for x in tokens if len(x) > 2
-                              and x.lower() not in stop_words
-                              and re.search('[a-zA-Z]', x)]
+                tokens = remove_unwanted(args, tokens)
 
             # If tokenizing text in order to find useful stats, do extra
             # processing and return without removing words
@@ -203,9 +211,6 @@ def merge_words(args, pwl, input, bigrams):
 def main(args):
     with open(args.corpus_bigrams) as json_file:
         bigrams = json.load(json_file)
-
-    if not args.disable_stopwords:
-        stop_words = set(stopwords.words('english'))
 
     if args.test:
         print("starting test")
@@ -311,6 +316,15 @@ def main(args):
 
             # Tokenize single file
             output = tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams)
+            # with open(file, "r") as f:
+            #     content = f.read()
+            #     lines = content.split("\n")
+            #     for j, line in enumerate(lines):
+            #         line_split = line.split(" ")
+            #         for i, word in enumerate(line_split):
+            #             if word.lower() in stop_words: line_split[i] = ""
+            #         lines[j] = " ".join(line_split)
+            #     output = lines
             # Write output to new file
             with open(output_file, "w") as f:
                 f.write('\n'.join(output))
