@@ -5,7 +5,9 @@
 #SBATCH --ntasks=1
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=clambert@vassar.edu
-#SBATCH -p emc --exclusive
+#SBATCH -p emc 
+
+#ADD THIS BACK: --exclusive
 
 echo Running: $SLURM_ARRAY_TASK_ID
 uname -a
@@ -20,14 +22,16 @@ TOPICS=${1:-30}
 SUFFIX=${2:-}
 echo Suffix: $SUFFIX
 
-# ./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/dtm-test --num_topics=$TOPICS --year_split=-1 --coherence --num_iterations=5 --suffix=$SUFFIX
+#./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=5 --year_split=-1 --num_iterations=5 --suffix=$SUFFIX
+# then -txt-tok- disable stop words (?)
+
 # unigrams:
 #./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
 # time slices
 # ./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
 # bigrams:
-# ./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
+ ./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
 # time slices
 #./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
@@ -38,6 +42,6 @@ echo Suffix: $SUFFIX
 # OB + LL: time slices, bigrams
 # ./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 # time slices
-./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
+#./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
 echo Finished: `date`
