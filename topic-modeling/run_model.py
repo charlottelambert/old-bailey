@@ -69,7 +69,7 @@ def compile_tokens(args, files):
             texts.append(text)
 
     # If we want to include a mix of unigrams and bigrams or just bigrams
-    texts = get_ngrams(args, texts)
+    # texts = get_ngrams(args, texts)
     return texts
 
 def run_lda(args, corpus, pre, dictionary=None, workers=None):
@@ -91,7 +91,8 @@ def run_lda(args, corpus, pre, dictionary=None, workers=None):
         model = Mallet(MALLET_PATH, mallet_corpus, num_topics=args.num_topics,
                        iters=args.num_iterations, bigrams=args.bigrams_only,
                        topical_n_grams=args.topical_n_grams,
-                       remove_stopwords=(not args.topical_n_grams), prefix=pre)
+                       remove_stopwords=(not args.topical_n_grams), prefix=pre,
+                       print_output=True)
     return model
 
 def run_multicore(args, corpus, dictionary, passes, alpha, workers, pre):
