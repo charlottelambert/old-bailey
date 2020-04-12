@@ -151,10 +151,12 @@ def graph_word_freqs(args, fd, suffix, dir="", save=False, restart=False):
             suffix (string): value to append to file path to distinguish each
                   plot (from whole corpus and from each time slice)
     """
+    color_dict = {"16":'b', "17":'m', "18":'k'}
     pre = args.corpus_dir if not dir else dir
-    path = os.path.join(pre, "word_freqs-" + suffix + ".png")
+    path = os.path.join(pre, "word_freqs-" + suffix.replace(" ", "") + ".png")
     plt.ion()
-    fd.plot(30, title="Word Frequencies: " + suffix, cumulative=False, label=suffix)
+    color = "c" if suffix[:2] not in color_dict else color_dict[suffix[:2]]
+    fd.plot(30, color=color, title="Word Frequencies: " + suffix, cumulative=False, label=suffix)
     plt.legend()
     if save:
         plt.savefig(path, bbox_inches="tight")
@@ -193,7 +195,7 @@ def find_basic_stats(args, files_dict):
                     slice_fd.update(toks)
             # Update frequency distribution for whole corpus
             corpus_fd.update({k:v for k, v in slice_fd.items() if re.search('\w', k)})
-            graph_word_freqs(args, slice_fd, str(start_year), save=True, restart=True)
+            graph_word_freqs(args, slice_fd, str(start_year), save=False, restart=False)
 
             stat_dict["num_tokens"].append(num_tokens)
             stat_dict["num_types"].append(len(types))
@@ -210,7 +212,8 @@ def find_basic_stats(args, files_dict):
             tsv_writer.writerow([row] + stat_dict[row])
 
     # Plot the word frequencies
-    graph_word_freqs(args, corpus_fd, "corpus", save=True, restart=True)
+    suff = "London Lives" if "londonLives" in args.corpus_dir else "Old Bailey"
+    graph_word_freqs(args, corpus_fd, suff, save=True, restart=True)
 
     print(timestamp() + " Done! Wrote basic statistics to", stats_path, file=sys.stderr)
 

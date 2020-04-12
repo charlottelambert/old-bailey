@@ -80,7 +80,7 @@ def build_corpus(input_dir_path=None, files=None):
     corpus = []
     for file in files:
         with open(file) as f:
-            corpus.append(f.read().split())
+            corpus.append(f.read().lower().split())
     return corpus
 
 # want to do this for each model trained
@@ -263,7 +263,7 @@ if __name__ == '__main__':
     parser.add_argument('--plot_neighbors', default=False, action="store_true", help='whether or not to visualize and plot data.')
     parser.add_argument('--filter_top_words', type=int, default=10000, help='number of words to include in model (take the most common words)')
     parser.add_argument('--find_n_neighbors', type=int, default=0, help='how many nearest neighbors to find')
-    parser.add_argument('--epochs', type=int, default=100, help='how many nearest neighbors to find')
+    parser.add_argument('--epochs', type=int, default=100, help='how many epochs')
     parser.add_argument('--year_split', type=int, default=100, help='number of years to include in each chunk of corpus (run tf-idf over each chunk)')
     parser.add_argument('-f', action='store_true', help='use fasttext model instead of word2vec')
     parser.add_argument('--print_similarity', action='store_true', default=False, help='whether or not to print out similarities')
