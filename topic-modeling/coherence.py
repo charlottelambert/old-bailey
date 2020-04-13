@@ -20,11 +20,13 @@ def vector_coherence(model, T):
             w_j, weight_j = item_j
             if i == j: continue
             # Update sum
-            sum += model.similarity(w_i, w_j)
-            acc += 1
-
+            try:
+                sum += model.similarity(w_i, w_j)
+                acc += 1
+            except:
+                print(w_i, w_j)
+                continue
     return sum / acc
-
 
 # http://qpleple.com/topic-coherence-to-evaluate-topic-models/
 def umass_coherence(T, corpus):
