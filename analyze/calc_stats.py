@@ -182,23 +182,25 @@ def find_basic_stats(args, files_dict):
             slice_fd = nltk.FreqDist()
             stat_dict["stat_name"].append(start_year)
             stat_dict["num_docs"].append(len(files))
-            num_tokens = 0
-            types = set()
+            # num_tokens = 0
+            # types = set()
             for i in tqdm(range(len(files))):
                 file = files[i]
                 with open(file, "r") as f:
                     # Increment token count
                     toks = f.read().lower().split()
-                    num_tokens += len(toks)
-                    types.update(toks)
+                    # num_tokens += len(sum[])
+                    # types.update(toks)
                     # Update frequency distribution for time slice
                     slice_fd.update(toks)
+            num_types = len(slice_fd)
+            num_tokens = sum([v for k,v in slice_fd.items()])
             # Update frequency distribution for whole corpus
             corpus_fd.update({k:v for k, v in slice_fd.items() if re.search('\w', k)})
             graph_word_freqs(args, slice_fd, str(start_year), save=False, restart=False)
 
             stat_dict["num_tokens"].append(num_tokens)
-            stat_dict["num_types"].append(len(types))
+            stat_dict["num_types"].append(num_types)
             # most common will return: [(word, frequency)]
             stat_dict["most_common_word"].append(slice_fd.most_common(1)[0][0])
 
