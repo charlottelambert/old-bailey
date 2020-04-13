@@ -80,21 +80,26 @@ def build_corpus(input_dir_path=None, files=None, corpus_file=None):
             with open(file) as f:
                 corpus.append(f.read().lower().split())
     elif corpus_file:
-        print("Building corpus from file...", file=sys.stderr)
+        print(timestamp(),"Building corpus from file...", file=sys.stderr)
+
+        corpus = []
+        doc_words = []
         with open(corpus_file, 'r') as f:
             content = f.read()
-            content = content.split("input: ")[1]
-            corpus = []
-            for line in content.split("\n"):
-                try:
-                    corpus.append(line.split(" ")[1].lower())
-                except:
-                    # Indicates blank line/misformatted. skip it
-                    continue
-            # corpus = [line.split(" ")[1].lower() for line in content.split("\n")]
+            lines = content.split("\n")
+            for line in lines:
+                if re.match("[0-9]+:", line):
+                    word = line.split(" ")[1]
+                    doc_words.append(word)
+                elif line[:5] == "name:" and len(doc_words) > 0:
+                    corpus.append(doc_words)
+                    doc_words = []
+                else: continue
+
     else:
         print("build_corpus(): Please input a path to a directory, list of files, or corpus file.", file=sys.stderr)
         exit(1)
+    print(sum([len(x) for x in corpus]))
     return corpus
 
 # want to do this for each model trained
@@ -135,16 +140,6 @@ def tsne_plot(model, pre, neighbor_dict):
     #     # Reset labels
     labels = []
     tokens = []
-
-        # for word in neighbor_dict[first_year]:
-        #     try:
-        #         tokens.append(model.wv[word])
-        #         labels.append(word)
-        #     except KeyError:
-        #         continue
-        #     for neighbor in neighbor_dict[first_year][word]:
-        #         tokens.append(neighbor[1])
-        #         labels.append(neighbor[0])
 
 
         # ###############
@@ -218,9 +213,13 @@ def main(args):
 
         if args.corpus_file:
             corpus = build_corpus(corpus_file=args.corpus_file)
+            print("Number of documents:", len(corpus))
             model = embedding_model(min_count=1)#, size=100, window=20)#, workers=4)
             print(timestamp(), "Building vocab...", file=sys.stderr)
             model.build_vocab(corpus)
+            print("guilty_verdict" in model.wv.vocab)
+            print(type(model.wv.vocab))
+            print(len(model.wv.vocab.keys()))
             msg = "Training model..."
             # Filter out top words (need to filter to 10000 if using projector.tensorflow)
             if args.filter_top_words: # Should this only happen with word2vec and not fasttext?
@@ -260,6 +259,7 @@ def main(args):
                     model = embedding_model(min_count=1)#, size=100, window=20)#, workers=4)
                     print(timestamp(), "Building vocab...", file=sys.stderr)
                     model.build_vocab(corpus)
+
                     msg = "Training model..."
                 # Filter out top words (need to filter to 10000 if using projector.tensorflow)
                 if args.filter_top_words: # Should this only happen with word2vec and not fasttext?
