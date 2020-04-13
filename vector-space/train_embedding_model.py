@@ -66,7 +66,7 @@ def find_n_neighbors(args, pre, model_dict):
     print(timestamp() + " Wrote top", args.find_n_neighbors, "neighbors to", tsv_path, file=sys.stderr)
     return neighbor_dict
 
-def build_corpus(input_dir_path=None, files=None):
+def build_corpus(input_dir_path=None, files=None, corpus_file=None):
     """
         Function to build a corpus (list of contents of files) based on input
         directory.
@@ -74,13 +74,27 @@ def build_corpus(input_dir_path=None, files=None):
     if not files and input_dir_path:
         files = [os.path.join(input_dir, f) for f in os.listdir(input_dir)
                      if (os.path.isfile(os.path.join(input_dir, f)) and f.endswith('.txt'))]
-    elif not input_dir_path and not files:
-        print("build_corpus(): Please input a path to a directory or a list of files.", file=sys.stderr)
+    elif files:
+        corpus = []
+        for file in files:
+            with open(file) as f:
+                corpus.append(f.read().lower().split())
+    elif corpus_file:
+        print("Building corpus from file...", file=sys.stderr)
+        with open(corpus_file, 'r') as f:
+            content = f.read()
+            content = content.split("input: ")[1]
+            corpus = []
+            for line in content.split("\n"):
+                try:
+                    corpus.append(line.split(" ")[1].lower())
+                except:
+                    # Indicates blank line/misformatted. skip it
+                    continue
+            # corpus = [line.split(" ")[1].lower() for line in content.split("\n")]
+    else:
+        print("build_corpus(): Please input a path to a directory, list of files, or corpus file.", file=sys.stderr)
         exit(1)
-    corpus = []
-    for file in files:
-        with open(file) as f:
-            corpus.append(f.read().lower().split())
     return corpus
 
 # want to do this for each model trained
@@ -202,27 +216,12 @@ def main(args):
         if not os.path.exists(pre):
             os.makedirs(pre)
 
-        # Order files by year
-        files_dict, _ = order_files(args)
-
-        print(timestamp(), "Data will be saved to directory " + pre, file=sys.stderr)
-        model_dict = {}
-        for first_year, file_list in files_dict.items():
-            print(timestamp(), "Building corpus...", file=sys.stderr)
-            corpus = build_corpus(files=file_list)
-            if args.pretrained:
-                print(timestamp(), "Initializing model with corpus...", file=sys.stderr)
-                model = embedding_model(corpus, size=300) #, min_count=1)#, size=100, window=20)#, workers=4)
-                print(timestamp(), "Intersecting with pretrained model", file=sys.stderr)
-                model.intersect_word2vec_format(args.pretrained,
-                                    lockf=1.0,
-                                    binary=True)
-                msg = "Retraining model..."
-            else:
-                model = embedding_model(min_count=1)#, size=100, window=20)#, workers=4)
-                print(timestamp(), "Building vocab...", file=sys.stderr)
-                model.build_vocab(corpus)
-                msg = "Training model..."
+        if args.corpus_file:
+            corpus = build_corpus(corpus_file=args.corpus_file)
+            model = embedding_model(min_count=1)#, size=100, window=20)#, workers=4)
+            print(timestamp(), "Building vocab...", file=sys.stderr)
+            model.build_vocab(corpus)
+            msg = "Training model..."
             # Filter out top words (need to filter to 10000 if using projector.tensorflow)
             if args.filter_top_words: # Should this only happen with word2vec and not fasttext?
                 print(timestamp(), "Extracting top " + str(args.filter_top_words) + " words...", file=sys.stderr)
@@ -234,12 +233,52 @@ def main(args):
                 print("Similarity between \'murder\' and \'murther\':",model.similarity('murder', 'murther'))
             except KeyError as e:
                 print("ERROR:", e)
-            model_path = os.path.join(pre, str(first_year)) + ".model"
+            model_path = os.path.join(pre, "w2v.model")
             model.save(model_path)
-            model_dict[first_year] = {"model": model, "model_path": model_path}
             print(timestamp(), "Model saved to", model_path, file=sys.stderr)
-        dump_w2v(model_dict=model_dict)
-        print("model dict:", model_dict)
+            dump_w2v(model_paths=[model_path])
+            exit(0)
+
+        else:
+            # Order files by year
+            files_dict, _ = order_files(args)
+
+            print(timestamp(), "Data will be saved to directory " + pre, file=sys.stderr)
+            model_dict = {}
+            for first_year, file_list in files_dict.items():
+                print(timestamp(), "Building corpus...", file=sys.stderr)
+                corpus = build_corpus(files=file_list)
+                if args.pretrained:
+                    print(timestamp(), "Initializing model with corpus...", file=sys.stderr)
+                    model = embedding_model(corpus, size=300) #, min_count=1)#, size=100, window=20)#, workers=4)
+                    print(timestamp(), "Intersecting with pretrained model", file=sys.stderr)
+                    model.intersect_word2vec_format(args.pretrained,
+                                        lockf=1.0,
+                                        binary=True)
+                    msg = "Retraining model..."
+                else:
+                    model = embedding_model(min_count=1)#, size=100, window=20)#, workers=4)
+                    print(timestamp(), "Building vocab...", file=sys.stderr)
+                    model.build_vocab(corpus)
+                    msg = "Training model..."
+                # Filter out top words (need to filter to 10000 if using projector.tensorflow)
+                if args.filter_top_words: # Should this only happen with word2vec and not fasttext?
+                    print(timestamp(), "Extracting top " + str(args.filter_top_words) + " words...", file=sys.stderr)
+                    model = filter_top_words(model, args.filter_top_words)
+
+                print(timestamp(), msg, file=sys.stderr)
+                model.train(corpus, total_examples=model.corpus_count, epochs=args.epochs)
+                try:
+                    print("Similarity between \'murder\' and \'murther\':",model.similarity('murder', 'murther'))
+                except KeyError as e:
+                    print("ERROR:", e)
+                model_path = os.path.join(pre, str(first_year)) + ".model"
+                model.save(model_path)
+                model_dict[first_year] = {"model": model, "model_path": model_path}
+                print(timestamp(), "Model saved to", model_path, file=sys.stderr)
+
+            dump_w2v(model_dict=model_dict)
+            print("model dict:", model_dict)
 
     # Find nearest n neighbors
     if args.find_n_neighbors or args.plot_neighbors:
@@ -256,6 +295,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--corpus_file', type=str, default="", help='path to corpus file saved from mallet --print_output')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-lower-lemma", help='directory containing corpus')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--load_model_dir', type=str, help='path to directory containing models to load and visualize.')
