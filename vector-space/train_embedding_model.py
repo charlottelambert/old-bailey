@@ -99,7 +99,7 @@ def build_corpus(input_dir_path=None, files=None, corpus_file=None):
     else:
         print("build_corpus(): Please input a path to a directory, list of files, or corpus file.", file=sys.stderr)
         exit(1)
-    print(sum([len(x) for x in corpus]))
+    print(timestamp(), "Number of tokens in corpus:", sum([len(x) for x in corpus]))
     return corpus
 
 # want to do this for each model trained
@@ -210,16 +210,17 @@ def main(args):
         pre = args.save_model_dir + model_base + time.strftime("%Y-%m-%d") + "/" + time.strftime("%H-%M-%S") + "/"
         if not os.path.exists(pre):
             os.makedirs(pre)
+        print(timestamp(), "Writing all files to", pre, file=sys.stderr)
 
         if args.corpus_file:
             corpus = build_corpus(corpus_file=args.corpus_file)
-            print("Number of documents:", len(corpus))
+            # print("Number of documents:", len(corpus))
             model = embedding_model(min_count=1)#, size=100, window=20)#, workers=4)
             print(timestamp(), "Building vocab...", file=sys.stderr)
             model.build_vocab(corpus)
-            print("guilty_verdict" in model.wv.vocab)
-            print(type(model.wv.vocab))
-            print(len(model.wv.vocab.keys()))
+            # print("guilty_verdict" in model.wv.vocab)
+            # print(type(model.wv.vocab))
+            # print(len(model.wv.vocab.keys()))
             msg = "Training model..."
             # Filter out top words (need to filter to 10000 if using projector.tensorflow)
             if args.filter_top_words: # Should this only happen with word2vec and not fasttext?
