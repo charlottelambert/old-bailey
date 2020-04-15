@@ -87,7 +87,8 @@ def run_lda(args, corpus, pre, dictionary=None, workers=None):
         print('Generating topic model.')
         mallet_corpus = prefix + 'corpus'
         os.makedirs(mallet_corpus)
-        corpus.export(mallet_corpus, abstract=False, form='text')
+        form = 'tsv' if args.corpus_file else "text"
+        corpus.export(mallet_corpus, abstract=False, form=form)
         model = Mallet(MALLET_PATH, mallet_corpus, num_topics=args.num_topics,
                        iters=args.num_iterations, bigrams=args.bigrams_only,
                        topical_n_grams=args.topical_n_grams,
@@ -137,18 +138,20 @@ def model_for_year(args, year, files, pre, time_slices):
     # if not args.mixed_ngrams:
     #     # Filter extremes if not doing only bigrams
     #     dictionary.filter_extremes(no_below=50, no_above=0.90)
-    texts = compile_tokens(args, files)
-
-    print(timestamp() + " Building dictionary.", file=sys.stderr)
-
-    dictionary = corpora.Dictionary(texts)
     if args.gensim or args.model_type != "lda":
+        texts = compile_tokens(args, files)
+
+        print(timestamp() + " Building dictionary.", file=sys.stderr)
+
+        dictionary = corpora.Dictionary(texts)
 
         print(timestamp() + " Reading corpus.", file=sys.stderr)
         corpus = [dictionary.doc2bow(text) for text in texts]
     else:
+        dictionary = None
         print(timestamp() + " Reading corpus.", file=sys.stderr)
-        corpus = Corpus(args.corpus_dir)
+        path = args.corpus_file if args.corpus_file else args.corpus_dir
+        corpus = Corpus(path)
 
     # Run the specified model
     if args.model_type == "multicore":
@@ -248,6 +251,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--corpus_file', type=str, default='/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok.tsv')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--unigrams_only', default=False, action="store_true", help='whether or not to only include unigrams')
     parser.add_argument('--bigrams_only', default=False, action="store_true", help='whether or not to only include bigrams')
