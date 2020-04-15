@@ -101,9 +101,17 @@ def encode_annotations(args, xml_path, txt_output_dir):
                 # Replace info in element with new info
                 elem.clear()
                 elem.text = annotated_element
-        if not args.london_lives and elem.tag == "div1":
-            file_name = elem.attrib["id"]
-            elem.text = "SPLIT_HERE\t" +  elem.attrib["id"][1:5] + "\t" + elem.attrib["id"]
+        if not args.london_lives:
+            if elem.tag == "div1":
+                file_name = elem.attrib["id"]
+                elem.text = "SPLIT_HERE\t" +  elem.attrib["id"][1:5] + "\t" + elem.attrib["id"]
+            elif elem.tag == "div0" and elem.attrib["type"] == "sessionsPaper":
+                file_name = elem.attrib["id"]
+                elem.text = "SPLIT_HERE\t" +  elem.attrib["id"][0:4] + "\t" + elem.attrib["id"]
+            elif elem.tag == "div0" and elem.attrib["type"] == "ordinarysAccount":
+                file_name = elem.attrib["id"]
+                elem.text = "SPLIT_HERE\t" +  elem.attrib["id"][2:6] + "\t" + elem.attrib["id"]
+
         elem.text = " " if not elem.text else elem.text + " "
 
 
@@ -128,11 +136,15 @@ def split_trials(text):
         if "SPLIT_HERE" in line:
             if text:
                 merged_text = re.sub("\ +", " ", " ".join(text))
-                tsv_out.append(id.rstrip() + "\t" + year + "\t" + merged_text)
+                tsv_out.append(id + "\t" + year + "\t" + merged_text)
                 text = []
             _, year, id = line.split("\\t")
+            id = id.rstrip()
         elif line.strip():
             text.append(line)
+    if text:
+        merged_text = re.sub("\ +", " ", " ".join(text))
+        tsv_out.append(id + "\t" + year + "\t" + merged_text)
     return tsv_out
 
 
@@ -152,6 +164,7 @@ def main(args):
         if os.path.isfile(os.path.join(args.corpus_XML_dir, f))]
 
         input_files = natsort.natsorted(input_files, key=lambda x: get_order(x))
+
     # Define name of output directory
     base_name = os.path.dirname(args.corpus_XML_dir).rstrip("/") + "-txt"
     annotations_str = "-gen" if args.encode_annotations_general else ""
@@ -199,8 +212,6 @@ def main(args):
         f.write("\n".join(tsv_out))
     print("Data written to " + txt_output_dir + ".tsv", file=sys.stderr)
 
-
-#ID #Year #text.replace("\n, " ")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
