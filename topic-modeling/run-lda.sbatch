@@ -40,8 +40,8 @@ echo Suffix: $SUFFIX
 
 
 # OB + LL: time slices, bigrams
-./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
+#./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
 # time slices
-#./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
+./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
 echo Finished: `date`
