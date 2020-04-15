@@ -23,8 +23,8 @@ def get_order(file):
     base = os.path.basename(file)
     if base[:2] == "OA":
         return base[2:]
-    if isalpha(base[:1])
-    return base[1:]
+    if isalpha(base[:1]):
+        return base[1:]
 
 def get_year(file, include_month=False):
     """
