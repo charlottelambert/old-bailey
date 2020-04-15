@@ -52,7 +52,7 @@ def encode_name(args, elem):
     return "$" + "_".join([base, "_".join(added_info)]) + " "
 
 
-def encode_annotations(args, xml_path):
+def encode_annotations(args, xml_path, txt_output_dir):
     """
         Replace parts of text file with relevant annotations (as provided on command line?)
 
@@ -100,7 +100,12 @@ def encode_annotations(args, xml_path):
                 # Replace info in element with new info
                 elem.clear()
                 elem.text = annotated_element
+        if not args.london_lives and elem.tag == "div1":
+            file_name = elem.attrib["id"]
+            elem.text = "SPLIT_HERE\t" + elem.attrib["type"] + "\t" + os.path.join(txt_output_dir, file_name + ".txt")
         elem.text = " " if not elem.text else elem.text + " "
+
+
     # Find root of tree, convert to string, and return
     text_from_xml = str(ET.tostring(root, encoding='ASCII', method='text'))
     text_from_xml = html.unescape(text_from_xml)
@@ -108,6 +113,21 @@ def encode_annotations(args, xml_path):
     if args.london_lives:
         return text_from_xml.replace('\\n', '\n'), filename # Fixes issue printing "\n"
     return text_from_xml.replace('\\n', '\n') # Fixes issue printing "\n"
+
+def split_trials(text):
+    lines = text.split("\n")
+    write_dict = {}
+    text = []
+    for line in lines:
+        if "SPLIT_HERE" in line:
+            if text:
+                write_dict[path.rstrip()] = "\n".join(text)
+                text = []
+            _, label, path = line.split("\\t")
+        elif line.strip():
+            text.append(line)
+    return write_dict
+
 
 def main(args):
     if not args.corpus_XML_dir:
@@ -149,16 +169,19 @@ def main(args):
         try:
             # Get string version of xml
             if args.london_lives:
-                text_from_xml, filename = encode_annotations(args, file)
+                text_from_xml, filename = encode_annotations(args, file, txt_output_dir)
                 text_from_xml = text_from_xml[2:-1]
                 file_path = os.path.join(txt_output_dir, filename)
                 if os.path.exists(file_path) and not args.overwrite:
                     continue
+                with open(file_path, "w") as txt_file:
+                    txt_file.write(text_from_xml)
             else:
-                text_from_xml = encode_annotations(args, file)[2:-1]
-
-            with open(file_path, "w") as txt_file:
-                txt_file.write(text_from_xml)
+                text_from_xml = encode_annotations(args, file, txt_output_dir)[2:-1]
+                write_dict = split_trials(text_from_xml)
+                for path, text_to_write in write_dict.items():
+                    with open(path, "w") as txt_file:
+                        txt_file.write(text_to_write)
         except UnicodeDecodeError:
             print("UnicodeDecodeError reading " + file + ". Skipping...")
             continue

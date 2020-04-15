@@ -23,7 +23,8 @@ def get_order(file):
     base = os.path.basename(file)
     if base[:2] == "OA":
         return base[2:]
-    return base
+    if isalpha(base[:1])
+    return base[1:]
 
 def get_year(file, include_month=False):
     """
@@ -34,7 +35,9 @@ def get_year(file, include_month=False):
         returns year in int format
     """
     try:
-        offset = 2 if os.path.basename(file)[:2] == "OA" else 0
+        if os.path.basename(file)[:2] == "OA": offset = 2
+        elif isalpha(os.path.basename(file)[:1]): offset = 1
+        else: offset = 0
         year = int(os.path.basename(file)[0 + offset:4 + offset])
         if include_month:
             month = int(os.path.basename(file)[4 + offset:6 + offset])
@@ -60,8 +63,6 @@ def order_files(args):
 
     start_year = get_year(files[0])
     files_dict = {start_year:[]}
-
-    # Indicate no year split
 
     try:
         year_split = args.year_split
