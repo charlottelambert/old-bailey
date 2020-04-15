@@ -23,7 +23,7 @@ def get_order(file):
     base = os.path.basename(file)
     if base[:2] == "OA":
         return base[2:]
-    if isalpha(base[:1]):
+    if base[:1].isalpha():
         return base[1:]
 
 def get_year(file, include_month=False):
@@ -36,7 +36,7 @@ def get_year(file, include_month=False):
     """
     try:
         if os.path.basename(file)[:2] == "OA": offset = 2
-        elif isalpha(os.path.basename(file)[:1]): offset = 1
+        elif os.path.basename(file)[:1].isalpha(): offset = 1
         else: offset = 0
         year = int(os.path.basename(file)[0 + offset:4 + offset])
         if include_month:
