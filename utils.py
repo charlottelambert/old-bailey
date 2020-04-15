@@ -25,6 +25,7 @@ def get_order(file):
         return base[2:]
     if base[:1].isalpha():
         return base[1:]
+    return base
 
 def get_year(file, include_month=False):
     """

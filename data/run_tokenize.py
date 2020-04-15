@@ -74,77 +74,79 @@ def remove_unwanted(args, tokens):
                   and re.search('[a-zA-Z]', x)]
     return tokens
 
+def tokenize_line(args, line, output_dir, gb, gb_and_pwl, bigrams):
+    if not line.strip():
+        return ""
+
+    # Lower line if needed
+    if args.lower and not args.stats:
+        line = line.lower()
+
+    # Tokenize line
+    tokens = [word.replace("\\", "") for word in word_tokenize(line)]
+
+    # Join $ to names
+    for i, tok in enumerate(tokens):
+        if tok == '$':
+            tokens[i:i+2] = [''.join(tokens[i:i+2])]
+
+    # Spelling correction
+    updated_tokens = []
+    for i, tok in enumerate(tokens):
+        # Split word by non-alphanumeric characters
+        split_word = re.split("([^A-Za-z0-9_(\w'\w)])|(^')|('$)", tok)
+        split_word = [w for w in split_word if not w == None and len(w) > 2]
+        if args.disable_spell_check:
+            updated_tokens += split_word
+            continue
+
+        for sub in split_word:
+            spell_checked = spell_correct(args, gb, gb_and_pwl, sub, bigrams).split()
+            updated_tokens += spell_checked
+    tokens = updated_tokens
+
+    # Handle issue with dashes appearing at start of word
+    mod_tokens = []
+    for i in range(len(tokens)):
+        mod_tokens += tokens[i].split() #fix_hyphens(tokens[i])
+    tokens = mod_tokens
+
+    # Replace split contractions with full words
+    tokens = contractions(tokens)
+
+    if not args.stats:
+        # First, remove trailing hyphens and slashes
+        sub_pattern = '\A([\W_]*)([A-Za-z0-9]+|[A-Za-z0-9]+[\W_]+[A-Za-z0-9]+)([\W_]*)$'
+        tokens = [re.sub(sub_pattern, "\\2", x) for x in tokens]
+
+        tokens = remove_unwanted(args, tokens)
+
+    # If tokenizing text in order to find useful stats, do extra
+    # processing and return without removing words
+    if args.stats:
+        return " ".join(tokens)
+
+    # Turn into bigrams if flag is true
+    if args.bigrams and not args.stats:
+        tokens = make_bigrams(tokens)
+
+    finished = " ".join(tokens)
+
+    # If needed, replace street names with generic version
+    if args.street_sub:
+        finished = re.sub("([^ ]+\-street)|([A-Z][a-z]* street)", "$name_street", finished)
+        # finished = re.sub("([^ ]+\-lane)|([A-Z][a-z]* lane)", "$name_street", finished)
+        # finished = re.sub("([^ ]+\-road)|([A-Z][a-z]* road)", "$name_street", finished)
+        # finished = re.sub("[^ ]+\-row", "$name_street", finished)
+        # also -square, -highway, -cross, -grove, -town
+
+    return finished
+
 def tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams):
     output = []
     with open(file, "r") as f:
         for line in f:
-            if not line.strip():
-                continue
-
-            # Lower line if needed
-            if args.lower and not args.stats:
-                line = line.lower()
-
-            # Tokenize line
-            tokens = [word.replace("\\", "") for word in word_tokenize(line)]
-
-            # Join $ to names
-            for i, tok in enumerate(tokens):
-                if tok == '$':
-                    tokens[i:i+2] = [''.join(tokens[i:i+2])]
-
-            # Spelling correction
-            updated_tokens = []
-            for i, tok in enumerate(tokens):
-                # Split word by non-alphanumeric characters
-                split_word = re.split("([^A-Za-z0-9_(\w'\w)])|(^')|('$)", tok)
-                split_word = [w for w in split_word if not w == None and len(w) > 2]
-                if args.disable_spell_check:
-                    updated_tokens += split_word
-                    continue
-
-                for sub in split_word:
-                    spell_checked = spell_correct(args, gb, gb_and_pwl, sub, bigrams).split()
-                    updated_tokens += spell_checked
-            tokens = updated_tokens
-
-            # Handle issue with dashes appearing at start of word
-            mod_tokens = []
-            for i in range(len(tokens)):
-                mod_tokens += tokens[i].split() #fix_hyphens(tokens[i])
-            tokens = mod_tokens
-
-            # Replace split contractions with full words
-            tokens = contractions(tokens)
-
-            if not args.stats:
-                # First, remove trailing hyphens and slashes
-                sub_pattern = '\A([\W_]*)([A-Za-z0-9]+|[A-Za-z0-9]+[\W_]+[A-Za-z0-9]+)([\W_]*)$'
-                tokens = [re.sub(sub_pattern, "\\2", x) for x in tokens]
-
-                tokens = remove_unwanted(args, tokens)
-
-            # If tokenizing text in order to find useful stats, do extra
-            # processing and return without removing words
-            if args.stats:
-                output.append(" ".join(tokens))
-                continue
-
-            # Turn into bigrams if flag is true
-            if args.bigrams and not args.stats:
-                tokens = make_bigrams(tokens)
-
-            finished = " ".join(tokens)
-
-            # If needed, replace street names with generic version
-            if args.street_sub:
-                finished = re.sub("([^ ]+\-street)|([A-Z][a-z]* street)", "$name_street", finished)
-                # finished = re.sub("([^ ]+\-lane)|([A-Z][a-z]* lane)", "$name_street", finished)
-                # finished = re.sub("([^ ]+\-road)|([A-Z][a-z]* road)", "$name_street", finished)
-                # finished = re.sub("[^ ]+\-row", "$name_street", finished)
-                # also -square, -highway, -cross, -grove, -town
-
-            output.append(finished)
+            output.append(tokenize_line(line))
     return output
 
 # Eventually, we jsut want to run this on each word, might need a way to speed
@@ -303,35 +305,51 @@ def main(args):
             f.write("\n".join(output))
         exit(0)
     else:
-        # Compile list of files to tokenize
-        files = [os.path.join(args.corpus_dir, f) for f in os.listdir(args.corpus_dir)
-                 if (os.path.isfile(os.path.join(args.corpus_dir, f)) and f.endswith('.txt'))]
-
-        for i in tqdm(range(len(files))):
-            file = files[i]
-            # Define path for new tokenized file
-            output_file = os.path.join(output_dir, os.path.basename(file))
+        if args.tsv_data:
+            output_file = args.tsv_data[:-4] + suffix + ".tsv"
             if not args.overwrite and os.path.exists(output_file):
-                continue
-
-            # Tokenize single file
-            output = tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams)
-            # with open(file, "r") as f:
-            #     content = f.read()
-            #     lines = content.split("\n")
-            #     for j, line in enumerate(lines):
-            #         line_split = line.split(" ")
-            #         for i, word in enumerate(line_split):
-            #             if word.lower() in stop_words: line_split[i] = ""
-            #         lines[j] = " ".join(line_split)
-            #     output = lines
-            # Write output to new file
+                print("File", output_file, "exists. Exiting...")
+                exit(0)
+            with open(args.tsv_data, 'r') as f:
+                docs = f.read().split("\n")
+                tsv_out = [docs[0]]
+                for doc in tqdm(docs[1:]):
+                    id, year, text = doc.split("\t")
+                    tokenized = tokenize_line(args, text, output_dir, gb, gb_and_pwl, bigrams)
+                    tsv_out.append(id + "\t" + year + "\t" + tokenized)
             with open(output_file, "w") as f:
-                f.write('\n'.join(output))
+                f.write('\n'.join(tsv_out))
+        else:
+            # Compile list of files to tokenize
+            files = [os.path.join(args.corpus_dir, f) for f in os.listdir(args.corpus_dir)
+                     if (os.path.isfile(os.path.join(args.corpus_dir, f)) and f.endswith('.txt'))]
+
+            for i in tqdm(range(len(files))):
+                file = files[i]
+                # Define path for new tokenized file
+                output_file = os.path.join(output_dir, os.path.basename(file))
+                if not args.overwrite and os.path.exists(output_file):
+                    continue
+
+                # Tokenize single file
+                output = tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams)
+                # with open(file, "r") as f:
+                #     content = f.read()
+                #     lines = content.split("\n")
+                #     for j, line in enumerate(lines):
+                #         line_split = line.split(" ")
+                #         for i, word in enumerate(line_split):
+                #             if word.lower() in stop_words: line_split[i] = ""
+                #         lines[j] = " ".join(line_split)
+                #     output = lines
+                # Write output to new file
+                with open(output_file, "w") as f:
+                    f.write('\n'.join(output))
         print(timestamp() + " Tokenization done.", file=sys.stderr)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--tsv_data', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt.tsv", help='path to data in tsv format')
     parser.add_argument('--output_dir_base', type=str, default="", help='location to save tokenized text')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsPapers-txt", help='directory containing corpus')
     parser.add_argument('--filepath', type=str, default="", help='path to single file to be tokenized')

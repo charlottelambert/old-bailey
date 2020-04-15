@@ -5,7 +5,8 @@ import xml.etree.ElementTree as ET
 from tqdm import tqdm
 from tei_reader import TeiReader
 from bs4 import BeautifulSoup
-
+sys.path.append("..")
+from utils import *
 
 def encode_name(args, elem):
     """
@@ -102,7 +103,7 @@ def encode_annotations(args, xml_path, txt_output_dir):
                 elem.text = annotated_element
         if not args.london_lives and elem.tag == "div1":
             file_name = elem.attrib["id"]
-            elem.text = "SPLIT_HERE\t" + elem.attrib["type"] + "\t" + os.path.join(txt_output_dir, file_name + ".txt")
+            elem.text = "SPLIT_HERE\t" +  elem.attrib["id"][1:5] + "\t" + elem.attrib["id"]
         elem.text = " " if not elem.text else elem.text + " "
 
 
@@ -115,18 +116,24 @@ def encode_annotations(args, xml_path, txt_output_dir):
     return text_from_xml.replace('\\n', '\n') # Fixes issue printing "\n"
 
 def split_trials(text):
+    """
+        Iterate over text found from file. Find indication of split between
+        trials ("SPLIT_HERE\tYEAR\tID"). Return list of lines to be written to
+        tsv file where each line is ID\tYEAR\tTEXT.
+    """
+    tsv_out = []
     lines = text.split("\n")
-    write_dict = {}
     text = []
     for line in lines:
         if "SPLIT_HERE" in line:
             if text:
-                write_dict[path.rstrip()] = "\n".join(text)
+                merged_text = re.sub("\ +", " ", " ".join(text))
+                tsv_out.append(id.rstrip() + "\t" + year + "\t" + merged_text)
                 text = []
-            _, label, path = line.split("\\t")
+            _, year, id = line.split("\\t")
         elif line.strip():
             text.append(line)
-    return write_dict
+    return tsv_out
 
 
 def main(args):
@@ -144,6 +151,7 @@ def main(args):
         input_files = [os.path.join(args.corpus_XML_dir, f) for f in os.listdir(args.corpus_XML_dir)
         if os.path.isfile(os.path.join(args.corpus_XML_dir, f))]
 
+        input_files = natsort.natsorted(input_files, key=lambda x: get_order(x))
     # Define name of output directory
     base_name = os.path.dirname(args.corpus_XML_dir).rstrip("/") + "-txt"
     annotations_str = "-gen" if args.encode_annotations_general else ""
@@ -153,7 +161,7 @@ def main(args):
 
     if not os.path.exists(txt_output_dir):
         os.mkdir(txt_output_dir)
-
+    tsv_out = ["id\tyear\ttext"]
     # Go through input files and generate output files
     for i in tqdm(range(len(input_files))):
         # Get current file
@@ -176,18 +184,23 @@ def main(args):
                     continue
                 with open(file_path, "w") as txt_file:
                     txt_file.write(text_from_xml)
+                exit(0)
             else:
                 text_from_xml = encode_annotations(args, file, txt_output_dir)[2:-1]
-                write_dict = split_trials(text_from_xml)
-                for path, text_to_write in write_dict.items():
-                    with open(path, "w") as txt_file:
-                        txt_file.write(text_to_write)
+                tsv_out += split_trials(text_from_xml)
+
         except UnicodeDecodeError:
             print("UnicodeDecodeError reading " + file + ". Skipping...")
             continue
         except ET.ParseError:
             print("ParseError reading " + file + ". Skipping...")
 
+    with open(txt_output_dir + ".tsv", 'w') as f:
+        f.write("\n".join(tsv_out))
+    print("Data written to " + txt_output_dir + ".tsv", file=sys.stderr)
+
+
+#ID #Year #text.replace("\n, " ")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
