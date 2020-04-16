@@ -5,9 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=clambert@vassar.edu
-#SBATCH -c 64 --pty /bin/bash --exclusive
-
-#-p emc --exclusive
+#SBATCH -p emc --exclusive
 
 #ADD THIS BACK: --exclusive
 
@@ -24,7 +22,7 @@ TOPICS=${1:-30}
 SUFFIX=${2:-}
 echo Suffix: $SUFFIX
 
-./run_model.py --unigrams_only --corpus_file=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok.tsv --num_topics=$TOPICS --year_split=-1
+#./run_model.py --unigrams_only --corpus_file=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok.tsv --num_topics=$TOPICS --year_split=-1
 
 #./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=5 --year_split=-1 --num_iterations=5 --suffix=$SUFFIX
 # then -txt-tok- disable stop words (?)
@@ -46,6 +44,6 @@ echo Suffix: $SUFFIX
 # OB + LL: time slices, bigrams
 #./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
 # time slices
-#./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
+./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
 echo Finished: `date`
