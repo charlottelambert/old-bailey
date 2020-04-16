@@ -275,7 +275,7 @@ def main(args):
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
-    if not args.filepath:
+    if not args.filepath and not args.tsv_data:
         print(timestamp() + " Tokenizing data to", suffix, file=sys.stderr)
 
     enchant.set_param("enchant.myspell.dictionary.path", args.myspell_path)
@@ -313,8 +313,10 @@ def main(args):
             with open(args.tsv_data, 'r') as f:
                 docs = f.read().split("\n")
                 tsv_out = [docs[0]]
-                for doc in tqdm(docs[1:]):
-                    id, year, text = doc.split("\t")
+                for doc in docs[1:]:
+                    try:
+                        id, year, text = doc.split("\t")
+                    except ValueError: continue
                     tokenized = tokenize_line(args, text, output_dir, gb, gb_and_pwl, bigrams)
                     tsv_out.append(id + "\t" + year + "\t" + tokenized)
             with open(output_file, "w") as f:
@@ -345,7 +347,7 @@ def main(args):
                 # Write output to new file
                 with open(output_file, "w") as f:
                     f.write('\n'.join(output))
-        print(timestamp() + " Tokenization done.", file=sys.stderr)
+        # print(timestamp() + " Tokenization done.", file=sys.stderr)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
