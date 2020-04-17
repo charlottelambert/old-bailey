@@ -84,6 +84,11 @@ def load_docs(options):
 
 
 def main(options, args):
+    if options.method == 'vectors':
+        print("Loading word2vec model from path", options.word2vec_model, file=sys.stderr, end=' ')
+        model = Word2Vec.load(options.word2vec_model)
+        print("Done!", file=sys.stderr)
+
     for wk in args:
         # Extract topics from each model
         print("Getting topics...", file=sys.stderr, end=' ')
@@ -98,17 +103,6 @@ def main(options, args):
             # export PYTHONPATH=/home/clambert/thesis/topic-modeling/lda-tools/lib:$PYTHONPATH
             corpus = load_docs(options)
             print("Done!", file=sys.stderr)
-
-            # print(D(corpus, "murther", second_word="murder"))
-            # NOW IMPLEMENT THAT MASS THING!!
-            # exit(0)
-        elif options.method == 'vectors':
-            print("Loading word2vec model from path", options.word2vec_model, file=sys.stderr, end=' ')
-            model = Word2Vec.load(options.word2vec_model)
-            print("Done!", file=sys.stderr)
-            # print(model.wv.vocab)
-            # print(len(model.wv.vocab))
-            # exit(0)
 
         print("Calculating coherence for", len(topics) ,"topics...", file=sys.stderr)
         c_value = 0
