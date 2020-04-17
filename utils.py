@@ -27,7 +27,7 @@ def get_order(file):
         return base[1:]
     return base
 
-def get_year(file, include_month=False):
+def get_year(input, include_month=False, tsv=False):
     """
         Get the year a file refers to.
 
@@ -35,17 +35,18 @@ def get_year(file, include_month=False):
 
         returns year in int format
     """
+    if tsv: return int(input.split("\t")[1])
     try:
-        if os.path.basename(file)[:2] == "OA": offset = 2
-        elif os.path.basename(file)[:1].isalpha(): offset = 1
+        if os.path.basename(input)[:2] == "OA": offset = 2
+        elif os.path.basename(input)[:1].isalpha(): offset = 1
         else: offset = 0
-        year = int(os.path.basename(file)[0 + offset:4 + offset])
+        year = int(os.path.basename(input)[0 + offset:4 + offset])
         if include_month:
-            month = int(os.path.basename(file)[4 + offset:6 + offset])
+            month = int(os.path.basename(input)[4 + offset:6 + offset])
             return (year, month)
         return year
     except ValueError:
-        print(timestamp() + " Skipping invalid file", file, file=sys.stderr)
+        print(timestamp() + " Skipping invalid file", input, file=sys.stderr)
         return -1
 
 def order_files(args):
@@ -56,29 +57,41 @@ def order_files(args):
         output: dictionary of format {"YYYY":[file0,file1,...], "YYYY+args.year_split":[file0,file1,...]}
                 and time slices:: [a, b, c]
     """
-    files = [os.path.join(args.corpus_dir, f) for f in os.listdir(args.corpus_dir)
-             if (os.path.isfile(os.path.join(args.corpus_dir, f))
-                 and re.match(".*[0-9]{8}", f) and f.endswith('.txt'))]
+    # If given tsv file as input, order documents based on year
+    tsv = False
+    try:
+        with open(args.corpus_file, 'r') as f:
+            lines = f.read().split("\n")
+            lines = [line for line in lines if line.rstrip()]
+            docs = natsort.natsorted(lines, key=lambda x: x.split("\t")[1])
+            tsv = True
+    except:
+        docs = [os.path.join(args.corpus_dir, f) for f in os.listdir(args.corpus_dir)
+                 if (os.path.isfile(os.path.join(args.corpus_dir, f))
+                     and re.match(".*[0-9]{8}", f) and f.endswith('.txt'))]
 
-    files = natsort.natsorted(files, key=lambda x: get_order(x))  # Sort in ascending numeric order
+        docs = natsort.natsorted(docs, key=lambda x: get_order(x))  # Sort in ascending numeric order
 
-    start_year = get_year(files[0])
-    files_dict = {start_year:[]}
+    start_year = get_year(docs[0], tsv=tsv)
+    docs_dict = {start_year:[]}
 
+    # Determine if we want to split by year
     try:
         year_split = args.year_split
     except AttributeError:
         year_split = -1
 
+    # If no split, just return docs as is
     if year_split == -1:
-        files_dict[start_year] = files
-        return [files_dict, len(files)]
+        docs_dict[start_year] = docs
+        return [docs_dict, len(docs)]
 
-    for file in files:
-        cur_year = get_year(file)
+    for doc in docs:
+        # Get year for current document
+        cur_year = get_year(doc)
         if cur_year == -1: continue
         if cur_year - start_year >= args.year_split:
             start_year = cur_year
-            files_dict[start_year] = []
-        files_dict[start_year].append(file)
-    return [files_dict, [len(file_list) for year, file_list in files_dict.items()]]
+            docs_dict[start_year] = []
+        docs_dict[start_year].append(doc)
+    return [docs_dict, [len(doc_list) for year, doc_list in docs_dict.items()]]
