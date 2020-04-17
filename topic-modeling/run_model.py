@@ -21,9 +21,6 @@ from vis_topic_mallet import get_topics
 sys.path.append('../')
 from utils import *
 
-# TAKEN OUT OF RUN-LDA.SBATCH, PUT BACK IF RUNNING OUT OF MEMORY
-# #SBATCH -c 64
-# export JAVA_OPTIONS="-Xms4G -Xmx8G"
 
 def calc_coherence(model, corpus):
     cm = CoherenceModel(model=model, corpus=corpus, coherence='u_mass')
@@ -63,7 +60,7 @@ def compile_tokens(args, files):
         with open(os.path.join(args.corpus_dir, file)) as f:
             text = f.read().lower().replace("\n", " ").split(" ")
 
-            # Changed: Also remove stop words from Mallet version
+            # Changed: Also remove stop words from Mallet version`
             # stop_words = stop.modified_stop_words
             # text = [word for word in text if word not in stop_words]
             texts.append(text)
@@ -72,7 +69,7 @@ def compile_tokens(args, files):
     # texts = get_ngrams(args, texts)
     return texts
 
-def run_lda(args, corpus, pre, dictionary=None, workers=None):
+def run_lda(args, corpus, pre, dictionary=None, workers=None, docs=None):
     MALLET_PATH = os.environ.get("MALLET_PATH", "lda-tools/ext/mallet/bin/mallet")
     if args.gensim:
         lda = gensim.models.wrappers.LdaMallet
@@ -83,17 +80,28 @@ def run_lda(args, corpus, pre, dictionary=None, workers=None):
     else:
         rand_prefix = hex(random.randint(0, 0xffffff))[2:] + '-'
         prefix = os.path.join(tempfile.gettempdir(), rand_prefix)
+        mallet_corpus = prefix + 'corpus'
 
         print('Generating topic model.')
-        mallet_corpus = prefix + 'corpus'
-        os.makedirs(mallet_corpus)
         form = 'tsv' if args.corpus_file else "text"
-        corpus.export(mallet_corpus, abstract=False, form=form)
+        if not args.corpus_file:
+            os.makedirs(mallet_corpus)
+            corpus.export(mallet_corpus, abstract=False, form=form)
+        elif args.year_split != -1:
+            year, lines = docs
+            os.makedirs(mallet_corpus)
+            corpus_file = os.path.join(mallet_corpus, str(year) + "-tmp.tsv")
+            with open(corpus_file, 'w') as f:
+                f.write("\t".join(lines))
+        else:
+            corpus_file = args.corpus_file
+        mallet_corpus = None if args.corpus_file else mallet_corpus
+
         model = Mallet(MALLET_PATH, mallet_corpus, num_topics=args.num_topics,
                        iters=args.num_iterations, bigrams=args.bigrams_only,
                        topical_n_grams=args.topical_n_grams,
                        remove_stopwords=(not args.topical_n_grams), prefix=pre,
-                       print_output=True)
+                       print_output=True, file=corpus_file)
     return model
 
 def run_multicore(args, corpus, dictionary, passes, alpha, workers, pre):
@@ -159,7 +167,7 @@ def model_for_year(args, year, files, pre, time_slices):
     elif args.model_type == "lda" and args.gensim:
         model = run_lda(args, corpus, pre, dictionary=dictionary, workers=12)
     elif args.model_type == "lda":
-        model = run_lda(args, corpus, pre)
+        model = run_lda(args, corpus, pre, docs=(year, files))
     else:
         if args.model_type == "dtm": # Dynamic Topic Model
             model = run_dtm(args, corpus, dictionary, time_slices, pre)
@@ -171,11 +179,6 @@ def model_for_year(args, year, files, pre, time_slices):
     if args.coherence:
         if args.gensim:
             calc_coherence(model, corpus)
-        # else:
-        #     weight_path = os.path.join(pre, "weighted-keys.txt")
-        #     topics = get_topics(weight_path)
-        #     print(topics)
-        #     calc_coherence(corpus, topics=topics, dictionary=dictionary)
     if not args.gensim and args.model_type == "lda":
         return model
 
@@ -222,7 +225,7 @@ def model_on_directory(args):
     print(timestamp() + " Time slices:", time_slices)
     # Loop for some model types
     if args.model_type in ["lda", "multicore"]:
-        for year, files in files_dict.items():
+        for year, docs in files_dict.items():
             if len(files_dict.items()) == 1:
                 year = ""
                 temp_pre = pre
@@ -230,15 +233,15 @@ def model_on_directory(args):
                 temp_pre = os.path.join(pre, str(year) + "/")
             if not os.path.exists(temp_pre):
                 os.makedirs(temp_pre)
-            print(model_for_year(args, year, files, temp_pre, time_slices))
+            print(model_for_year(args, year, docs, temp_pre, time_slices))
 
     # Dynamic models only need to be run once
     elif args.model_type in ["dtm", "ldaseq"]:
-        files = []
+        docs = []
         for year, file_list in files_dict.items():
-            files += file_list
+            docs += file_list
 
-        model_for_year(args, None, files, pre, time_slices)
+        model_for_year(args, None, docs, pre, time_slices)
     print(timestamp() + " Done.", file=sys.stderr)
 
 # _________________________________________________________________________
@@ -251,7 +254,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--corpus_file', type=str, default='/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok.tsv')
+    parser.add_argument('--corpus_file', type=str, default='')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--unigrams_only', default=False, action="store_true", help='whether or not to only include unigrams')
     parser.add_argument('--bigrams_only', default=False, action="store_true", help='whether or not to only include bigrams')
