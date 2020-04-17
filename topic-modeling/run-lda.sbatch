@@ -5,9 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=clambert@vassar.edu
-#SBATCH -c 64 --exclusive
-
-#-p emc --exclusive
+#SBATCH -p emc --exclusive
 
 #ADD THIS BACK: --exclusive
 
