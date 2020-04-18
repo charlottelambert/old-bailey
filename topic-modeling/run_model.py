@@ -84,6 +84,7 @@ def run_lda(args, corpus, pre, dictionary=None, workers=None, docs=None):
 
         print('Generating topic model.')
         form = 'tsv' if args.corpus_file else "text"
+        corpus_file = None
         if not args.corpus_file:
             os.makedirs(mallet_corpus)
             corpus.export(mallet_corpus, abstract=False, form=form)
