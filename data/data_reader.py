@@ -8,6 +8,12 @@ from bs4 import BeautifulSoup
 sys.path.append("..")
 from utils import *
 
+type_dict = {
+    "div1": (1, 5),
+    ("div0", "sessionsPaper"): (0,4),
+    ("div0", "ordinarysAccount"): (2,6)
+}
+
 def encode_name(args, elem):
     """
         Encode name information based on a given element with tag "persName"
@@ -108,28 +114,32 @@ def encode_annotations(args, xml_path, txt_output_dir):
                 # Replace info in element with new info
                 elem.clear()
                 elem.text = annotated_element
-        if not args.london_lives:
-            if elem.tag == "div1":
-                file_name = elem.attrib["id"]
-                print(elem.attrib["type"])
-                elem.text = "SPLIT_HERE\t" +  elem.attrib["id"][1:5] + "\t" + elem.attrib["id"]
-            elif elem.tag == "div0" and elem.attrib["type"] == "sessionsPaper":
-                file_name = elem.attrib["id"]
-                elem.text = "SPLIT_HERE\t" +  elem.attrib["id"][0:4] + "\t" + elem.attrib["id"]
-            elif elem.tag == "div0" and elem.attrib["type"] == "ordinarysAccount":
-                file_name = elem.attrib["id"]
-                elem.text = "SPLIT_HERE\t" +  elem.attrib["id"][2:6] + "\t" + elem.attrib["id"]
-        elem.text = " " if not elem.text else elem.text + " "
+        if not args.london_lives and args.tsv:
+            # Check if current element indicates a split between trials
+            if elem.attrib["id"] in type_dict:
+                range = type_dict[elem.tag]
+            elif (elem.tag, elem.attrib["type"]) in type_dict:
+                range = type_dict[elem.tag, elem.attrib["type"]]
+            else:
+                # Does not indicate a split between trials
+                elem.text = " " if not elem.text else elem.text + " "
+                continue
+            # Identify file name and insert text
+            file_name = elem.attrib["id"]
+            elem.text = "SPLIT_HERE\t" + file_name[range[0]:range[1]] + "\t" + file_name
+        else:
+            elem.text = " " if not elem.text else elem.text + " "
 
 
     # Find root of tree, convert to string, and return
     text_from_xml = str(ET.tostring(root, encoding='ASCII', method='text'))
+    # Fix issues with new lines and tabs
     sub_str = " " if args.tsv else "\n"
     text_from_xml = html.unescape(text_from_xml).replace("\\t", " ").replace("\\n", sub_str)
     text_from_xml = re.sub("\ +", " ", text_from_xml)
 
     if args.london_lives:
-        return text_from_xml, filename # Fixes issue printing "\n"
+        return text_from_xml, filename
     return text_from_xml
 
 def split_trials(text):
@@ -214,7 +224,8 @@ def main(args):
                         txt_file.write(text_from_xml)
             else:
                 text_from_xml = encode_annotations(args, file, txt_output_dir)[2:-1]
-                tsv_out += split_trials(text_from_xml)
+                if args.tsv:
+                    tsv_out += split_trials(text_from_xml)
 
         except UnicodeDecodeError:
             print("UnicodeDecodeError reading " + file + ". Skipping...")
@@ -223,6 +234,7 @@ def main(args):
             print("ParseError reading " + file + ". Skipping...")
     if args.tsv:
         with open(txt_output_dir + ".tsv", 'w') as f:
+            # Sort in year order
             tsv_out = [tsv_out[0]] + natsort.natsorted(tsv_out[1:], key=lambda x: x.split("\t")[1])
             f.write("\n".join(tsv_out))
     print("Data written to " + txt_output_dir + ".tsv", file=sys.stderr)
