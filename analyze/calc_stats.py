@@ -66,7 +66,7 @@ def get_stat_output(args, first_year, stats_dict, top_words, data_list):
 
     return ret
 
-def stats_for_file(file, stats_dict):
+def stats_for_file(text, stats_dict):
     """
         For a given file, increment values in stats dict based on types of words
         in the file.
@@ -80,54 +80,54 @@ def stats_for_file(file, stats_dict):
     if args.unique:
         words_seen = set()
 
-    with open(file) as f:
-        for line in f:
-            line = line.replace("/", " ")
+    # with open(file) as f:
+    for line in text:
+        line = line.replace("/", " ")
 
-            # all_tokens: all words in line (excluding just punctuation)
-            all_tokens = [tok for tok in line.split() if re.search('[a-zA-Z]', tok)]
-            backup = [tok for tok in line.split() if re.search('[a-zA-Z]', tok)]
+        # all_tokens: all words in line (excluding just punctuation)
+        all_tokens = [tok for tok in line.split() if re.search('[a-zA-Z]', tok)]
+        backup = [tok for tok in line.split() if re.search('[a-zA-Z]', tok)]
 
-            # If only looking for unique words, don't add any that have already been processed
-            if args.unique:
-                all_tokens = list(set([tok for tok in all_tokens if tok not in words_seen]))
-                words_seen.update(all_tokens)
+        # If only looking for unique words, don't add any that have already been processed
+        if args.unique:
+            all_tokens = list(set([tok for tok in all_tokens if tok not in words_seen]))
+            words_seen.update(all_tokens)
 
-            stats_dict['total'] += len(all_tokens)
+        stats_dict['total'] += len(all_tokens)
 
-            # Calculate capitalization statistics
-            for word in all_tokens:
-                if word.isupper():
-                    stats_dict['upper'] += 1
-                elif word.islower():
-                    stats_dict['lower'] += 1
-                else:
-                    stats_dict['mixed'] += 1
+        # Calculate capitalization statistics
+        for word in all_tokens:
+            if word.isupper():
+                stats_dict['upper'] += 1
+            elif word.islower():
+                stats_dict['lower'] += 1
+            else:
+                stats_dict['mixed'] += 1
 
-            tagged_nnp = [pair[0] for pair in tagged_sent if pair[1] == 'NNP']
+        tagged_nnp = [pair[0] for pair in tagged_sent if pair[1] == 'NNP']
 
-            all_tokens, propernouns = update_tok_lists(all_tokens, tagged_nnp)
-            stats_dict['proper_nouns'] += len(propernouns)
+        all_tokens, propernouns = update_tok_lists(all_tokens, tagged_nnp)
+        stats_dict['proper_nouns'] += len(propernouns)
 
-            # english_words: all words in english in the line
-            in_english = english_words.extract_keywords(" ".join(all_tokens))
-            all_tokens, english_words_found = update_tok_lists(all_tokens, in_english)
+        # english_words: all words in english in the line
+        in_english = english_words.extract_keywords(" ".join(all_tokens))
+        all_tokens, english_words_found = update_tok_lists(all_tokens, in_english)
 
-            stats_dict['modern_english'] += len(english_words_found)
+        stats_dict['modern_english'] += len(english_words_found)
 
-            # latin_words: all latin words in the line
-            in_latin = latin_words.extract_keywords(" ".join(all_tokens))
-            all_tokens, latin_words_found = update_tok_lists(all_tokens, in_latin)
-            stats_dict['latin'] += len(latin_words_found)
+        # latin_words: all latin words in the line
+        in_latin = latin_words.extract_keywords(" ".join(all_tokens))
+        all_tokens, latin_words_found = update_tok_lists(all_tokens, in_latin)
+        stats_dict['latin'] += len(latin_words_found)
 
-            stats_dict['unk'] += len(all_tokens)
-            unk_words.update([word for word in backup if word.lower() in all_tokens])
-            try:
-                assert stats_dict["modern_english"] + stats_dict["latin"] + stats_dict["old_english"] + stats_dict["proper_nouns"] + stats_dict["unk"] == stats_dict["total"]
-                assert stats_dict["lower"] + stats_dict["upper"] + stats_dict["mixed"] == stats_dict["total"]
-            except AssertionError:
-                print(timestamp(), "Error: failed to process file. Skipping", file, file=sys.stderr)
-                return [backup, 0]
+        stats_dict['unk'] += len(all_tokens)
+        unk_words.update([word for word in backup if word.lower() in all_tokens])
+        try:
+            assert stats_dict["modern_english"] + stats_dict["latin"] + stats_dict["old_english"] + stats_dict["proper_nouns"] + stats_dict["unk"] == stats_dict["total"]
+            assert stats_dict["lower"] + stats_dict["upper"] + stats_dict["mixed"] == stats_dict["total"]
+        except AssertionError:
+            print(timestamp(), "Error: failed to process file. Skipping", file, file=sys.stderr)
+            return [backup, 0]
 
     return [stats_dict, 1]
 
@@ -165,13 +165,13 @@ def graph_word_freqs(args, fd, suffix, dir="", save=False, restart=False):
     plt.show()
     if restart: plt.clf()
 
-def find_basic_stats(args, files_dict):
+def find_basic_stats(args, files_dict, dir):
     """
         Function finding basic statistics for all files in corpus.
     """
     print(timestamp() + " Starting statistics calculation...", file=sys.stderr)
-    # First, find out how many files there are per year chunk
-    stats_path = os.path.join(args.corpus_dir, "basic_stats.tsv")
+    # Make path for outputting statistics
+    stats_path = os.path.join(dir, "basic_stats.tsv")
     with open(stats_path, "w") as f:
         tsv_writer = csv.writer(f, delimiter='\t')
         stat_dict = {"stat_name": [], "num_docs":[],
@@ -182,22 +182,20 @@ def find_basic_stats(args, files_dict):
             slice_fd = nltk.FreqDist()
             stat_dict["stat_name"].append(start_year)
             stat_dict["num_docs"].append(len(files))
-            # num_tokens = 0
-            # types = set()
             for i in tqdm(range(len(files))):
-                file = files[i]
-                with open(file, "r") as f:
-                    # Increment token count
-                    toks = f.read().lower().split()
-                    # num_tokens += len(sum[])
-                    # types.update(toks)
-                    # Update frequency distribution for time slice
-                    slice_fd.update(toks)
+                if args.corpus_file:
+                    toks = files[i].lower().split()
+                else:
+                    with open(files[i], "r") as f:
+                        # Increment token count
+                        toks = f.read().lower().split()
+                # Update frequency distribution for time slice
+                slice_fd.update(toks)
             num_types = len(slice_fd)
             num_tokens = sum([v for k,v in slice_fd.items()])
             # Update frequency distribution for whole corpus
             corpus_fd.update({k:v for k, v in slice_fd.items() if re.search('\w', k)})
-            graph_word_freqs(args, slice_fd, str(start_year), save=False, restart=False)
+            graph_word_freqs(args, slice_fd, str(start_year), dir=os.path.dirname(stats_path), save=False, restart=False)
 
             stat_dict["num_tokens"].append(num_tokens)
             stat_dict["num_types"].append(num_types)
@@ -215,8 +213,7 @@ def find_basic_stats(args, files_dict):
 
     # Plot the word frequencies
     suff = "London Lives" if "londonLives" in args.corpus_dir else "Old Bailey"
-    graph_word_freqs(args, corpus_fd, suff, save=True, restart=True)
-
+    graph_word_freqs(args, corpus_fd, suff, dir=os.path.dirname(stats_path), save=True, restart=True)
     print(timestamp() + " Done! Wrote basic statistics to", stats_path, file=sys.stderr)
 
 
@@ -251,11 +248,26 @@ def main(args):
         print("Percent of proper nouns in all text:", (num_proper_nouns/num_total) * 100, "%")
         exit(0)
 
+    print(timestamp(), "Collecting text data...", file=sys.stderr)
     # Order files by year
     files_dict, _ = order_files(args)
 
+    # Make output path
+    if args.corpus_file:
+        dir = os.path.dirname(args.corpus_file)
+        base = os.path.basename(args.corpus_file).replace(".tsv", "")
+        if args.london_lives_file:
+            s = base.split("-")
+            if len(s) > 1:
+                base = "OB_LL" + "-" + "-".join(base.split("-")[1:])
+            else: base = "OB_LL"
+        base += "-stats"
+        dir = os.path.join(dir, base)
+        if not os.path.exists(dir): os.makedirs(dir)
+    else: dir = args.corpus_dir
+
     if args.basic_stats:
-        find_basic_stats(args, files_dict)
+        find_basic_stats(args, files_dict, dir)
         exit(0)
 
     # If we have a model to load, add fields to data_list and load model
@@ -271,7 +283,7 @@ def main(args):
         tfidf, corpus, mydict = gensim_tfidf(args, pre, documents)
     path_suff = ""
     if args.unique:
-        path_suff += "-unique"
+        path_suff += "unique-"
     # Add latin words to keyword processor
     with open(args.latin_dict) as f:
         latin_dict = f.read().split()
@@ -288,22 +300,27 @@ def main(args):
     # Initialize stats dict
     stats_dict = init_stats_dict(data_list)
 
-    # Make output path
-    base_stats_dir = os.path.join(args.corpus_dir, "../stats_dir/")
-    if not os.path.exists(base_stats_dir):
-        os.mkdir(base_stats_dir)
+    stats_path = os.path.join(dir, path_suff + "stats.tsv")
 
-    stats_path = os.path.join(base_stats_dir, args.corpus_dir.rstrip('/') + path_suff + "-stats.tsv")
     with open(stats_path, "w") as f: # FIX OUTPUT DIRECTORY AND PATH
         tsv_writer = csv.writer(f, delimiter='\t')
         tsv_writer.writerow(["start_year"] +  data_list)
         valid = 1
         doc_idx = 0
+        # Iterate over each time slice
         for first_year, files in files_dict.items():
-
+            # Iterate over all documents in corpus
             for i in tqdm(range(len(files[:1]))):
-                file_path = files[i]
-                stats_dict, valid = stats_for_file(file_path, stats_dict)
+                # If reading from a corpus file, just pass in the text
+                if args.corpus_file:
+                    text = files[i].split("\n")
+                # Otherwise pass in an opened file
+                else:
+                    text = open(files[i], 'r')
+                # Get the statistics
+                stats_dict, valid = stats_for_file(text, stats_dict)
+                # Close file if necessary
+                if not args.corpus_file: text.close()
             if valid:
                 if args.disable_tfidf:
                     top_words = []
@@ -313,6 +330,8 @@ def main(args):
 
             doc_idx += 1
     print(timestamp() + " Wrote statistics to", stats_path, file=sys.stderr)
+    
+    # Print unknown words (for testing)
     if args.print_unk:
         sorted = list(unk_words)
         sorted.sort()
@@ -320,6 +339,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--corpus_file', type=str, default='')
+    parser.add_argument('--london_lives_file', type=str, default='')
     parser.add_argument('--basic_stats', default=False, action='store_true', help='whether to find basic corpus stats only.')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-stats", help='directory containing corpus')
     parser.add_argument('--year_split', type=int, default=100, help='number of years to calculate stats for')
@@ -332,7 +353,6 @@ if __name__ == '__main__':
     parser.add_argument('--count_entities', default=False, action='store_true', help='whether or not to count named entities in corpus and bnc')
     parser.add_argument('--print_unk', default=False, action='store_true', help='whether or not to print out unknown words')
     parser.add_argument('--bnc_dir', type=str, default="/work/clambert/thesis-data/parsed-bnc", help='path for calculating bnc entities')
-    # parser.add_argument('--bnc_entities', default=False, action='store_true', help='whether or not to calculate BNC entities')
     parser.add_argument('--disable_tfidf', default=False, action='store_true')
     parser.add_argument('--graph_bnc', default=False, action='store_true')
     args = parser.parse_args()

@@ -121,7 +121,7 @@ if __name__ == '__main__':
     parser = OptionParser(usage="usage: %prog [options] weighted_keys1 weighted_keys2 ...")
     # parser.add_option('weighted_keys', type=str, help='path to weighted_keys.txt file to load')
     parser.add_option('--corpus_dir', type=str, default='/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-lower', help='path to corpus path')
-    parser.add_option('--method', type=str, default='umass', help='method to use when calculating coherence')
+    parser.add_option('--method', type=str, default='vectors', help='method to use when calculating coherence')
     parser.add_option('--word2vec_model', type=str, default='/work/clambert/models/word2vec/2020-04-13/10-07-41/w2v.model', help='path to word2vec model to use in vector method')
     # args = parser.parse_args()
     (options, args) = parser.parse_args()

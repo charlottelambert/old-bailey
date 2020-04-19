@@ -39,7 +39,10 @@ def get_year(input, include_month=False, tsv=False):
 
         returns year in int format
     """
-    if tsv: return int(input.split("\t")[1])
+    if tsv:
+        cols = input.split("\t")
+        if cols[0].lower() == "id": return -1
+        return int(cols[1])
     try:
         if os.path.basename(input)[:2] == "OA": offset = 2
         elif os.path.basename(input)[:1].isalpha(): offset = 1
@@ -103,7 +106,7 @@ def order_files(args):
 
     for doc in docs:
         # Get year for current document
-        cur_year = get_year(doc)
+        cur_year = get_year(doc, tsv=tsv)
         if cur_year == -1: continue
         if cur_year - start_year >= args.year_split:
             start_year = cur_year
