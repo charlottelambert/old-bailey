@@ -69,7 +69,10 @@ def order_files(args):
     try:
         with open(args.corpus_file, 'r') as f:
             lines = f.read().split("\n")
-            lines = [line for line in lines if line.rstrip()]
+
+            if lines[0].lower() == "id\tyear\ttext": idx = 1
+            else: idx = 0
+            lines = [line for line in lines[idx:] if line.rstrip()]
             tsv = True
         # If there was an input london lives tsv file, add that to the documents
         try:
@@ -78,7 +81,6 @@ def order_files(args):
                 ll_lines = [line for line in ll_lines if line.rstrip()]
             lines += ll_lines
         except: pass
-
         docs = natsort.natsorted(lines, key=lambda x: x.split("\t")[1])
 
     # Otherwise, input is directory of files
