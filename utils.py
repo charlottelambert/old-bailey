@@ -17,6 +17,9 @@ c_dict =    {
 }
 
 def timestamp():
+    """
+        Function to return formatted time string.
+    """
     return "["+datetime.now().strftime('%Y-%m-%d %H:%M:%S')+"]"
 
 def get_order(file):
@@ -31,7 +34,8 @@ def get_year(input, include_month=False, tsv=False):
     """
         Get the year a file refers to.
 
-        file: input filepath of format "OAYYYYMMDD.txt" or "YYYYMMDD.txt"
+        file: input filepath of format "OAYYYYMMDD.txt" or "YYYYMMDD.txt" or
+                    "XYYYYMMDD.txt" where X is a single lowercase letter.
 
         returns year in int format
     """
@@ -63,8 +67,18 @@ def order_files(args):
         with open(args.corpus_file, 'r') as f:
             lines = f.read().split("\n")
             lines = [line for line in lines if line.rstrip()]
-            docs = natsort.natsorted(lines, key=lambda x: x.split("\t")[1])
             tsv = True
+        # If there was an input london lives tsv file, add that to the documents
+        try:
+            with open(args.london_lives_file, 'r') as f:
+                ll_lines = f.read().split("\n")
+                ll_lines = [line for line in ll_lines if line.rstrip()]
+            lines += ll_lines
+        except: pass
+
+        docs = natsort.natsorted(lines, key=lambda x: x.split("\t")[1])
+
+    # Otherwise, input is directory of files
     except:
         docs = [os.path.join(args.corpus_dir, f) for f in os.listdir(args.corpus_dir)
                  if (os.path.isfile(os.path.join(args.corpus_dir, f))
@@ -72,6 +86,7 @@ def order_files(args):
 
         docs = natsort.natsorted(docs, key=lambda x: get_order(x))  # Sort in ascending numeric order
 
+    # Find start year
     start_year = get_year(docs[0], tsv=tsv)
     docs_dict = {start_year:[]}
 

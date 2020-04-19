@@ -256,6 +256,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--corpus_file', type=str, default='')
+    parser.add_argument('--london_lives_file', type=str, default='')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--unigrams_only', default=False, action="store_true", help='whether or not to only include unigrams')
     parser.add_argument('--bigrams_only', default=False, action="store_true", help='whether or not to only include bigrams')
