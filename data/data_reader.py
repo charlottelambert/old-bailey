@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, html, re, os, argparse
+import sys, html, re, os, argparse, natsort
 import xml.etree.ElementTree as ET
 from tqdm import tqdm
 from tei_reader import TeiReader
@@ -79,7 +79,14 @@ def encode_annotations(args, xml_path, txt_output_dir):
                 date = re.split("[./]", elem.attrib["modern"].rstrip())
                 # Create filename from date to make later processing easier
                 id = os.path.splitext(os.path.basename(xml_path))[0]
-                filename = "".join(date[::-1]) + "_" + id + ".txt"
+                if args.tsv:
+                    if not date[-1]: year = date[-2]
+                    else: year = date[-1]
+
+                    filename = id + "\t" + year + "\t"
+                else:
+                    filename = "".join(date[::-1]) + "_" + id + ".txt"
+
                 ready_for_date = False
             # Don't include ID numbers within document
             elif elem.tag == "img":
@@ -104,6 +111,7 @@ def encode_annotations(args, xml_path, txt_output_dir):
         if not args.london_lives:
             if elem.tag == "div1":
                 file_name = elem.attrib["id"]
+                print(elem.attrib["type"])
                 elem.text = "SPLIT_HERE\t" +  elem.attrib["id"][1:5] + "\t" + elem.attrib["id"]
             elif elem.tag == "div0" and elem.attrib["type"] == "sessionsPaper":
                 file_name = elem.attrib["id"]
@@ -111,17 +119,18 @@ def encode_annotations(args, xml_path, txt_output_dir):
             elif elem.tag == "div0" and elem.attrib["type"] == "ordinarysAccount":
                 file_name = elem.attrib["id"]
                 elem.text = "SPLIT_HERE\t" +  elem.attrib["id"][2:6] + "\t" + elem.attrib["id"]
-
         elem.text = " " if not elem.text else elem.text + " "
 
 
     # Find root of tree, convert to string, and return
     text_from_xml = str(ET.tostring(root, encoding='ASCII', method='text'))
-    text_from_xml = html.unescape(text_from_xml)
+    sub_str = " " if args.tsv else "\n"
+    text_from_xml = html.unescape(text_from_xml).replace("\\t", " ").replace("\\n", sub_str)
+    text_from_xml = re.sub("\ +", " ", text_from_xml)
 
     if args.london_lives:
-        return text_from_xml.replace('\\n', '\n'), filename # Fixes issue printing "\n"
-    return text_from_xml.replace('\\n', '\n') # Fixes issue printing "\n"
+        return text_from_xml, filename # Fixes issue printing "\n"
+    return text_from_xml
 
 def split_trials(text):
     """
@@ -171,7 +180,6 @@ def main(args):
     annotations_str = "-spec" if args.encode_annotations_specific else annotations_str
     txt_output_dir = base_name + annotations_str
     print("Writing files to " + txt_output_dir)
-
     if not os.path.exists(txt_output_dir):
         os.mkdir(txt_output_dir)
     tsv_out = ["id\tyear\ttext"]
@@ -192,12 +200,18 @@ def main(args):
             if args.london_lives:
                 text_from_xml, filename = encode_annotations(args, file, txt_output_dir)
                 text_from_xml = text_from_xml[2:-1]
-                file_path = os.path.join(txt_output_dir, filename)
-                if os.path.exists(file_path) and not args.overwrite:
-                    continue
-                with open(file_path, "w") as txt_file:
-                    txt_file.write(text_from_xml)
-                exit(0)
+                # If want to output tsv file, add to tsv list
+                if args.tsv:
+                    text = re.sub("\n" , " ", text_from_xml)
+                    l = text_from_xml.split()
+                    tsv_out.append(filename + text)
+                # Otherwise, write data to file
+                else:
+                    file_path = os.path.join(txt_output_dir, filename)
+                    if os.path.exists(file_path) and not args.overwrite:
+                        continue
+                    with open(file_path, "w") as txt_file:
+                        txt_file.write(text_from_xml)
             else:
                 text_from_xml = encode_annotations(args, file, txt_output_dir)[2:-1]
                 tsv_out += split_trials(text_from_xml)
@@ -207,9 +221,10 @@ def main(args):
             continue
         except ET.ParseError:
             print("ParseError reading " + file + ". Skipping...")
-
-    with open(txt_output_dir + ".tsv", 'w') as f:
-        f.write("\n".join(tsv_out))
+    if args.tsv:
+        with open(txt_output_dir + ".tsv", 'w') as f:
+            tsv_out = [tsv_out[0]] + natsort.natsorted(tsv_out[1:], key=lambda x: x.split("\t")[1])
+            f.write("\n".join(tsv_out))
     print("Data written to " + txt_output_dir + ".tsv", file=sys.stderr)
 
 
@@ -220,5 +235,6 @@ if __name__ == '__main__':
     parser.add_argument('--encode_annotations_specific', default=False, action="store_true", help='whether or not to encode specific version of annotations in text')
     parser.add_argument('--overwrite', default=False, action="store_true", help='whether or not to overwrite old files with the same names')
     parser.add_argument('--london_lives', default=False, action="store_true", help='whether or not input is London Lives corpus')
+    parser.add_argument('--tsv', default=True, action="store_true", help="whether or not to store output as tsv")
     args = parser.parse_args()
     main(args)
