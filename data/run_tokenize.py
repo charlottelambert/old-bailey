@@ -271,8 +271,9 @@ def main(args):
         output_dir = base.rstrip("/") + suffix
     else:
         output_dir = args.output_dir_base.rstrip("/") + suffix
+
     # Create output directory
-    if not os.path.exists(output_dir):
+    if not args.tsv_data and not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
     if not args.filepath and not args.tsv_data:

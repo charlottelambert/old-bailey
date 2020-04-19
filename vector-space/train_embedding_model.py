@@ -227,9 +227,6 @@ def main(args):
             model = embedding_model(min_count=1)#, size=100, window=20)#, workers=4)
             print(timestamp(), "Building vocab...", file=sys.stderr)
             model.build_vocab(corpus)
-            # print("guilty_verdict" in model.wv.vocab)
-            # print(type(model.wv.vocab))
-            # print(len(model.wv.vocab.keys()))
             msg = "Training model..."
             # Filter out top words (need to filter to 10000 if using projector.tensorflow)
             if args.filter_top_words: # Should this only happen with word2vec and not fasttext?
