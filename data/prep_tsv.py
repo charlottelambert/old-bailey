@@ -6,8 +6,9 @@ def main(options, args):
     if len(args) > 0:
         print("Merging TSV files...", file=sys.stderr)
         base = os.path.dirname(args[0])
+        suffix = os.path.basename(args[0]).split("-")[2:]
 
-        output_file = base.replace(".tsv-dir", "-tok.tsv")
+        output_file = base.replace(".tsv-dir", "-" + "-".join(suffix))
         print("Merged tokenized TSV file being written to", output_file)
         all_lines = []
         for file in args:

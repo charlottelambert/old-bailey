@@ -66,25 +66,35 @@ def find_n_neighbors(args, pre, model_dict):
     print(timestamp() + " Wrote top", args.find_n_neighbors, "neighbors to", tsv_path, file=sys.stderr)
     return neighbor_dict
 
-def build_corpus(input_dir_path=None, files=None, corpus_file=None):
+def build_corpus(args, input_dir_path=None, files=None, corpus_txt_file=None):
     """
         Function to build a corpus (list of contents of files) based on input
         directory.
     """
-    if not files and input_dir_path:
-        files = [os.path.join(input_dir, f) for f in os.listdir(input_dir)
-                     if (os.path.isfile(os.path.join(input_dir, f)) and f.endswith('.txt'))]
+    # If input tsv file, compile the third column of all
+    if args.corpus_file:
+        corpus = []
+        for line in files:
+            text = line.split("\t")[2:]
+            corpus.append("\t".join(text))
+    elif not files and input_dir_path:
+        files = [os.path.join(input_dir_path, f) for f in os.listdir(input_dir_path)
+                     if (os.path.isfile(os.path.join(input_dir_path, f)) and f.endswith('.txt'))]
+        corpus = []
+        for file in files:
+            with open(file) as f:
+                corpus.append(f.read().lower().split())
     elif files:
         corpus = []
         for file in files:
             with open(file) as f:
                 corpus.append(f.read().lower().split())
-    elif corpus_file:
+    # If input corpus.txt file output from Mallet's --print-output flag
+    elif corpus_txt_file:
         print(timestamp(),"Building corpus from file...", file=sys.stderr)
-
         corpus = []
         doc_words = []
-        with open(corpus_file, 'r') as f:
+        with open(corpus_txt_file, 'r') as f:
             content = f.read()
             lines = content.split("\n")
             for line in lines:
@@ -95,7 +105,6 @@ def build_corpus(input_dir_path=None, files=None, corpus_file=None):
                     corpus.append(doc_words)
                     doc_words = []
                 else: continue
-
     else:
         print("build_corpus(): Please input a path to a directory, list of files, or corpus file.", file=sys.stderr)
         exit(1)
@@ -212,8 +221,8 @@ def main(args):
             os.makedirs(pre)
         print(timestamp(), "Writing all files to", pre, file=sys.stderr)
 
-        if args.corpus_file:
-            corpus = build_corpus(corpus_file=args.corpus_file)
+        if args.corpus_txt_file:
+            corpus = build_corpus(args,corpus_txt_file=args.corpus_txt_file)
             # print("Number of documents:", len(corpus))
             model = embedding_model(min_count=1)#, size=100, window=20)#, workers=4)
             print(timestamp(), "Building vocab...", file=sys.stderr)
@@ -247,7 +256,7 @@ def main(args):
             model_dict = {}
             for first_year, file_list in files_dict.items():
                 print(timestamp(), "Building corpus...", file=sys.stderr)
-                corpus = build_corpus(files=file_list)
+                corpus = build_corpus(args, files=file_list)
                 if args.pretrained:
                     print(timestamp(), "Initializing model with corpus...", file=sys.stderr)
                     model = embedding_model(corpus, size=300) #, min_count=1)#, size=100, window=20)#, workers=4)
@@ -296,7 +305,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--corpus_file', type=str, default="", help='path to corpus file saved from mallet --print_output')
+    parser.add_argument('--corpus_file', type=str, default="", help='path to corpus file in tsv format')
+    parser.add_argument('--corpus_txt_file', type=str, default="", help='path to corpus file saved from mallet --print_output')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-lower-lemma", help='directory containing corpus')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--load_model_dir', type=str, help='path to directory containing models to load and visualize.')

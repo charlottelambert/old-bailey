@@ -368,6 +368,5 @@ if __name__ == '__main__':
     parser.add_argument('--pwl_path', type=str, default="/work/clambert/thesis-data/OB_LL-txt/unigram_pwl.txt")
     parser.add_argument('--merge_words', default=False, action="store_true", help='whether or not to merge words into words present in unigram list')
     parser.add_argument('--disable_stopwords', default=False, action="store_true", help='whether or not to disable stop word removal')
-    # /System/Volumes/Data/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/enchant/share/enchant/myspell
     args = parser.parse_args()
     main(args)
