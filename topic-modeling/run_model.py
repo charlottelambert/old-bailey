@@ -93,7 +93,8 @@ def run_lda(args, corpus, pre, dictionary=None, workers=None, docs=None):
             os.makedirs(mallet_corpus)
             corpus_file = os.path.join(mallet_corpus, str(year) + "-tmp.tsv")
             with open(corpus_file, 'w') as f:
-                f.write("\t".join(lines))
+                f.write("\n".join(lines))
+
         else:
             corpus_file = args.corpus_file
         mallet_corpus = None if args.corpus_file else mallet_corpus
