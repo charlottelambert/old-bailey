@@ -24,7 +24,7 @@ TOPICS=${1:-30}
 SUFFIX=${2:-}
 echo Suffix: $SUFFIX
 
-./run_model.py --unigrams_only --corpus_file=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok.tsv --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
+./run_model.py --unigrams_only --corpus_file=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-bi.tsv --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
 #./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=5 --year_split=-1 --num_iterations=5 --suffix=$SUFFIX
 # then -txt-tok- disable stop words (?)

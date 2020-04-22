@@ -4,7 +4,7 @@ MODEL_TYPE=${1:-lda}
 
 if [ "$MODEL_TYPE" == "lda-test" ]
 then
-TOPIC_ARR=(10 20 30 40)
+TOPIC_ARR=(20 35 50 70)
 declare -i SUFFIX=0
 
 for topic in ${TOPIC_ARR[@]};
