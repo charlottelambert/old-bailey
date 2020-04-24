@@ -84,17 +84,15 @@ def tokenize_line(args, line, output_dir, gb, gb_and_pwl, bigrams):
 
     # Tokenize line
     tokens = [word.replace("\\", "") for word in word_tokenize(line)]
-
-    # Join $ to names
-    for i, tok in enumerate(tokens):
-        if tok == '$':
-            tokens[i:i+2] = [''.join(tokens[i:i+2])]
-
+    # for i, tok in enumerate(tokens):
+    #         if tok == '$':
+    #             tokens[i:i+2] = [''.join(tokens[i:i+2])]
     # Spelling correction
     updated_tokens = []
     for i, tok in enumerate(tokens):
         # Split word by non-alphanumeric characters
         split_word = re.split("([^A-Za-z0-9_(\w'\w)])|(^')|('$)", tok)
+
         split_word = [w for w in split_word if not w == None and len(w) > 2]
         if args.disable_spell_check:
             updated_tokens += split_word
@@ -104,7 +102,6 @@ def tokenize_line(args, line, output_dir, gb, gb_and_pwl, bigrams):
             spell_checked = spell_correct(args, gb, gb_and_pwl, sub, bigrams).split()
             updated_tokens += spell_checked
     tokens = updated_tokens
-
     # Handle issue with dashes appearing at start of word
     mod_tokens = []
     for i in range(len(tokens)):
@@ -118,7 +115,6 @@ def tokenize_line(args, line, output_dir, gb, gb_and_pwl, bigrams):
         # First, remove trailing hyphens and slashes
         sub_pattern = '\A([\W_]*)([A-Za-z0-9]+|[A-Za-z0-9]+[\W_]+[A-Za-z0-9]+)([\W_]*)$'
         tokens = [re.sub(sub_pattern, "\\2", x) for x in tokens]
-
         tokens = remove_unwanted(args, tokens)
 
     # If tokenizing text in order to find useful stats, do extra
@@ -126,9 +122,13 @@ def tokenize_line(args, line, output_dir, gb, gb_and_pwl, bigrams):
     if args.stats:
         return " ".join(tokens)
 
+    for idx, t in enumerate(tokens):
+        tokens[idx] = "$" + t if "_" in t else t
+
     # Turn into bigrams if flag is true
     if args.bigrams and not args.stats:
         tokens = make_bigrams(tokens)
+
 
     finished = " ".join(tokens)
 
@@ -313,8 +313,13 @@ def main(args):
                 exit(0)
             with open(args.tsv_data, 'r') as f:
                 docs = f.read().split("\n")
-                tsv_out = [docs[0]]
-                for doc in docs[1:]:
+                if docs[0].lower() == "id\tyear\ttext":
+                    idx = 1
+                    tsv_out = [docs[0]]
+                else:
+                    idx = 0
+                    tsv_out = []
+                for doc in docs[idx:]:
                     try:
                         id, year, text = doc.split("\t")
                     except ValueError: continue

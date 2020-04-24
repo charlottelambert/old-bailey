@@ -108,7 +108,7 @@ def build_corpus(args, input_dir_path=None, files=None, corpus_txt_file=None):
     else:
         print("build_corpus(): Please input a path to a directory, list of files, or corpus file.", file=sys.stderr)
         exit(1)
-    print(timestamp(), "Number of tokens in corpus:", sum([len(x) for x in corpus]))
+    # print(timestamp(), "Number of tokens in corpus:", sum([len(x) for x in corpus]))
     return corpus
 
 # want to do this for each model trained

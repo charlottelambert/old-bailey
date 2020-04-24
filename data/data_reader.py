@@ -49,8 +49,6 @@ def encode_name(args, elem):
                     if gender == "indeterminate":
                         gender = "unk"
                     added_info.append(gender)
-                    # print("base:",base)
-                    # print("value:",sub_elem.attrib["value"])
             # If gender is not known, encode in format speakerType_unk
             except KeyError:
                 return "$" + base + "_unk "
@@ -115,18 +113,22 @@ def encode_annotations(args, xml_path, txt_output_dir):
                 elem.clear()
                 elem.text = annotated_element
         if not args.london_lives and args.tsv:
+            try:
             # Check if current element indicates a split between trials
-            if elem.attrib["id"] in type_dict:
-                range = type_dict[elem.tag]
-            elif (elem.tag, elem.attrib["type"]) in type_dict:
-                range = type_dict[elem.tag, elem.attrib["type"]]
-            else:
-                # Does not indicate a split between trials
+                if elem.tag in type_dict:
+                    range = type_dict[elem.tag]
+                elif (elem.tag, elem.attrib["type"]) in type_dict:
+                    range = type_dict[elem.tag, elem.attrib["type"]]
+                else:
+                    # Does not indicate a split between trials
+                    elem.text = " " if not elem.text else elem.text + " "
+                    continue
+                # Identify file name and insert text
+                file_name = elem.attrib["id"]
+                elem.text = "SPLIT_HERE" + file_name[range[0]:range[1]] + "SPLIT_HERE" + file_name
+            # Element doesn't contain the right attributes
+            except KeyError:
                 elem.text = " " if not elem.text else elem.text + " "
-                continue
-            # Identify file name and insert text
-            file_name = elem.attrib["id"]
-            elem.text = "SPLIT_HERE\t" + file_name[range[0]:range[1]] + "\t" + file_name
         else:
             elem.text = " " if not elem.text else elem.text + " "
 
@@ -134,8 +136,9 @@ def encode_annotations(args, xml_path, txt_output_dir):
     # Find root of tree, convert to string, and return
     text_from_xml = str(ET.tostring(root, encoding='ASCII', method='text'))
     # Fix issues with new lines and tabs
-    sub_str = " " if args.tsv else "\n"
-    text_from_xml = html.unescape(text_from_xml).replace("\\t", " ").replace("\\n", sub_str)
+    # sub_str = " " if args.tsv else "\n"
+    text_from_xml = html.unescape(text_from_xml).replace("\\t", " ").replace("\\n", "\n")
+    if args.london_lives and args.tsv: text_from_xml = text_from_xml.replace("\\n", "\n")
     text_from_xml = re.sub("\ +", " ", text_from_xml)
 
     if args.london_lives:
@@ -157,7 +160,7 @@ def split_trials(text):
                 merged_text = re.sub("\ +", " ", " ".join(text))
                 tsv_out.append(id + "\t" + year + "\t" + merged_text)
                 text = []
-            _, year, id = line.split("\\t")
+            _, year, id = line.split("SPLIT_HERE")
             id = id.rstrip()
         elif line.strip():
             text.append(line)
@@ -189,9 +192,10 @@ def main(args):
     annotations_str = "-gen" if args.encode_annotations_general else ""
     annotations_str = "-spec" if args.encode_annotations_specific else annotations_str
     txt_output_dir = base_name + annotations_str
-    print("Writing files to " + txt_output_dir)
-    if not os.path.exists(txt_output_dir):
-        os.mkdir(txt_output_dir)
+    if not args.tsv:
+        print("Writing files to " + txt_output_dir)
+        if not os.path.exists(txt_output_dir):
+            os.mkdir(txt_output_dir)
     tsv_out = ["id\tyear\ttext"]
     # Go through input files and generate output files
     for i in tqdm(range(len(input_files))):
@@ -199,7 +203,7 @@ def main(args):
         file = input_files[i]
 
         # Change to txt file
-        if not args.london_lives:
+        if not args.london_lives and not args.tsv:
             filename = os.path.splitext(os.path.basename(file))[0] + ".txt"
             file_path = os.path.join(txt_output_dir, filename)
             if os.path.exists(file_path) and not args.overwrite:
