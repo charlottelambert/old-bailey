@@ -76,7 +76,7 @@ def build_corpus(args, input_dir_path=None, files=None, corpus_txt_file=None):
         corpus = []
         for line in files:
             text = line.split("\t")[2:]
-            corpus.append("\t".join(text))
+            corpus.append("\t".join(text).lower().split())
     elif not files and input_dir_path:
         files = [os.path.join(input_dir_path, f) for f in os.listdir(input_dir_path)
                      if (os.path.isfile(os.path.join(input_dir_path, f)) and f.endswith('.txt'))]
