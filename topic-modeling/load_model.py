@@ -31,7 +31,7 @@ def main(args):
 
                 print("Topic", str(topic_id) + ", time slice", str(time) + ':', end=' ')
                 for weight, word in top_words:
-                    print(word, end=' ')
+                    print(word, end=', ')
                 print()
             print()
     elif args.lda_type == "ldaseq":
