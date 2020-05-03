@@ -34,7 +34,6 @@ def get_diffs(t1_list, t2_list, slices):
                     t2_val = 0
 
                 diffs[key] += abs(t1_val - t2_val)
-
     return diffs
 
 def compare_topics(n_most, n_least, triples, topic_lists):
@@ -71,11 +70,13 @@ def compare_topics(n_most, n_least, triples, topic_lists):
 
         print_similarities(triple, topic_lists)
         print("-"*50)
+    return acc
 
 def print_similarities(triple, topic_lists):
     for time_slice, id in enumerate(triple):
         if id == "-1":
             print("No topic for time slice", time_slice)
+            print("-"*50)
             continue
         topic = int(id.split("_")[0])
         words = topic_lists[time_slice][topic]
@@ -178,11 +179,36 @@ def main(args):
     print("Comparing time slice", pair[0], "and time slice", pair[1])
     n_most = 300
     n_least = 0
-    compare_topics(n_most, n_least, triples, topic_lists)
+    acc = compare_topics(n_most, n_least, triples, topic_lists)
     print("-"*50)
+    print()
+    print("Showing topics with no alignments:")
 
+    print("-"*50)
+    overall_unseen = []
+    # Figure out which topics had no matches
+    for i,t in enumerate(topic_lists):
+
+        topics_seen = [triple[i] for triple, weight in triples]
+        topics_not_seen = [str(topic) + "_" + str(i) for topic in t.keys()
+                           if str(topic) + "_" + str(i) not in topics_seen]
+        # print([t[i] for i in topics_not_seen])
+        unseen_triples = [["-1","-1","-1"] for t in topics_not_seen]
+
+        for j, triple in enumerate(unseen_triples):
+            unseen_triples[j][i] = topics_not_seen[j]
+            unseen_triples[j] = tuple(unseen_triples[j])
+
+            print(str(acc) + ": Topic similarity between:", str(unseen_triples[j]) + "\n")
+            print_similarities(unseen_triples[j], topic_lists)
+            acc += 1
+
+        overall_unseen += unseen_triples
 
     print("\n".join([str(item) for item in triples]))
+    print("\n".join([str(item) for item in overall_unseen]))
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('weighted_keys_1', type=str, help='path to first weighted_keys.txt file to load')
