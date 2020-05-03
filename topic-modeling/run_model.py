@@ -161,7 +161,7 @@ def model_for_year(args, year, files, pre, time_slices):
         dictionary = None
         print(timestamp() + " Reading corpus.", file=sys.stderr)
         path = args.corpus_file if args.corpus_file else args.corpus_dir
-        corpus = Corpus(path)
+        corpus = Corpus(path, path_list=files)
 
     # Run the specified model
     if args.model_type == "multicore":
