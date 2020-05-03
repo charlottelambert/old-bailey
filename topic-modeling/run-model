@@ -17,7 +17,7 @@ done;
 elif [ "$MODEL_TYPE" == "lda" ]
 then
 
-sbatch run-lda.sbatch 35
+sbatch run-lda.sbatch 70
 
 elif [[ "$MODEL_TYPE" == "dtm" || "$MODEL_TYPE" == "ldaseq" ]];
 then
