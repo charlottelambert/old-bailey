@@ -15,10 +15,10 @@ To run a Word2Vec model, use `train_embedding_model.py`. Run one of the followin
 Below are some parameters and instructions of when to use them. Use the `--help` flag to see all possible arguments.
 Argument | Description
 ---------|------------
-`--pretrained` | Path to pretrained word embeddings. If specified, loaded model will be retrained using the vocabular of the input corpus. This increases the vocabulary.
-`--filter_top_words` | Model will filter out the top `n` words of the model. Use this with `n=10000` when visualizing model with (projector.tensorflow.org)[projector.tensorflow.org]. Otherwise, specify `n=0`.
-`--find_n_neighbors` | Number of neighbors to find for each word in a list of relevant words (`word_list` in `train_embedding_model.py`). Program will output TSV file containing the `n` nearest neighbors and generate wordcloud visualizations of these word-relationships.
-`-f` | Whether or not to train a FastText model instead of Word2Vec
+`pretrained` | Path to pretrained word embeddings. If specified, loaded model will be retrained using the vocabular of the input corpus. This increases the vocabulary.
+`filter_top_words` | Model will filter out the top `n` words of the model. Use this with `n=10000` when visualizing model with (projector.tensorflow.org)[projector.tensorflow.org]. Otherwise, specify `n=0`.
+`find_n_neighbors` | Number of neighbors to find for each word in a list of relevant words (`word_list` in `train_embedding_model.py`). Program will output TSV file containing the `n` nearest neighbors and generate wordcloud visualizations of these word-relationships.
+`f` | Whether or not to train a FastText model instead of Word2Vec
 
 ### Word2Vec from Corpus Directory
 ```
