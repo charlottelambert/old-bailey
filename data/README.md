@@ -9,9 +9,9 @@ Name | Contents
 `data_reader.py` | File to convert XML data to text data
 `make_latin_dict.py` | Builds a Latin dictionary
 `ngrams.py` | File to write unigram and bigram personal word lists
-prep_tsv.py | File to split or merge tsv file(s) to allow for parallel processing of one tsv data file
-README.md | This file
-run_tokenize.py | File to tokenize data
+`prep_tsv.py` | File to split or merge tsv file(s) to allow for parallel processing of one tsv data file
+`README.md` | This file
+`run_tokenize.py` | File to tokenize data
 
 ## Collection of Data
 
@@ -45,25 +45,20 @@ From the XML files of BNC data gotten [here](https://ota.bodleian.ox.ac.uk/repos
 Then, run the following command to calculate useful statistics on how many modern english words, historical english words, latin words, and proper nouns are present in all the files in a specific corpus directory:
 
 
-## Tokenization (need to update)
+## Tokenization
 
-To tokenize data (and clean up some idiosyncrasies), run `run_tokenize.py` on a corpus of text files. Some default arguments have been added for simplicity, but can be overridden by setting the appropriate flags.
+To tokenize data (and clean up some idiosyncrasies), run `run_tokenize.py` on a corpus of text files or one tsv file. Some default arguments have been added for simplicity, but can be overridden by setting the appropriate flags.
 
 ```
-./run_tokenize.py --corpus_dir=CORPUS_DIR
+./run_tokenize.py --tsv_data=sessionsAndOrdinarys-txt.tsv --overwrite
 ```
 
-Tokenized text files will be written to a directory with the suffix `-tok` added to the input `CORPUS_DIR`. Like with `code/data_reader.py`, by default, code will not overwrite files if they already exist in this created directory. Flags can be added to change this and to incorporate annotations from the XML into the text data.
+If tsv file is input, output tokenization will be written to a tsv file with the suffix `-tok`. Additional arguments may add to this suffix. If no tsv file is input but something is passed into the argument `--corpus_dir`, each file in the directory will be tokenized and written to a file of the same name in a directory of the form `corpus_dir-tok`. You can also provide a path to a specific file using the option `--filepath` to tokenize that file only. It will be processed the same as any file input using the `--corpus_dir` argument. This allows for parallelization.
 
-You can also provide a path to a specific file using the option `--filepath` to tokenize that file only. This allows for parallelization.
+If you wish to disable spell-checking (a function that will split words that appear to be merged based on whether or not it is present in the input word lists or a British MySpell dictionary), include the flag `--disable_spell_check`.
+
+Use the `--help` flag to get mroe information about remaining flags and arguments.
 
 ### Bigrams (optional)
 
-To convert unigram data to bigram data, run the following line of code:
-
-```
-./run_tokenize.py --corpus_dir=CORPUS_DIR --bigrams
-```
-This command will convert all files in `CORPUS_DIR` to a bigram representation and output all files into `CORPUS_DIR-bi`.
-
-Note: the data provided should be tokenized and dehyphenated first. If data is not already dehyphenated, there is no code to properly dehyphenate bigrams.
+To convert unigram data to bigram data, run the following line of code, run `run_tokenize.py` with the flag `--bigrams`. Output data will be in bigram representation.
