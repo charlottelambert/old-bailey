@@ -20,11 +20,6 @@ def gen_wordcloud(args, pre, first_year, neighbor_dict):
     # dict is {word: [(neighbor, similarity), ...]}
     # pre will be /path/to/dir/
     max_words = len(word_list)*(args.find_n_neighbors+1)
-    # wc = WordCloud(background_color="white", max_words=max_words, width=400, height=400, random_state=1).generate(text)
-    # # to recolour the image
-    # # plt.imshow(wc.recolor(color_func=image_colors))
-    # plt.imshow()
-
     wordcloud = WordCloud(background_color="white", max_words=max_words, width=400, height=400)
 
     word_frequency_list = []
@@ -38,7 +33,6 @@ def gen_wordcloud(args, pre, first_year, neighbor_dict):
     print(timestamp(), "Saving word cloud to", wc_path, file=sys.stderr)
 
 
-# want to do this once for all models trained
 def find_n_neighbors(args, pre, model_dict):
     print(timestamp(), "Finding nearest", args.find_n_neighbors, "neighbors...", file=sys.stderr)
     tsv_path = os.path.join(pre, "neighbors.tsv")
@@ -108,10 +102,8 @@ def build_corpus(args, input_dir_path=None, files=None, corpus_txt_file=None):
     else:
         print("build_corpus(): Please input a path to a directory, list of files, or corpus file.", file=sys.stderr)
         exit(1)
-    # print(timestamp(), "Number of tokens in corpus:", sum([len(x) for x in corpus]))
     return corpus
 
-# want to do this for each model trained
 # https://stackoverflow.com/questions/48941648/how-to-remove-a-word-completely-from-a-word2vec-model-in-gensim
 def filter_top_words(model, n):
     """
@@ -132,7 +124,6 @@ def filter_top_words(model, n):
         del(wv.index2word[i])
     return model
 
-# want to do this for each model trained
 # https://www.kaggle.com/jeffd23/visualizing-word-vectors-with-t-sne/notebook
 def tsne_plot(model, pre, neighbor_dict):
     """
@@ -144,24 +135,15 @@ def tsne_plot(model, pre, neighbor_dict):
         for neighbor in neighbor_dict[word]:
             words_to_plot.append(neighbor[0])
 
-    # # problem: this is plotting all the stuff by year
-    # for first_year in neighbor_dict:
-    #     # Reset labels
     labels = []
     tokens = []
 
-
-        # ###############
     for i, word in enumerate(model.wv.vocab):
-        # print(word)
-        # exit(0)
         tokens.append(model.wv[word])
         labels.append(word)
 
-#   tsne_model = TSNE(perplexity=30, n_components=2, init='pca', n_iter=2500, random_state=23)
     tsne_model = TSNE(random_state=2017, perplexity=12, n_components=2, init='pca', method='barnes_hut', verbose=1)
     print(timestamp(), "TSNE model initialized.", file=sys.stderr)
-    # PROBLEM with fit_transform, it's just never returning
     try:
         new_values = tsne_model.fit_transform(tokens)
     except KeyboardInterrupt:
@@ -169,7 +151,6 @@ def tsne_plot(model, pre, neighbor_dict):
 
     x = []
     y = []
-#    for value in new_values:
     for i in tqdm(range(len(new_values))):
         value = new_values[i]
         x.append(value[0])
@@ -179,7 +160,6 @@ def tsne_plot(model, pre, neighbor_dict):
     for i in tqdm(range(len(x))):
         if labels[i] not in words_to_plot:
             continue
-    #for i in range(len(x)):
 
         plt.scatter(x[i],y[i])
         plt.annotate(labels[i],
@@ -188,7 +168,6 @@ def tsne_plot(model, pre, neighbor_dict):
                      textcoords='offset points',
                      ha='right',
                      va='bottom')
-    # plt.show()
     plt.savefig(pre + "_plot.png")
     print(timestamp(), "TSNE plot saved.", file=sys.stderr)
 
@@ -198,8 +177,6 @@ def main(args):
     embedding_model = FastText if args.f else Word2Vec
 
     if args.load_model_dir:
-        # FIX THIS SO IT CAN CALL FIND N NEIGHBORS PROPERLY
-        # Load model from args.load_model_dir MAKE THIS LAOD A MODEL DIR INSTEAD OF A MODEL!
         models = [os.path.join(args.load_model_dir, f) for f in os.listdir(args.load_model_dir)
                  if os.path.join(args.load_model_dir, f)[-6:] == ".model"]
         model_dict = {}
@@ -223,13 +200,12 @@ def main(args):
 
         if args.corpus_txt_file:
             corpus = build_corpus(args,corpus_txt_file=args.corpus_txt_file)
-            # print("Number of documents:", len(corpus))
             model = embedding_model(min_count=1)#, size=100, window=20)#, workers=4)
             print(timestamp(), "Building vocab...", file=sys.stderr)
             model.build_vocab(corpus)
             msg = "Training model..."
             # Filter out top words (need to filter to 10000 if using projector.tensorflow)
-            if args.filter_top_words: # Should this only happen with word2vec and not fasttext?
+            if args.filter_top_words:
                 print(timestamp(), "Extracting top " + str(args.filter_top_words) + " words...", file=sys.stderr)
                 model = filter_top_words(model, args.filter_top_words)
 
@@ -269,7 +245,7 @@ def main(args):
 
                     msg = "Training model..."
                 # Filter out top words (need to filter to 10000 if using projector.tensorflow)
-                if args.filter_top_words: # Should this only happen with word2vec and not fasttext?
+                if args.filter_top_words:
                     print(timestamp(), "Extracting top " + str(args.filter_top_words) + " words...", file=sys.stderr)
                     model = filter_top_words(model, args.filter_top_words)
 
@@ -296,7 +272,6 @@ def main(args):
         print(timestamp(), "Visualizing results...", file=sys.stderr)
         for year in model_dict:
             tsne_plot(model_dict[year]["model"], os.path.join(pre, str(year)), neighbor_dict[year])
-
 
     print(timestamp(), "Done! Ending at " + time.strftime("%d/%m/%Y %H:%M ") , file=sys.stderr)
 
