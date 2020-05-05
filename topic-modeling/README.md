@@ -95,9 +95,33 @@ This command uses the method of computing topic coherence by using word similari
 
 The other possible coherence calculation method is `umass` which does not require that a Word2Vec model be input. The vector method is recommended, however.
 
-### Loading Models (need to update)
+### Loading Models (Gensim models only)
 
-### Visualizing Models (need to update)
+To load a Gensim model and print out the model's topics, run the following command:
+
+```
+./load_model.py MODEL_PATH --num_topics=-1 --model_type=lda
+```
+
+The `--num_topics` argument specifies the number of topics to print out. When the argument is `-1`, it will print out all the topics found by the model. 
+
+The `--model_type` argument requires that the input be either `lda` (default), `dtm`, or `ldaseq` depending on how the original input model was run.
+
+### Visualizing Models
+
+The following commands take in model/weighted keys files and generate HTML for visualizing these topics. The commands return the HTML itself and can be redirected to an HTML file. The resulting visualization shows all the topics with the highest-weighted words in dark grey/black and the lower-weighted words in increasingly light grey.
+
+#### Gensim
+
+```
+./vis-topic-gensim.py WEIGHTED_KEYS > vis_gensim.html
+```
+
+#### Mallet Wrapper
+
+```
+./vis_topic_mallet.py WEIGHTED_KEYS > vis_mallet.html
+```
 
 ## ETM/D-ETM (need to update)
 Code for running ETM on Old Bailey data can be cloned from [this](https://github.com/charlottelambert/ETM) repository.
