@@ -60,6 +60,11 @@ If you wish to disable spell-checking (a function that will split words that app
 
 Use the `--help` flag to get mroe information about remaining flags and arguments.
 
+### TSV Files in Parallel (need to update)
+
+`prep_tsv.py` and `parallel-tokenize`
+
 ### Bigrams (optional)
 
 To convert unigram data to bigram data, run the following line of code, run `run_tokenize.py` with the flag `--bigrams`. Output data will be in bigram representation.
+
