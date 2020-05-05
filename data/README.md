@@ -9,6 +9,7 @@ Name | Contents
 `data_reader.py` | File to convert XML data to text data
 `make_latin_dict.py` | Builds a Latin dictionary
 `ngrams.py` | File to write unigram and bigram personal word lists
+`parallel-tokenize` | Bash script to run `run_tokenize.py` in parallel on an input tsv file
 `prep_tsv.py` | File to split or merge tsv file(s) to allow for parallel processing of one tsv data file
 `README.md` | This file
 `run_tokenize.py` | File to tokenize data
