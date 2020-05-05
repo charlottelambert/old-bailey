@@ -2,54 +2,6 @@
 
 The following descriptions relate to code in the `thesis/code` directory. To get more information, you can run each file with the `--help` flag and see all possible arguments.
 
-### Corpus Pre-Processing
-
-Convert given XML documents to text files using the following code:
-```
-./data_reader /work/clambert/thesis-data/sessionsPapers --tsv=1 --overwrite
-```
-
-If the `--tsv` flag is passed in as true, converted data will be output to a tsv file with the suffix `-txt.tsv` added to the input `corpus_XML_dir` with one line per document. Otherwise, converted text data will be placed in a directory with the suffix `-txt` added to the input `corpus_XML_dir`. The `--overwrite` flag indicates that if the output tsv file or directory already exists, it should be overwritten.
-
-Additionally, if the data passed in is from the London Lives corpus, include the flag `--london_lives` to ensure the data is collected properly.
-
-Finally, up to one of two flags can be passed in to indicate that annotations from the input XML should be replaced with some token. The `--encode_annotations_general` flag will result in output data in which every person's name is replaced with a token of the format `speakerType_gender`. The `--encode_annotations_specific` flag will result in output data in which every person's name is replaced with a token of the format `speakerType_GIVENNAME_SURNAME`. In either case, if something is unknown, it will be replaced with the token `unk`.
-
-### Tokenization
-
-To tokenize data (and clean up some idiosyncrasies), run `run_tokenize.py` on a corpus of text files. Some default arguments have been added for simplicity, but can be overridden by setting the appropriate flags.
-
-```
-./run_tokenize.py --corpus_dir=CORPUS_DIR
-```
-
-Tokenized text files will be written to a directory with the suffix `-tok` added to the input `CORPUS_DIR`. Like with `code/data_reader.py`, by default, code will not overwrite files if they already exist in this created directory. Flags can be added to change this and to incorporate annotations from the XML into the text data.
-
-You can also provide a path to a specific file using the option `--filepath` to tokenize that file only. This allows for parallelization.
-
-### Dehyphenation
-
-To dehyphenate data, run `dehyphenate.py` on a single text file. Typically, dehyphenation should only be done after data has been tokenized. You can run the code as follows, using parallelization for faster processing.
-
-```
-srun -c 64 --pty /bin/bash
-ls -d CORPUS_DIR/* | parallel --progress -j 64 "./dehyphenate.py {}"
-```
-
-This command will dehyphenate all files in `CORPUS_DIR` and output all files into `CORPUS_DIR-dh`.
-
-### Bigrams (optional)
-
-To convert unigram data to bigram data, run the following line of code:
-
-```
-./run_tokenize.py --corpus_dir=CORPUS_DIR --bigrams
-```
-This command will convert all files in `CORPUS_DIR` to a bigram representation and output all files into `CORPUS_DIR-bi`.
-
-Note: the data provided should be tokenized and dehyphenated first. If data is not already dehyphenated, there is no code to properly dehyphenate bigrams.
-
-
 ### Calculating Corpus Statistics
 
 In order to calculate some valuable statistics about a corpus, first [download an Elementary Latin Dictionary](http://www.perseus.tufts.edu/hopper/dltext?doc=Perseus%3Atext%3A1999.04.0060). Then, to convert the downloaded XML file to a text file, run the following command:
