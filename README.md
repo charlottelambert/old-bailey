@@ -12,3 +12,4 @@ Name | Content
 `utils.py` | Functions used by code in several directories
 `vector-space` | Code for running vector space models
 
+Note: To run topic models using the Mallet wrapper, clone [this](https://github.com/charlottelambert/techknacq-tk) repo into `thesis/topic-modeling/lda-tools`.
