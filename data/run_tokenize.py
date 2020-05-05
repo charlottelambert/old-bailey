@@ -44,17 +44,6 @@ def make_bigrams(tokens):
         output.append(bigram[0] + "_" + bigram[1])
     return output
 
-def fix_hyphens(input):
-    """
-        Fix issues with hyphens that isn't fixed through tokenization.
-    """
-    out = re.sub(r'([^a-zA-z-])([\—\-]+)([^a-zA-z-])', '\\1 \\2 \\3', input)
-    out = re.sub(r'([^a-zA-z-])([\—\-]+)([a-zA-z])', '\\1 \\2 \\3', out)
-    out = re.sub(r'([a-zA-z])([\—\-]+)([^a-zA-z-])', '\\1 \\2 \\3', out)
-    out = re.sub(r'([a-zA-z])([\—\-]+)([a-zA-z-])', '\\1 \\2 \\3', out)
-
-    return out.split()
-
 def remove_unwanted(args, tokens):
     # Keep all words containing at least one letter
     # Also remove words of length < 2
@@ -79,14 +68,12 @@ def tokenize_line(args, line, output_dir, gb, gb_and_pwl, bigrams):
         return ""
 
     # Lower line if needed
-    if args.lower and not args.stats:
+    if args.lower:
         line = line.lower()
 
     # Tokenize line
     tokens = [word.replace("\\", "") for word in word_tokenize(line)]
-    # for i, tok in enumerate(tokens):
-    #         if tok == '$':
-    #             tokens[i:i+2] = [''.join(tokens[i:i+2])]
+
     # Spelling correction
     updated_tokens = []
     for i, tok in enumerate(tokens):
@@ -100,33 +87,29 @@ def tokenize_line(args, line, output_dir, gb, gb_and_pwl, bigrams):
 
         for sub in split_word:
             spell_checked = spell_correct(args, gb, gb_and_pwl, sub, bigrams).split()
+            if sub != spell_checked[0]:
+                print(sub)
             updated_tokens += spell_checked
     tokens = updated_tokens
     # Handle issue with dashes appearing at start of word
     mod_tokens = []
     for i in range(len(tokens)):
-        mod_tokens += tokens[i].split() #fix_hyphens(tokens[i])
+        mod_tokens += tokens[i].split()
     tokens = mod_tokens
 
     # Replace split contractions with full words
     tokens = contractions(tokens)
 
-    if not args.stats:
-        # First, remove trailing hyphens and slashes
-        sub_pattern = '\A([\W_]*)([A-Za-z0-9]+|[A-Za-z0-9]+[\W_]+[A-Za-z0-9]+)([\W_]*)$'
-        tokens = [re.sub(sub_pattern, "\\2", x) for x in tokens]
-        tokens = remove_unwanted(args, tokens)
-
-    # If tokenizing text in order to find useful stats, do extra
-    # processing and return without removing words
-    if args.stats:
-        return " ".join(tokens)
+    # First, remove trailing hyphens and slashes
+    sub_pattern = '\A([\W_]*)([A-Za-z0-9]+|[A-Za-z0-9]+[\W_]+[A-Za-z0-9]+)([\W_]*)$'
+    tokens = [re.sub(sub_pattern, "\\2", x) for x in tokens]
+    tokens = remove_unwanted(args, tokens)
 
     for idx, t in enumerate(tokens):
         tokens[idx] = "$" + t if "_" in t else t
 
     # Turn into bigrams if flag is true
-    if args.bigrams and not args.stats:
+    if args.bigrams:
         tokens = make_bigrams(tokens)
 
 
@@ -214,43 +197,6 @@ def main(args):
     with open(args.corpus_bigrams) as json_file:
         bigrams = json.load(json_file)
 
-    if args.test:
-        print("starting test")
-        enchant.set_param("enchant.myspell.dictionary.path", args.myspell_path)
-        gb = enchant.DictWithPWL("en_GB") #, args.pwl_path) # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
-        gb_and_pwl = enchant.DictWithPWL("en_GB", args.pwl_path) # GB isn't working, doesn't recognize 'entrancei' as "entrance i"
-        change_set = set()
-        with open(args.filepath) as f:
-            lines = f.read().split()
-            # for i in tqdm(range(len(lines))):
-                # line = lines[i].rstrip()
-            for line in lines:
-                tokens = [word.replace("\\", "") for word in word_tokenize(line.rstrip())]
-
-                # Join $ to names
-                for i, tok in enumerate(tokens):
-                    if tok == '$':
-                        tokens[i:i+2] = [''.join(tokens[i:i+2])]
-
-                updated_tokens = []
-                for i, tok in enumerate(tokens):
-                    # Split word by non-alphanumeric characters
-                    split_word = re.split("([^A-Za-z0-9_(\w'\w)])|(^')|('$)", tok)
-                    split_word = [w for w in split_word if not w == None and len(w) > 2]
-                    if args.disable_spell_check:
-                        updated_tokens += split_word
-                        continue
-
-                    for sub in split_word:
-                        spell_checked = spell_correct(args, gb, gb_and_pwl, sub, bigrams).split()
-                        updated_tokens += spell_checked
-
-                        if spell_checked[0] != sub:
-                            change_set.add(sub + ": " + " ".join(spell_checked))
-
-        print("\n".join(change_set))
-        exit(0)
-
     # Define additional info to add to output path
     suffix = "-tok"
     sp_str = "-no_sp" if args.disable_spell_check else ""
@@ -261,10 +207,6 @@ def main(args):
     stop_str = "-tng" if args.disable_stopwords else "" # tng = topical ngrams
 
     suffix += sp_str + bigram_str + lower_str + lemma_str + street_str + stop_str
-
-    if args.stats:
-        suffix = "-stats"
-
 
     if not args.output_dir_base:
         base = args.corpus_dir if not args.filepath else os.path.dirname(args.filepath)
@@ -341,19 +283,10 @@ def main(args):
 
                 # Tokenize single file
                 output = tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams)
-                # with open(file, "r") as f:
-                #     content = f.read()
-                #     lines = content.split("\n")
-                #     for j, line in enumerate(lines):
-                #         line_split = line.split(" ")
-                #         for i, word in enumerate(line_split):
-                #             if word.lower() in stop_words: line_split[i] = ""
-                #         lines[j] = " ".join(line_split)
-                #     output = lines
+
                 # Write output to new file
                 with open(output_file, "w") as f:
                     f.write('\n'.join(output))
-        # print(timestamp() + " Tokenization done.", file=sys.stderr)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -364,14 +297,12 @@ if __name__ == '__main__':
     parser.add_argument('--overwrite', default=False, action="store_true", help='whether or not to overwrite old files with the same names')
     parser.add_argument('--bigrams', default=False, action="store_true", help='whether or not to convert data to bigrams')
     parser.add_argument('--lower', default=False, action="store_true", help='whether or not to lowercase all text')
-    parser.add_argument('--stats', default=False, action="store_true", help='whether or not to process text for finding statistics (calc_stats.py)')
     parser.add_argument('--street_sub', default=False, action="store_true", help='whether or not to substitute street names with generic string')
     parser.add_argument('--lemma', default=False, action="store_true", help='whether or not to lemmatize all text')
-    parser.add_argument('--test', default=False, action="store_true", help='testing spellcheck')
     parser.add_argument('--corpus_bigrams', type=str, default="/work/clambert/thesis-data/OB_LL-txt/corpus_bigrams.json", help='path to json file containing dictionary of all corpus bigrams')
-    parser.add_argument('--myspell_path', type=str, default="/home/clambert/.local/lib/python3.6/site-packages/enchant/share/enchant/myspell")
+    parser.add_argument('--myspell_path', type=str, default="/home/clambert/.local/lib/python3.6/site-packages/enchant/share/enchant/myspell", help='Path to myspell dictionary')
     parser.add_argument('--disable_spell_check', default=False, action="store_true", help='whether or not to disable spell check')
-    parser.add_argument('--pwl_path', type=str, default="/work/clambert/thesis-data/OB_LL-txt/unigram_pwl.txt")
+    parser.add_argument('--pwl_path', type=str, default="/work/clambert/thesis-data/OB_LL-txt/unigram_pwl.txt", help='path to unigram word list')
     parser.add_argument('--merge_words', default=False, action="store_true", help='whether or not to merge words into words present in unigram list')
     parser.add_argument('--disable_stopwords', default=False, action="store_true", help='whether or not to disable stop word removal')
     args = parser.parse_args()

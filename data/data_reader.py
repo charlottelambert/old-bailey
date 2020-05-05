@@ -230,6 +230,13 @@ def main(args):
                 text_from_xml = encode_annotations(args, file, txt_output_dir)[2:-1]
                 if args.tsv:
                     tsv_out += split_trials(text_from_xml)
+                # else:
+                #     filename =
+                #     file_path = os.path.join(txt_output_dir, filename)
+                #     if os.path.exists(file_path) and not args.overwrite:
+                #         continue
+                #     with open(file_path, "w") as txt_file:
+                #         txt_file.write(text_from_xml)
 
         except UnicodeDecodeError:
             print("UnicodeDecodeError reading " + file + ". Skipping...")
@@ -251,6 +258,6 @@ if __name__ == '__main__':
     parser.add_argument('--encode_annotations_specific', default=False, action="store_true", help='whether or not to encode specific version of annotations in text')
     parser.add_argument('--overwrite', default=False, action="store_true", help='whether or not to overwrite old files with the same names')
     parser.add_argument('--london_lives', default=False, action="store_true", help='whether or not input is London Lives corpus')
-    parser.add_argument('--tsv', default=True, action="store_true", help="whether or not to store output as tsv")
+    parser.add_argument('--tsv', default=1, type=int, help="whether or not to store output as tsv")
     args = parser.parse_args()
     main(args)
