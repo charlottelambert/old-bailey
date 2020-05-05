@@ -6,7 +6,6 @@ Name | Content
 -------|-------
 `align_topics.py` | Code to align topics from LDA models that are split into different time slices
 `coherence.py` | Code to calulate topic coherence for a given model
-`lda-tools` | Directory containing wrapper code for Mallet
 `load_model.py` | Code to load and print topic model topics
 `README.md` | This file
 `run-dtm.sbatch` | File to run DTM using slurm (called in run-model)
