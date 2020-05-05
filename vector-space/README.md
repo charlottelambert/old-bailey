@@ -41,8 +41,7 @@ If you want to compute topic coherence over a model run using the Mallet wrapper
 ```
 ./train-embedding_model.py --corpus_txt_file=PATH_TO_CORPUS_FILE --filter_top_words=0 --year_split=-1
 ```
-Make sure not to filter out the top 10,000 words because this will cause the vocabularies to not match. You can use the `--
-year_split` argument to match the same parameter from the command used to run `run_model.py`. Alternatively, always set `--year_split` to -1 so the output Word2Vec model can be used for calculating topic coherence for a model run with no year split and for models run with a year split.
+Make sure not to filter out the top 10,000 words because this will cause the vocabularies to not match. You can use the `--year_split` argument to match the same parameter from the command used to run `run_model.py`. Alternatively, always input `--year_split=-1` so the output Word2Vec model can be used for calculating topic coherence for a model run with no year split and for models run with a year split.
 
 
 
