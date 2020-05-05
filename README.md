@@ -7,10 +7,9 @@ The following descriptions relate to code in the `thesis/code` directory. To get
 Convert given XML documents to text files using the following code:
 ```
 ./data_reader /work/clambert/thesis-data/sessionsPapers --tsv=1 --overwrite
-
 ```
 
-If the `--tsv` flag is passed in as true, converted data will be output to a tsv file with the suffix `-txt.tsv` added to the input `corpus_XML_dir` with one line per document. Otherwise, converted text data will be placed in a directory with the suffix `-txt` added to the input `corpus_XML_dir`. The `--overwrite` flag indicates taht if the output tsv file or directory already exists, it should be overwritten.
+If the `--tsv` flag is passed in as true, converted data will be output to a tsv file with the suffix `-txt.tsv` added to the input `corpus_XML_dir` with one line per document. Otherwise, converted text data will be placed in a directory with the suffix `-txt` added to the input `corpus_XML_dir`. The `--overwrite` flag indicates that if the output tsv file or directory already exists, it should be overwritten.
 
 Additionally, if the data passed in is from the London Lives corpus, include the flag `--london_lives` to ensure the data is collected properly.
 
