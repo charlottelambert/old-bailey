@@ -60,6 +60,5 @@ if __name__ == '__main__':
     parser.add_option('--rm_dir', default=False, action='store_true', help='whether or not to remove directory after merging')
     parser.add_option('--tsv_file', type=str, default='', help='path to tsv file to split')
     parser.add_option('--num_splits', type=int, default=4, help='how many tsv files to split args.tsv_file into')
-    parser.add_option('--year_split', type=int, default=0, help='number of years per split')
     (options, args) = parser.parse_args()
     main(options, args)
