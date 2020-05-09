@@ -8,6 +8,7 @@ Name | Contents
 `custom_stop_words.py` | Custom list of stop words to add to NLTK's list
 `data_reader.py` | File to convert XML data to text data
 `make_latin_dict.py` | Builds a Latin dictionary
+`min_max_df.py` | Code to remove words from corpus based on min_df and max_df."
 `ngrams.py` | File to write unigram and bigram personal word lists
 `parallel-tokenize` | Bash script to run `run_tokenize.py` in parallel on an input tsv file
 `prep_tsv.py` | File to split or merge tsv file(s) to allow for parallel processing of one tsv data file
@@ -87,3 +88,5 @@ All of these steps can be done by running `./parallel-tokenize TSV_PATH`.
 
 To convert unigram data to bigram data, run `run_tokenize.py` with the flag `--bigrams`. Output data will be in bigram representation. Note that if you intend to use the Mallet wrapper code in `../topic-modeling/lda-tools` on a directory representation of the corpus, there is no need to convert your data to bigrams. Simply specify the `--bigrams_only` flag to `run_model.py` and the wrapper code will do the conversion.
 
+
+## Min and Max df (need to update)
