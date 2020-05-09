@@ -33,12 +33,12 @@ echo Suffix: $SUFFIX
 # unigrams:
 #./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
 # time slices
-#./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
+#./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-min_df_100-max_df_0.8 --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
 # bigrams:
 #./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
 # time slices
-#./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
+./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-min_df_100-max_df_0.8 --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
 # topical n-grams
 #./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-tng --num_topics=$TOPICS --year_split=-1 --topical_n_grams --suffix=$SUFFIX
