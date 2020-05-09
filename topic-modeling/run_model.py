@@ -69,7 +69,7 @@ def compile_tokens(args, files):
     # texts = get_ngrams(args, texts)
     return texts
 
-def run_lda(args, corpus, pre, dictionary=None, workers=None, docs=None):
+def run_lda(args, corpus, pre, dictionary=None, workers=None, docs=None, num_files=None):
     MALLET_PATH = os.environ.get("MALLET_PATH", "lda-tools/ext/mallet/bin/mallet")
     if args.gensim:
         lda = gensim.models.wrappers.LdaMallet
@@ -94,16 +94,17 @@ def run_lda(args, corpus, pre, dictionary=None, workers=None, docs=None):
             corpus_file = os.path.join(mallet_corpus, str(year) + "-tmp.tsv")
             with open(corpus_file, 'w') as f:
                 f.write("\n".join(lines))
-
+                # num_docs = len(lines)
         else:
             corpus_file = args.corpus_file
-        mallet_corpus = None if args.corpus_file else mallet_corpus
 
+        mallet_corpus = None if args.corpus_file else mallet_corpus
         model = Mallet(MALLET_PATH, mallet_corpus, num_topics=args.num_topics,
                        iters=args.num_iterations, bigrams=args.bigrams_only,
                        topical_n_grams=args.topical_n_grams,
                        remove_stopwords=(not args.topical_n_grams), prefix=pre,
-                       print_output=True, file=corpus_file)
+                       print_output=True, file=corpus_file, min_df=args.min_df,
+                       max_df=args.max_df, num_files=num_files)
     return model
 
 def run_multicore(args, corpus, dictionary, passes, alpha, workers, pre):
@@ -162,6 +163,7 @@ def model_for_year(args, year, files, pre, time_slices):
         print(timestamp() + " Reading corpus.", file=sys.stderr)
         path = args.corpus_file if args.corpus_file else args.corpus_dir
         corpus = Corpus(path, path_list=files)
+        num_files = len(files)
 
     # Run the specified model
     if args.model_type == "multicore":
@@ -169,7 +171,7 @@ def model_for_year(args, year, files, pre, time_slices):
     elif args.model_type == "lda" and args.gensim:
         model = run_lda(args, corpus, pre, dictionary=dictionary, workers=12)
     elif args.model_type == "lda":
-        model = run_lda(args, corpus, pre, docs=(year, files))
+        model = run_lda(args, corpus, pre, docs=(year, files), num_files=num_files)
     else:
         if args.model_type == "dtm": # Dynamic Topic Model
             model = run_dtm(args, corpus, dictionary, time_slices, pre)
@@ -274,5 +276,7 @@ if __name__ == '__main__':
     parser.add_argument('--suffix', type=str, default="", help="suffix to add to model directory if exists")
     parser.add_argument('--topical_n_grams', default=False, action='store_true', help='whether or not to run topical_n_grams')
     parser.add_argument('--coherence', default=False, action='store_true', help='whether or not to calculate topic coherence')
+    parser.add_argument('--min_df', default=0, type=int, help="minimum number of documents needed to contain a word")
+    parser.add_argument('--max_df', default=1.0, type=float, help="maximum number of documents allowed to contain a word")
     args = parser.parse_args()
     main(args)
