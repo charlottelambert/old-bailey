@@ -4,8 +4,8 @@ MODEL_TYPE=${1:-lda}
 
 if [ "$MODEL_TYPE" == "lda-test" ]
 then
-TOPIC_ARR=(10 15 20)
-#TOPIC_ARR=(35 45 55)
+#TOPIC_ARR=(10 15 20)
+TOPIC_ARR=(35 45 55)
 #TOPIC_ARR=(50 60 70)
 declare -i SUFFIX=0
 
