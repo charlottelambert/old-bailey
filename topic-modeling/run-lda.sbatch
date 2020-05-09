@@ -5,9 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=clambert@vassar.edu
-#SBATCH -c 64 --exclusive
-
-#-p emc --exclusive
+#SBATCH -p emc --exclusive
 
 echo Running: $SLURM_ARRAY_TASK_ID
 uname -a
@@ -35,12 +33,12 @@ echo Suffix: $SUFFIX
 # unigrams:
 #./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
 # time slices
-./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --min_df=5 --max_df=0.8 --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
+#./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --min_df=5 --max_df=0.8 --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
 # bigrams:
 #./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
 # time slices
-#./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --min_df=5 --max_df=0.8 --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
+./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok --min_df=10 --max_df=0.8 --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
 # topical n-grams
 #./run_model.py --unigrams_only --corpus_dir=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-tng --num_topics=$TOPICS --year_split=-1 --topical_n_grams --suffix=$SUFFIX
@@ -48,6 +46,6 @@ echo Suffix: $SUFFIX
 # Old Bailey and London Lives data: time slices, bigrams
 #./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --num_topics=$TOPICS --year_split=-1 --suffix=$SUFFIX
 # time slices
-#./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --min_df=5 --max_df=0.8 --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
+#./run_model.py --bigrams_only --corpus_dir=/work/clambert/thesis-data/OB_LL-txt-tok --min_df=10 --max_df=0.8 --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
 echo Finished: `date`
