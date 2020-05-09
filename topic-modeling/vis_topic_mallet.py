@@ -42,6 +42,7 @@ def read_weighted_keys(keyfile):
     word_weights = defaultdict(list)
     r = csv.reader(keyfile, delimiter='\t')
     for row in r:
+        row = [r for r in row if r]
         topicnum = row[0]
         weighted_words = [(x, float(y)) for (x, y) in
                           zip(row[1::2], row[2::2])]
