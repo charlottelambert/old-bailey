@@ -4,9 +4,9 @@ MODEL_TYPE=${1:-lda}
 
 if [ "$MODEL_TYPE" == "lda-test" ]
 then
-#TOPIC_ARR=(10 15 20)
+TOPIC_ARR=(10 15 20 30)
 #TOPIC_ARR=(35 45 55)
-TOPIC_ARR=(50 60 70)
+#TOPIC_ARR=(50 60 70)
 declare -i SUFFIX=0
 
 for topic in ${TOPIC_ARR[@]};
@@ -19,7 +19,7 @@ done;
 elif [ "$MODEL_TYPE" == "lda" ]
 then
 
-sbatch run-lda.sbatch 70
+sbatch run-lda.sbatch 30
 
 elif [[ "$MODEL_TYPE" == "dtm" || "$MODEL_TYPE" == "ldaseq" ]];
 then
