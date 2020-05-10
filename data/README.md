@@ -60,11 +60,30 @@ If you wish to disable spell-checking (a function that will split words that app
 
 Use the `--help` flag to get mroe information about remaining flags and arguments.
 
-### TSV Files in Parallel (need to update)
+### TSV Files in Parallel
 
-`prep_tsv.py` and `parallel-tokenize`
+To run tokenization in parallel over a TSV file, use `prep_tsv.py` to split up the tsv file into `n` smaller files. Then, you can use the `parallel` command to tokenize all files in parallel. To split the file, run the following command:
+
+```
+./prep_tsv.py --tsv_file=TSV_PATH --num_splits=n
+```
+
+This will create a directory called `TSV_PATH-dir` containing about `n` tsv files (may contain more if number of lines in tsv file is not evenly divided by `n`). These files can be tokenized in parallel by executing the following command:
+```
+ls -d TSV_PATH-dir/*{0..9}.tsv | parallel --progress -j 64 "./run_tokenize.py --tsv_data={}"
+```
+
+This will tokenize each file in `TSV_PATH-dir` and write tokenized files to the same directory (with the suffix `-tok.tsv`). Note that you can modify the parameters passed to `run_tokenize.py` as described previously.
+
+To merge the tokenized into one tsv file, use `prep_tsv.py` again with the following arguments:
+
+`./prep_tsv.py TSV_PATH-dir/*-tok.tsv --rm_dir`
+
+This command takes in all the tokenized files as input, merges them into a file with the same name as the original `TSV_PATH` but with `-tok.tsv` as its suffix. Specify the `--rm_dir` argument to remove the temporary `TSV_PATH-dir` directory which is no longer needed.
+
+All of these steps can be done by running `./parallel-tokenize TSV_PATH`.
 
 ### Bigrams (optional)
 
-To convert unigram data to bigram data, run the following line of code, run `run_tokenize.py` with the flag `--bigrams`. Output data will be in bigram representation.
+To convert unigram data to bigram data, run `run_tokenize.py` with the flag `--bigrams`. Output data will be in bigram representation. Note that if you intend to use the Mallet wrapper code in `../topic-modeling/lda-tools` on a directory representation of the corpus, there is no need to convert your data to bigrams. Simply specify the `--bigrams_only` flag to `run_model.py` and the wrapper code will do the conversion.
 
