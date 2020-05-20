@@ -46,7 +46,7 @@ def get_year(input, include_month=False, tsv=False):
     if tsv:
         cols = input.split("\t")
         if cols[0].lower() == "id": return -1
-        return int(cols[1])
+        input = cols[0]
     try:
         if os.path.basename(input)[:2] == "OA": offset = 2
         elif os.path.basename(input)[:1].isalpha(): offset = 1
