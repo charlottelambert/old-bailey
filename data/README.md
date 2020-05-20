@@ -48,7 +48,7 @@ Then, run the following command to calculate useful statistics on how many moder
 To tokenize data (and clean up some idiosyncrasies), run `run_tokenize.py` on a corpus of text files or one tsv file. Some default arguments have been added for simplicity, but can be overridden by setting the appropriate flags.
 
 ```
-./run_tokenize.py --tsv_data=sessionsAndOrdinarys-txt.tsv --overwrite
+./run_tokenize.py --tsv_corpus=sessionsAndOrdinarys-txt.tsv --overwrite
 ```
 
 If tsv file is input, output tokenization will be written to a tsv file with the suffix `-tok`. Additional arguments may add to this suffix. If no tsv file is input but something is passed into the argument `--corpus_dir`, each file in the directory will be tokenized and written to a file of the same name in a directory of the form `corpus_dir-tok`. You can also provide a path to a specific file using the option `--filepath` to tokenize that file only. It will be processed the same as any file input using the `--corpus_dir` argument. This allows for parallelization.
@@ -67,7 +67,7 @@ To run tokenization in parallel over a TSV file, use `prep_tsv.py` to split up t
 
 This will create a directory called `TSV_PATH-dir` containing about `n` tsv files (may contain more if number of lines in tsv file is not evenly divided by `n`). These files can be tokenized in parallel by executing the following command:
 ```
-ls -d TSV_PATH-dir/*{0..9}.tsv | parallel --progress -j 64 "./run_tokenize.py --tsv_data={}"
+ls -d TSV_PATH-dir/*{0..9}.tsv | parallel --progress -j 64 "./run_tokenize.py --tsv_corpus={}"
 ```
 
 This will tokenize each file in `TSV_PATH-dir` and write tokenized files to the same directory (with the suffix `-tok.tsv`). Note that you can modify the parameters passed to `run_tokenize.py` as described previously.

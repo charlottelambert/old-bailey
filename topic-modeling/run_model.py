@@ -83,27 +83,27 @@ def run_lda(args, corpus, pre, dictionary=None, workers=None, docs=None, num_fil
         mallet_corpus = prefix + 'corpus'
 
         print('Generating topic model.')
-        form = 'tsv' if args.corpus_file else "text"
-        corpus_file = None
-        if not args.corpus_file:
+        form = 'tsv' if args.tsv_corpus else "text"
+        tsv_corpus = None
+        if not args.tsv_corpus:
             os.makedirs(mallet_corpus)
             corpus.export(mallet_corpus, abstract=False, form=form)
         elif args.year_split != -1:
             year, lines = docs
             os.makedirs(mallet_corpus)
-            corpus_file = os.path.join(mallet_corpus, str(year) + "-tmp.tsv")
-            with open(corpus_file, 'w') as f:
+            tsv_corpus = os.path.join(mallet_corpus, str(year) + "-tmp.tsv")
+            with open(tsv_corpus, 'w') as f:
                 f.write("\n".join(lines))
                 # num_docs = len(lines)
         else:
-            corpus_file = args.corpus_file
+            tsv_corpus = args.tsv_corpus
 
-        mallet_corpus = None if args.corpus_file else mallet_corpus
+        mallet_corpus = None if args.tsv_corpus else mallet_corpus
         model = Mallet(MALLET_PATH, mallet_corpus, num_topics=args.num_topics,
                        iters=args.num_iterations, bigrams=args.bigrams_only,
                        topical_n_grams=args.topical_n_grams,
                        remove_stopwords=(not args.topical_n_grams), prefix=pre,
-                       print_output=True, file=corpus_file, min_df=args.min_df,
+                       print_output=True, file=tsv_corpus, min_df=args.min_df,
                        max_df=args.max_df, num_files=num_files)
     return model
 
@@ -161,7 +161,7 @@ def model_for_year(args, year, files, pre, time_slices):
     else:
         dictionary = None
         print(timestamp() + " Reading corpus.", file=sys.stderr)
-        path = args.corpus_file if args.corpus_file else args.corpus_dir
+        path = args.tsv_corpus if args.tsv_corpus else args.corpus_dir
         corpus = Corpus(path, path_list=files)
         num_files = len(files)
 
@@ -258,7 +258,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--corpus_file', type=str, default='')
+    parser.add_argument('--tsv_corpus', type=str, default='path to tsv file containing corpus')
     parser.add_argument('--london_lives_file', type=str, default='')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--unigrams_only', default=False, action="store_true", help='whether or not to only include unigrams')

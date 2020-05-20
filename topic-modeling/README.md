@@ -24,16 +24,16 @@ Name | Content
 This file is the python code used to run LDA, manual dynamic LDA, DTM, and LDAseq. The following command is an example of running LDA over a TSV file containing the Old Bailey corpus:
 
 ```
-./run_model.py --model_type=lda --corpus_file=[TSV_DATA] --num_topics=NUM_TOPICS --year_split=-1
+./run_model.py --model_type=lda --tsv_corpus=[TSV_CORPUS] --num_topics=NUM_TOPICS --year_split=-1
 ```
 
-This will run an LDA model over the entire corpus found in `TSV_DATA` with `NUM_TOPICS` topics. By default, this will save an LDA model (along with a file containing the parameters used to run the model) in a time-stamped directory within the path provided in the `--save_model_dir` argument. To run manual dynamic LDA, change the `--year_split` argument to the desired number of years per time slice, default is 100. This will save the individually-run models in subdirectories of the time-stamped directory with names indicating the first year in that model's time slice. 
+This will run an LDA model over the entire corpus found in `TSV_CORPUS` with `NUM_TOPICS` topics. By default, this will save an LDA model (along with a file containing the parameters used to run the model) in a time-stamped directory within the path provided in the `--save_model_dir` argument. To run manual dynamic LDA, change the `--year_split` argument to the desired number of years per time slice, default is 100. This will save the individually-run models in subdirectories of the time-stamped directory with names indicating the first year in that model's time slice.
 
-If no file is passed into `--corpus_file`, the value for `--corpus_dir`, a directory containing the data in text files, will be used instead. If the input `--corpus_file` only contains Old Bailey data and you wish to run the model over both Old Bailey and London Lives data, pass in the path to a tsv file containing the London Lives data to the `--london_lives_file` argument in addition to the `--corpus_file` argument.
+If no file is passed into `--tsv_corpus`, the value for `--corpus_dir`, a directory containing the data in text files, will be used instead. If the input `--tsv_corpus` only contains Old Bailey data and you wish to run the model over both Old Bailey and London Lives data, pass in the path to a tsv file containing the London Lives data to the `--london_lives_file` argument in addition to the `--tsv_corpus` argument.
 
 Including the flag `--gensim` indicates that you wish to run LDA with Gensim's wrapper. It is recommended that you do not use this flag and instead let the Mallet wrapper code in `lda-tools` run LDA. See the `README.md` in the `thesis` directory for instructions on obtaining the Mallet wrapper.
 
-When running LDA on the files in a directory, you may specify the `--bigrams_only` argument to convert the data to bigrams. This will be reported to the Mallet wrapper code. 
+When running LDA on the files in a directory, you may specify the `--bigrams_only` argument to convert the data to bigrams. This will be reported to the Mallet wrapper code.
 
 You can also change the type of model being run to `dtm` or `ldaseq`.
 
@@ -82,7 +82,7 @@ For a manual dynamic LDA model run using the Mallet wrapper code in `lda-tools`,
 ```
 ./align_topics WEIGHTED_KEYS_1 WEIGHTED_KEYS_2 WEIGHTED_KEYS_3
 ```
-At this point, three models must be input. the `WEIGHTED_KEYS` arguments refer to files saved within each subdirectory within the time-stamped directory created when running `run-model`. These files are called `weighed-keys.txt`. This command will print out `NUM_TOPICS` alignments in order of most similar to least similar. After all alignments of 2 or three topics are printed, all the topics that were not aligned are printed out. These are considered unique to their own time slice. 
+At this point, three models must be input. the `WEIGHTED_KEYS` arguments refer to files saved within each subdirectory within the time-stamped directory created when running `run-model`. These files are called `weighed-keys.txt`. This command will print out `NUM_TOPICS` alignments in order of most similar to least similar. After all alignments of 2 or three topics are printed, all the topics that were not aligned are printed out. These are considered unique to their own time slice.
 
 ### Calculating Topic Coherence
 
@@ -103,7 +103,7 @@ To load a Gensim model and print out the model's topics, run the following comma
 ./load_model.py MODEL_PATH --num_topics=-1 --model_type=lda
 ```
 
-The `--num_topics` argument specifies the number of topics to print out. When the argument is `-1`, it will print out all the topics found by the model. 
+The `--num_topics` argument specifies the number of topics to print out. When the argument is `-1`, it will print out all the topics found by the model.
 
 The `--model_type` argument requires that the input be either `lda` (default), `dtm`, or `ldaseq` depending on how the original input model was run.
 

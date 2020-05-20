@@ -22,16 +22,16 @@ def main(options, args):
             f.write("\n".join(all_lines))
         if options.rm_dir: shutil.rmtree(base)
         print(timestamp(), "Done!", file=sys.stderr)
-    elif options.tsv_file:
-        base = os.path.basename(options.tsv_file) + "-dir"
-        new_dir = os.path.join(os.path.dirname(options.tsv_file), base)
+    elif options.tsv_corpus:
+        base = os.path.basename(options.tsv_corpus) + "-dir"
+        new_dir = os.path.join(os.path.dirname(options.tsv_corpus), base)
         if not os.path.exists(new_dir): os.makedirs(new_dir)
         else:
             print("Directory", new_dir, "already exists. Exiting...", file=sys.stderr)
             exit(0)
 
         print(timestamp(), "Splitting TSV file...", file=sys.stderr)
-        with open(options.tsv_file, 'r') as f:
+        with open(options.tsv_corpus, 'r') as f:
             lines = f.read().split("\n")
             if lines[0].lower() == "id\tyear\ttext": idx = 1
             else: idx = 0
@@ -56,9 +56,9 @@ def main(options, args):
         exit(1)
 
 if __name__ == '__main__':
-    parser = optparse.OptionParser(usage="usage: %prog [options] tsv_file1 tsv_file2 ...")
+    parser = optparse.OptionParser(usage="usage: %prog [options] tsv_corpus1 tsv_corpus2 ...")
     parser.add_option('--rm_dir', default=False, action='store_true', help='whether or not to remove directory after merging')
-    parser.add_option('--tsv_file', type=str, default='', help='path to tsv file to split')
-    parser.add_option('--num_splits', type=int, default=4, help='how many tsv files to split args.tsv_file into')
+    parser.add_option('--tsv_corpus', type=str, default='', help='path to tsv file to split')
+    parser.add_option('--num_splits', type=int, default=4, help='how many tsv files to split options.tsv_corpus into')
     (options, args) = parser.parse_args()
     main(options, args)

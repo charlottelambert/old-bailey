@@ -71,7 +71,7 @@ def order_files(args):
     # If given tsv file as input, order documents based on year
     tsv = False
     try:
-        with open(args.corpus_file, 'r') as f:
+        with open(args.tsv_corpus, 'r') as f:
             lines = f.read().split("\n")
 
             if lines[0].lower() == "id\tyear\ttext": idx = 1

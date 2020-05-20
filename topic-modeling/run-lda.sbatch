@@ -21,10 +21,10 @@ echo Suffix: $SUFFIX
 
 # DATA FROM TSV FILES
 # Old Bailey bigram data only, year split 100
-#./run_model.py --unigrams_only --corpus_file=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-bi.tsv --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
+#./run_model.py --unigrams_only --tsv_corpus=/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-bi.tsv --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
 # Old Bailey and London Lives bigram data, year split 100
-#./run_model.py --unigrams_only --corpus_file=/work/clambert/thesis-data/OB_LL-txt-tok-bi.tsv --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
+#./run_model.py --unigrams_only --tsv_corpus=/work/clambert/thesis-data/OB_LL-txt-tok-bi.tsv --num_topics=$TOPICS --year_split=100 --suffix=$SUFFIX
 
 #######################################################################################################
 

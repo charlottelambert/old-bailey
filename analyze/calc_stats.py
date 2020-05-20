@@ -183,7 +183,7 @@ def find_basic_stats(args, files_dict, dir):
             stat_dict["stat_name"].append(start_year)
             stat_dict["num_docs"].append(len(files))
             for i in tqdm(range(len(files))):
-                if args.corpus_file:
+                if args.tsv_corpus:
                     toks = files[i].lower().split()
                 else:
                     with open(files[i], "r") as f:
@@ -253,9 +253,9 @@ def main(args):
     files_dict, _ = order_files(args)
 
     # Make output path
-    if args.corpus_file:
-        dir = os.path.dirname(args.corpus_file)
-        base = os.path.basename(args.corpus_file).replace(".tsv", "")
+    if args.tsv_corpus:
+        dir = os.path.dirname(args.tsv_corpus)
+        base = os.path.basename(args.tsv_corpus).replace(".tsv", "")
         if args.london_lives_file:
             s = base.split("-")
             if len(s) > 1:
@@ -312,7 +312,7 @@ def main(args):
             # Iterate over all documents in corpus
             for i in tqdm(range(len(files[:1]))):
                 # If reading from a corpus file, just pass in the text
-                if args.corpus_file:
+                if args.tsv_corpus:
                     text = files[i].split("\n")
                 # Otherwise pass in an opened file
                 else:
@@ -320,7 +320,7 @@ def main(args):
                 # Get the statistics
                 stats_dict, valid = stats_for_file(text, stats_dict)
                 # Close file if necessary
-                if not args.corpus_file: text.close()
+                if not args.tsv_corpus: text.close()
             if valid:
                 if args.disable_tfidf:
                     top_words = []
@@ -330,7 +330,7 @@ def main(args):
 
             doc_idx += 1
     print(timestamp() + " Wrote statistics to", stats_path, file=sys.stderr)
-    
+
     # Print unknown words (for testing)
     if args.print_unk:
         sorted = list(unk_words)
@@ -339,7 +339,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--corpus_file', type=str, default='')
+    parser.add_argument('--tsv_corpus', type=str, default='path to tsv file containing corpus')
     parser.add_argument('--london_lives_file', type=str, default='')
     parser.add_argument('--basic_stats', default=False, action='store_true', help='whether to find basic corpus stats only.')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-stats", help='directory containing corpus')

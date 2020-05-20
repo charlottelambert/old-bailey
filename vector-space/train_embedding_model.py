@@ -66,7 +66,7 @@ def build_corpus(args, input_dir_path=None, files=None, corpus_txt_file=None):
         directory.
     """
     # If input tsv file, compile the third column of all
-    if args.corpus_file:
+    if args.tsv_corpus:
         corpus = []
         for line in files:
             text = line.split("\t")[2:]
@@ -277,7 +277,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--corpus_file', type=str, default="", help='path to corpus file in tsv format')
+    parser.add_argument('--tsv_corpus', type=str, default="", help='path to corpus file in tsv format')
     parser.add_argument('--corpus_txt_file', type=str, default="", help='path to corpus file saved from mallet --print_output')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-tok-lower-lemma", help='directory containing corpus')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
