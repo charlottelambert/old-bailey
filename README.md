@@ -6,14 +6,14 @@ The following descriptions relate to code in the `thesis` directory. To get more
 
 Name | Content
 -------|-------
-`analyze` | Code for analyzing processed data
-`data` | Code for acquiring and processing text data
-`lambert-final-thesis.pdf` | Final thesis draft.
-`logs` | Directory containing logfiles from topic modeling
-`README.md` | This file
-`topic-modeling` | Code for running LDA/DTM/other variations of topic modeling
-`utils.py` | Functions used by code in several directories
-`vector-space` | Code for running vector space models
+[`analyze`](analyze) | Code for analyzing processed data
+[`data`](data) | Code for acquiring and processing text data
+[`lambert-final-thesis.pdf`](lambert-final-thesis.pdf) | Final thesis draft.
+[`logs`](logs) | Directory containing logfiles from topic modeling
+[`README.md`](README.md) | This file
+[`topic-modeling`](topic-modeling) | Code for running LDA/DTM/other variations of topic modeling
+[`utils.py`](utils.py) | Functions used by code in several directories
+[`vector-space`](vector-space) | Code for running vector space models
 
 To obtain the data used in this project, you will need two different datasets. For consistency with the instructions included in the `README.md` files, directory names are specified for each dataset:
 1. [The Proceedings of Old Bailey](https://www.oldbaileyonline.org/index.jsp): Download the data from [here](https://figshare.shef.ac.uk/articles/Old_Bailey_Online_XML_Data/4775434) and store the XML files in a directory called `sessionsPapers`.
