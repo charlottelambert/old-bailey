@@ -16,7 +16,7 @@ Name | Contents
 
 Convert given XML documents to text files using the following code:
 ```
-./data_reader /work/clambert/thesis-data/sessionsPapers --tsv=1 --overwrite --split_trials
+./data_reader /work/clambert/thesis-data/sessionsAndOrdinarys --tsv=1 --overwrite --split_trials
 ```
 
 If the `--tsv` flag is passed in as true (1), converted data will be output to a tsv file with the suffix `-txt.tsv` added to the input `corpus_XML_dir` with one line per document. Otherwise, converted text data will be placed in a directory with the suffix `-txt` added to the input `corpus_XML_dir`. The `--overwrite` flag indicates that if the output tsv file or directory already exists, it should be overwritten. The `--split_trials` flag indicates whether or not the data will be split by trial when possible. If false, output will be split by document (i.e., one session). Ordinarys Accounts are always written to one line in a tsv document or one file in the output directory since there are no trials.

@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
 import os, argparse, natsort, sys, re
 from datetime import datetime
 
+# Mapping between tokenized contractions to equivalent words
 c_dict =    {
     "ca n't": "can not",
     "wo n't": "will not",
@@ -23,6 +23,10 @@ def timestamp():
     return "["+datetime.now().strftime('%Y-%m-%d %H:%M:%S')+"]"
 
 def get_order(file):
+    """
+        Function used when sorting files by year. Return the 8 character string
+        containing the date in "YYYYMMDD" format.
+    """
     base = os.path.basename(file)
     if base[:2] == "OA":
         return base[2:]
