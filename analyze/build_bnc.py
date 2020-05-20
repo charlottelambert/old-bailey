@@ -54,7 +54,6 @@ def main(args):
         # Extract the words from that path
         bnc_words.update(update_bnc_words(xml_path, out_path))
 
-
     # Create directory for output file if doesn't exist
     if not os.path.exists(os.path.dirname(args.save_lexicon_path)):
         os.makedirs(os.path.dirname(args.save_lexicon_path))
