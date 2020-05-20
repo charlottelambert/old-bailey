@@ -30,6 +30,5 @@ cp ordinarysAccounts/* sessionsAndOrdinarys
 
 ### Information about this project
 
-```
 The Proceedings of the Old Bailey, 1674–1913 (Hitchcock et al., 2012b) is a published record of criminal proceedings at London’s central criminal court. The Proceedings primarily depict the lives of the "non-elite" population of London. This project explores these proceedings to study this specific population over the approximately 250-year time period of the publication. Because the corpus spans a significant period of history, it can be examined to identify evolving patterns related to different social groups represented in the text. This project aims to identify which computational methods can reveal interesting sociolinguistic information about this corpus. More specifically, this paper will explore unsupervised techniques like latent Dirichlet allocation (LDA) (Blei et al., 2003), Word2Vec (Mikolov et al., 2013), and Embedded Topic Modeling (ETM) (Dieng et al., 2019b) when applied to the Proceedings of Old Bailey. Additionally, temporal variants of these methods, such as Dynamic Topic Modeling (DTM) (Blei and Lafferty, 2006), Dynamic Embedded Topic Modeling (DETM) (Dieng et al., 2019a), and LDA and Word2Vec manually run across different time slices, are applied to analyze the corpus over time.
-```
+
