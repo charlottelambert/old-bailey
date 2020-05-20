@@ -4,11 +4,8 @@ The following table shows all files present in the `thesis/data` directory. Belo
 
 Name | Contents
 -------|-------
-`build_bnc.py` | 
 `custom_stop_words.py` | Custom list of stop words to add to NLTK's list
 `data_reader.py` | File to convert XML data to text data
-`make_latin_dict.py` | Builds a Latin dictionary
-`min_max_df.py` | Code to remove words from corpus based on min_df and max_df."
 `ngrams.py` | File to write unigram and bigram personal word lists
 `parallel-tokenize` | Bash script to run `run_tokenize.py` in parallel on an input tsv file
 `prep_tsv.py` | File to split or merge tsv file(s) to allow for parallel processing of one tsv data file
@@ -19,12 +16,12 @@ Name | Contents
 
 Convert given XML documents to text files using the following code:
 ```
-./data_reader /work/clambert/thesis-data/sessionsPapers --tsv=1 --overwrite
+./data_reader /work/clambert/thesis-data/sessionsPapers --tsv=1 --overwrite --split_trials
 ```
 
-If the `--tsv` flag is passed in as true, converted data will be output to a tsv file with the suffix `-txt.tsv` added to the input `corpus_XML_dir` with one line per document. Otherwise, converted text data will be placed in a directory with the suffix `-txt` added to the input `corpus_XML_dir`. The `--overwrite` flag indicates that if the output tsv file or directory already exists, it should be overwritten.
+If the `--tsv` flag is passed in as true (1), converted data will be output to a tsv file with the suffix `-txt.tsv` added to the input `corpus_XML_dir` with one line per document. Otherwise, converted text data will be placed in a directory with the suffix `-txt` added to the input `corpus_XML_dir`. The `--overwrite` flag indicates that if the output tsv file or directory already exists, it should be overwritten. The `--split_trials` flag indicates whether or not the data will be split by trial when possible. If false, output will be split by document (i.e., one session). Ordinarys Accounts are always written to one line in a tsv document or one file in the output directory since there are no trials.
 
-Additionally, if the data passed in is from the London Lives corpus, include the flag `--london_lives` to ensure the data is collected properly.
+Additionally, if the data passed in is from the London Lives corpus, include the flag `--london_lives` to ensure the data is collected properly. London lives data cannot be split by trial (there are no trials).
 
 Finally, up to one of two flags can be passed in to indicate that annotations from the input XML should be replaced with some token. The `--encode_annotations_general` flag will result in output data in which every person's name is replaced with a token of the format `speakerType_gender`. The `--encode_annotations_specific` flag will result in output data in which every person's name is replaced with a token of the format `speakerType_GIVENNAME_SURNAME`. In either case, if something is unknown, it will be replaced with the token `unk`.
 
@@ -45,7 +42,6 @@ From the XML files of BNC data gotten [here](https://ota.bodleian.ox.ac.uk/repos
 ```
 
 Then, run the following command to calculate useful statistics on how many modern english words, historical english words, latin words, and proper nouns are present in all the files in a specific corpus directory:
-
 
 ## Tokenization
 
@@ -87,6 +83,3 @@ All of these steps can be done by running `./parallel-tokenize TSV_PATH`.
 ### Bigrams (optional)
 
 To convert unigram data to bigram data, run `run_tokenize.py` with the flag `--bigrams`. Output data will be in bigram representation. Note that if you intend to use the Mallet wrapper code in `../topic-modeling/lda-tools` on a directory representation of the corpus, there is no need to convert your data to bigrams. Simply specify the `--bigrams_only` flag to `run_model.py` and the wrapper code will do the conversion.
-
-
-## Min and Max df (need to update)

@@ -3,7 +3,9 @@
 Name | Content
 -------|-------
 `analyze_utils.py` | (is this used?)
+`build_bnc.py` | Build lexicon of words from the BNC from BNC XML files
 `calc_stats.py` | Code to calculate statistics on processed data
+`make_latin_dict.py` | Builds a Latin dictionary
 `README.md` | This file
 `train_tfidf.py` | Code for training TF-IDF models
 

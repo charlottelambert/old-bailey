@@ -87,8 +87,6 @@ def tokenize_line(args, line, output_dir, gb, gb_and_pwl, bigrams):
 
         for sub in split_word:
             spell_checked = spell_correct(args, gb, gb_and_pwl, sub, bigrams).split()
-            if sub != spell_checked[0]:
-                print(sub)
             updated_tokens += spell_checked
     tokens = updated_tokens
     # Handle issue with dashes appearing at start of word
@@ -129,7 +127,7 @@ def tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams):
     output = []
     with open(file, "r") as f:
         for line in f:
-            output.append(tokenize_line(line))
+            output.append(tokenize_line(args, line, output_dir, gb, gb_and_pwl, bigrams))
     return output
 
 # Eventually, we jsut want to run this on each word, might need a way to speed
@@ -243,6 +241,7 @@ def main(args):
             for i,line in enumerate(output):
                 output[i] = " ".join(merge_words(args, pwl, line.split(), bigrams))
 
+        if not os.path.exists(os.path.dirname(output_file)): os.makedirs(os.path.dirname(output_file))
         # Write output to new file
         with open(output_file, "w") as f:
             f.write("\n".join(output))

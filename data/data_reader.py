@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import sys, html, re, os, argparse, natsort
 import xml.etree.ElementTree as ET
 from tqdm import tqdm
@@ -112,7 +111,7 @@ def encode_annotations(args, xml_path, txt_output_dir):
                 # Replace info in element with new info
                 elem.clear()
                 elem.text = annotated_element
-        if not args.london_lives and args.tsv:
+        if not args.london_lives and args.tsv or args.split_trials:
             try:
             # Check if current element indicates a split between trials
                 if elem.tag in type_dict:
@@ -123,9 +122,14 @@ def encode_annotations(args, xml_path, txt_output_dir):
                     # Does not indicate a split between trials
                     elem.text = " " if not elem.text else elem.text + " "
                     continue
-                # Identify file name and insert text
-                file_name = elem.attrib["id"]
-                elem.text = "SPLIT_HERE" + file_name[range[0]:range[1]] + "SPLIT_HERE" + file_name
+
+                # If splitting by trial and have identified a new trial, indicate
+                # with string 'SPLIT_HERE'
+                if args.split_trials:
+                    # Identify file name and insert text
+                    file_name = elem.attrib["id"]
+                    elem.text = "SPLIT_HERE" + file_name[range[0]:range[1]] + "SPLIT_HERE" + file_name
+                else: elem.text = " " if not elem.text else elem.text + " "
             # Element doesn't contain the right attributes
             except KeyError:
                 elem.text = " " if not elem.text else elem.text + " "
@@ -145,30 +149,72 @@ def encode_annotations(args, xml_path, txt_output_dir):
         return text_from_xml, filename
     return text_from_xml
 
-def split_trials(text):
+def split_trials(text, split_trials=False, tsv=False, file=""):
     """
         Iterate over text found from file. Find indication of split between
         trials ("SPLIT_HERE\tYEAR\tID"). Return list of lines to be written to
         tsv file where each line is ID\tYEAR\tTEXT.
     """
-    tsv_out = []
+    if tsv: join_str = " "
+    else: join_str = "\n"
+
+    # Splitting by session, don't need to find different trials within file.
+    # Just return text itself
+    if not split_trials:
+        text = re.sub("[\ |\t]+", " ", text)
+        # If tsv, must remove all line breaks and format in tsv format
+        if tsv and file:
+            text = " ".join(text.split("\n"))
+            id = os.path.basename(file).split(".")[0]
+            year = str(get_year(file))
+            text = id + "\t" + year + "\t" + text
+        return [text]
+
     lines = text.split("\n")
     text = []
+    tsv_out = []
+    # Iterate over lines in text
     for line in lines:
+        # If found trial split
         if "SPLIT_HERE" in line:
+            # If text contains lines, i.e., not an empty trial
             if text:
-                merged_text = re.sub("\ +", " ", " ".join(text))
+                # Replace extra spacing
+                merged_text = re.sub("\ +", " ", join_str.join(text))
+                # Join text with id and year
                 tsv_out.append(id + "\t" + year + "\t" + merged_text)
+                # Reset text
                 text = []
+            # Get new year and id from current line which refers to subsequent trial
             _, year, id = line.split("SPLIT_HERE")
             id = id.rstrip()
+        # Otherwise, just add line to text
         elif line.strip():
             text.append(line)
+
+    # If anything is leftover, process in the same way
     if text:
-        merged_text = re.sub("\ +", " ", " ".join(text))
+        merged_text = re.sub("\ +", " ", join_str.join(text))
         tsv_out.append(id + "\t" + year + "\t" + merged_text)
+    # Return list of lines making up tsv file
     return tsv_out
 
+def write_file(args, txt_output_dir, name, text):
+    """
+        Function to write text to file
+    """
+    # Get name of file to write to
+    if name: path = os.path.join(txt_output_dir, name)
+    # This is if writing to tsv file, naming is strange
+    else: path = txt_output_dir
+
+    # If file exists and don't want to overwrite, don't write to file
+    if os.path.exists(path) and not args.overwrite:
+        return
+
+    # Otherwise, write text to file
+    with open(path, "w") as file:
+        file.write(text)
 
 def main(args):
     if not args.corpus_XML_dir:
@@ -176,6 +222,7 @@ def main(args):
         sys.exit(1)
     args.corpus_XML_dir = os.path.join(args.corpus_XML_dir, '')
 
+    # Build lists of input files depending on data type
     if args.london_lives:
         input_files = []
         for root, _, files in os.walk(args.corpus_XML_dir, topdown=False):
@@ -192,11 +239,15 @@ def main(args):
     annotations_str = "-gen" if args.encode_annotations_general else ""
     annotations_str = "-spec" if args.encode_annotations_specific else annotations_str
     txt_output_dir = base_name + annotations_str
+
+    # Make directory to write files to if not doing tsv
     if not args.tsv:
         print("Writing files to " + txt_output_dir)
         if not os.path.exists(txt_output_dir):
-            os.mkdir(txt_output_dir)
-    tsv_out = ["id\tyear\ttext"]
+            os.makedirs(txt_output_dir)
+    # Otherwise make header for tsv file
+    else: tsv_out = ["id\tyear\ttext"]
+
     # Go through input files and generate output files
     for i in tqdm(range(len(input_files))):
         # Get current file
@@ -210,7 +261,7 @@ def main(args):
                 continue
         # Write text to txt file
         try:
-            # Get string version of xml
+            # London lives
             if args.london_lives:
                 text_from_xml, filename = encode_annotations(args, file, txt_output_dir)
                 text_from_xml = text_from_xml[2:-1]
@@ -219,37 +270,45 @@ def main(args):
                     text = re.sub("\n" , " ", text_from_xml)
                     l = text_from_xml.split()
                     tsv_out.append(filename + text)
-                # Otherwise, write data to file
                 else:
-                    file_path = os.path.join(txt_output_dir, filename)
-                    if os.path.exists(file_path) and not args.overwrite:
-                        continue
-                    with open(file_path, "w") as txt_file:
-                        txt_file.write(text_from_xml)
+                    # Otherwise, write data to file
+                    write_file(args, txt_output_dir, filename, text_from_xml)
+
+            # Not london lives
             else:
                 text_from_xml = encode_annotations(args, file, txt_output_dir)[2:-1]
+                output = split_trials(text_from_xml, split_trials=args.split_trials, tsv=args.tsv, file=file)
+                # If working with tsv file, continue collecting tsv output
                 if args.tsv:
-                    tsv_out += split_trials(text_from_xml)
-                # else:
-                #     filename =
-                #     file_path = os.path.join(txt_output_dir, filename)
-                #     if os.path.exists(file_path) and not args.overwrite:
-                #         continue
-                #     with open(file_path, "w") as txt_file:
-                #         txt_file.write(text_from_xml)
-
+                    tsv_out += output
+                # If not doing tsv file but still want to split trials
+                elif args.split_trials:
+                    # Iterate over every trial and write to text file
+                    for trial in output:
+                        # Filename is based on trial ID
+                        filename = trial.split("\t")[0] + ".txt"
+                        # Write to file
+                        write_file(args, txt_output_dir, filename, trial)
+                # Otherwise, just write entire session to file
+                else:
+                    filename = os.path.splitext(os.path.basename(file))[0] + ".txt"
+                    write_file(args, txt_output_dir, filename, output[0])
+        # Catch possible errors
         except UnicodeDecodeError:
             print("UnicodeDecodeError reading " + file + ". Skipping...")
             continue
         except ET.ParseError:
             print("ParseError reading " + file + ". Skipping...")
-    if args.tsv:
-        with open(txt_output_dir + ".tsv", 'w') as f:
-            # Sort in year order
-            tsv_out = [tsv_out[0]] + natsort.natsorted(tsv_out[1:], key=lambda x: x.split("\t")[1])
-            f.write("\n".join(tsv_out))
-    print("Data written to " + txt_output_dir + ".tsv", file=sys.stderr)
 
+    # If writing to tsv file, combine all lines and write to file
+    if args.tsv:
+        txt_output_dir += ".tsv"
+        # Sort in year order
+        tsv_out = [tsv_out[0]] + natsort.natsorted(tsv_out[1:], key=lambda x: x.split("\t")[1])
+        # Write to tsv file
+        write_file(args, txt_output_dir, "", "\n".join(tsv_out))
+
+    print("Data written to " + txt_output_dir, file=sys.stderr)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -257,6 +316,7 @@ if __name__ == '__main__':
     parser.add_argument('--encode_annotations_general', default=False, action="store_true", help='whether or not to encode general version of annotations in text')
     parser.add_argument('--encode_annotations_specific', default=False, action="store_true", help='whether or not to encode specific version of annotations in text')
     parser.add_argument('--overwrite', default=False, action="store_true", help='whether or not to overwrite old files with the same names')
+    parser.add_argument('--split_trials', default=False, action="store_true", help='whether or not to split data into trials')
     parser.add_argument('--london_lives', default=False, action="store_true", help='whether or not input is London Lives corpus')
     parser.add_argument('--tsv', default=1, type=int, help="whether or not to store output as tsv")
     args = parser.parse_args()
