@@ -213,10 +213,10 @@ def main(args):
         output_dir = args.output_dir_base.rstrip("/") + suffix
 
     # Create output directory
-    if not args.tsv_data and not os.path.exists(output_dir):
+    if not args.tsv_corpus and not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
-    if not args.filepath and not args.tsv_data:
+    if not args.filepath and not args.tsv_corpus:
         print(timestamp() + " Tokenizing data to", suffix, file=sys.stderr)
 
     enchant.set_param("enchant.myspell.dictionary.path", args.myspell_path)
@@ -247,12 +247,12 @@ def main(args):
             f.write("\n".join(output))
         exit(0)
     else:
-        if args.tsv_data:
-            output_file = args.tsv_data[:-4] + suffix + ".tsv"
+        if args.tsv_corpus:
+            output_file = args.tsv_corpus[:-4] + suffix + ".tsv"
             if not args.overwrite and os.path.exists(output_file):
                 print("File", output_file, "exists. Exiting...")
                 exit(0)
-            with open(args.tsv_data, 'r') as f:
+            with open(args.tsv_corpus, 'r') as f:
                 docs = f.read().split("\n")
                 if docs[0].lower() == "id\tyear\ttext":
                     idx = 1
@@ -289,7 +289,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tsv_data', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt.tsv", help='path to data in tsv format')
+    parser.add_argument('--tsv_corpus', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt.tsv", help='path to data in tsv format')
     parser.add_argument('--output_dir_base', type=str, default="", help='location to save tokenized text')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsPapers-txt", help='directory containing corpus')
     parser.add_argument('--filepath', type=str, default="", help='path to single file to be tokenized')

@@ -25,12 +25,12 @@ Note: To run topic models using the Mallet wrapper, clone [this](https://github.
 This file is the python code used to run LDA, manual dynamic LDA, DTM, and LDAseq. The following command is an example of running LDA over a TSV file containing the Old Bailey corpus:
 
 ```
-./run_model.py --model_type=lda --corpus_file=[TSV_DATA] --num_topics=NUM_TOPICS --year_split=-1
+./run_model.py --model_type=lda --tsv_corpus=[TSV_CORPUS] --num_topics=NUM_TOPICS --year_split=-1
 ```
 
-This will run an LDA model over the entire corpus found in `TSV_DATA` with `NUM_TOPICS` topics. By default, this will save an LDA model (along with a file containing the parameters used to run the model) in a time-stamped directory within the path provided in the `--save_model_dir` argument. To run manual dynamic LDA, change the `--year_split` argument to the desired number of years per time slice, default is 100. This will save the individually-run models in subdirectories of the time-stamped directory with names indicating the first year in that model's time slice.
+This will run an LDA model over the entire corpus found in `TSV_CORPUS` with `NUM_TOPICS` topics. By default, this will save an LDA model (along with a file containing the parameters used to run the model) in a time-stamped directory within the path provided in the `--save_model_dir` argument. To run manual dynamic LDA, change the `--year_split` argument to the desired number of years per time slice, default is 100. This will save the individually-run models in subdirectories of the time-stamped directory with names indicating the first year in that model's time slice.
 
-If no file is passed into `--corpus_file`, the value for `--corpus_dir`, a directory containing the data in text files, will be used instead. If the input `--corpus_file` only contains Old Bailey data and you wish to run the model over both Old Bailey and London Lives data, pass in the path to a tsv file containing the London Lives data to the `--london_lives_file` argument in addition to the `--corpus_file` argument.
+If no file is passed into `--tsv_corpus`, the value for `--corpus_dir`, a directory containing the data in text files, will be used instead. If the input `--tsv_corpus` only contains Old Bailey data and you wish to run the model over both Old Bailey and London Lives data, pass in the path to a tsv file containing the London Lives data to the `--london_lives_file` argument in addition to the `--tsv_corpus` argument.
 
 Including the flag `--gensim` indicates that you wish to run LDA with Gensim's wrapper. It is recommended that you do not use this flag and instead let the Mallet wrapper code in `lda-tools` run LDA. See the `README.md` in the `thesis` directory for instructions on obtaining the Mallet wrapper.
 

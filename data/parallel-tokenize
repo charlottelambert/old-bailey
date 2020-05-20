@@ -9,6 +9,6 @@ echo "File being processed:" $TSV
 ./prep_tsv.py --tsv_file=$TSV --num_splits=64
 
 # Only process files that have not been processed yet (i.e., split-{0..9}+.tsv)
-ls -d $TSV-dir/*{0..9}.tsv | parallel --progress -j 64 "./run_tokenize.py --tsv_data={} --overwrite"
+ls -d $TSV-dir/*{0..9}.tsv | parallel --progress -j 64 "./run_tokenize.py --tsv_corpus={} --overwrite"
 
 ./prep_tsv.py $TSV-dir/*-tok.tsv --rm_dir

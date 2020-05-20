@@ -29,17 +29,17 @@ This runs Word2Vec over all the text files in `CORPUS_DIR`.
 
 ### Word2Vec from Corpus TSV File
 ```
-./train_embedding_model.py --corpus_file=CORPUS_FILE
+./train_embedding_model.py --tsv_corpus=TSV_CORPUS
 ````
 
-This command will treat each line in the input `CORPUS_FILE` as a document and run Word2Vec over all documents in the file.
+This command will treat each line in the input `TSV_CORPUS` as a document and run Word2Vec over all documents in the file.
 
 ### Word2Vec from Corpus txt File (output from Mallet wrapper)
 
 If you want to compute topic coherence over a model run using the Mallet wrapper code in `../topic-modeling/lda-tools`, you first need to train a Word2Vec model using the `corpus.txt` file written by the wrapper code before training. This ensures that the Word2Vec vocabulary is identical to that of the model. Use the following arguments:
 
 ```
-./train-embedding_model.py --corpus_txt_file=PATH_TO_CORPUS_FILE --filter_top_words=0 --year_split=-1
+./train-embedding_model.py --corpus_txt_file=PATH_TO_TSV_CORPUS --filter_top_words=0 --year_split=-1
 ```
 Make sure not to filter out the top 10,000 words because this will cause the vocabularies to not match. You can use the `--year_split` argument to match the same parameter from the command used to run `run_model.py`. Alternatively, always input `--year_split=-1` so the output Word2Vec model can be used for calculating topic coherence for a model run with no year split and for models run with a year split.
 
@@ -54,5 +54,3 @@ When running `train_embeddings.py`, all the files needed to visualize on [projec
 ```
 
 This code will generate two tsv files in the same directory as the input model: `model.tsv` and `labels.tsv`. These two files can then be used to load data for visualization in [projector.tensorflow.org](projector.tensorflow.org).
-
-
