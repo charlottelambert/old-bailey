@@ -26,13 +26,12 @@ Additionally, if the data passed in is from the London Lives corpus, include the
 Finally, up to one of two flags can be passed in to indicate that annotations from the input XML should be replaced with some token. The `--encode_annotations_general` flag will result in output data in which every person's name is replaced with a token of the format `speakerType_gender`. The `--encode_annotations_specific` flag will result in output data in which every person's name is replaced with a token of the format `speakerType_GIVENNAME_SURNAME`. In either case, if something is unknown, it will be replaced with the token `unk`.
 
 
-## Latin dictionary (need to update)
+## Latin dictionary
 
 In order to calculate some valuable statistics about a corpus, first [download an Elementary Latin Dictionary](http://www.perseus.tufts.edu/hopper/dltext?doc=Perseus%3Atext%3A1999.04.0060). Then, to convert the downloaded XML file to a text file, run the following command:
 
 ```
 ./make_latin_dict.py [PATH_TO_XML_FILE] > latin_dict.txt
-
 ```
 
 From the XML files of BNC data gotten [here](https://ota.bodleian.ox.ac.uk/repository/xmlui/handle/20.500.12024/2554#), extract all words and compile a list of words that can be considered modern English words. Pass in the output file (path provided by `--save_lexicon_path` option) as the `--english_words` argument to `calc_stats.py`.
@@ -42,6 +41,18 @@ From the XML files of BNC data gotten [here](https://ota.bodleian.ox.ac.uk/repos
 ```
 
 Then, run the following command to calculate useful statistics on how many modern english words, historical english words, latin words, and proper nouns are present in all the files in a specific corpus directory:
+
+## Building personal word list (PWL) and bigram dictionary
+
+In the next step, tokenization, some words merged by the transcription will be split. Build a dictionary of all bigrams in the corpus and a list of all unigrams in the corpus to provide the next step with more information about what words are present in the corpus. Essentially allows you to use words unique to this corpus in the process of spell checking.
+
+```
+./ngrams.py --corpus_dir=sessionsAndOrdinarys-txt --overwrite
+```
+
+This command will write bigram and unigram counts to files within the `--corpus_dir` as well as a text file serving as the unigram personal word list. The `--overwrite` flag will write to the files even if they exist. To run with tsv input, replace the `--corpus_dir` argument with `--tsv_corpus` and pass in the path to a tsv file containing the corpus. Include the `--disable_filter` flag to include all data in counts and word lists. Otherwise, only files that were manually transcribed (within year range 1674-1834) will be included.
+
+It is recommended to run this code on the combination of London Lives data and Old Bailey data.
 
 ## Tokenization
 
@@ -55,7 +66,9 @@ If tsv file is input, output tokenization will be written to a tsv file with the
 
 If you wish to disable spell-checking (a function that will split words that appear to be merged based on whether or not it is present in the input word lists or a British MySpell dictionary), include the flag `--disable_spell_check`.
 
-Use the `--help` flag to get mroe information about remaining flags and arguments.
+Note, make sure the `--corpus_bigrams` argument includes the path to the bigram file output by `ngrams.py` and that the `--pwl_path` argument includes the path to the unigram personal word list output by `ngrams.py`.
+
+Use the `--help` flag to get more information about remaining flags and arguments.
 
 ### TSV Files in Parallel
 
