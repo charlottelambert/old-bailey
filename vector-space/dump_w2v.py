@@ -5,9 +5,30 @@ import sys, os
 sys.path.append('../')
 from utils import *
 
+def detm_embed_dump(model_txt_path):
+    # Convert text file to tsv file
+    model_tsv_path = model_txt_path.rstrip("/") + ".tsv"
+    labels_tsv_path = model_txt_path.rstrip('/') + "_labels.tsv"
+    model_tsv_output = []
+    labels_tsv_output = []
+    with open(model_txt_path) as f:
+        for line in f:
+            line = line.strip().split()
+            model_tsv_output.append("\t".join(line[1:]))
+            labels_tsv_output.append(line[0])
+
+    # Write to separate tsv files, readable by projector.tensorflow
+    with open(model_tsv_path, "w") as f:
+        f.write("\n".join(model_tsv_output))
+    print(timestamp(), "Model tsv file saved to " + model_tsv_path, file=sys.stderr)
+
+    with open(labels_tsv_path, "w") as f:
+        f.write("\n".join(labels_tsv_output))
+    print(timestamp(), "Labels tsv file saved to " + labels_tsv_path, file=sys.stderr)
+    print(timestamp(), "Done!", file=sys.stderr)
+
 def dump_w2v(model_paths=None, model_dict=None):
     print(timestamp(), "Starting txt and tsv file dump...", file=sys.stderr)
-
     if not (model_paths or model_dict):
         print("dump_w2v: input list of model paths or valid models.", file=sys.stderr)
     loading = False if model_dict else True
@@ -16,6 +37,9 @@ def dump_w2v(model_paths=None, model_dict=None):
 
     for obj in iter_list:
         model_path = obj if loading else model_dict[obj]["model_path"]
+        if "-embed" in model_path:
+            detm_embed_dump(model_path)
+            continue
 
         base = os.path.dirname(model_path)
         model_name = os.path.basename(model_path)
