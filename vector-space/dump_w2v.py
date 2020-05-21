@@ -53,7 +53,6 @@ def dump_w2v(model_paths=None, model_dict=None, detm=False):
         vectors.save_word2vec_format(model_txt_path, binary=False)
         print(timestamp(), "Model text file saved to " + model_txt_path, file=sys.stderr)
 
-
         # Convert text file to tsv file
         model_tsv_path = os.path.join(base, model_name.split(".model")[0] + ".tsv")
         labels_tsv_path = os.path.join(base, model_name.split(".model")[0] + "_labels.tsv")
