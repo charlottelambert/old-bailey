@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import gensim
-import sys, os
+import sys, os, argparse
 sys.path.append('../')
 from utils import *
 
@@ -27,7 +27,7 @@ def detm_embed_dump(model_txt_path):
     print(timestamp(), "Labels tsv file saved to " + labels_tsv_path, file=sys.stderr)
     print(timestamp(), "Done!", file=sys.stderr)
 
-def dump_w2v(model_paths=None, model_dict=None):
+def dump_w2v(model_paths=None, model_dict=None, detm=False):
     print(timestamp(), "Starting txt and tsv file dump...", file=sys.stderr)
     if not (model_paths or model_dict):
         print("dump_w2v: input list of model paths or valid models.", file=sys.stderr)
@@ -37,7 +37,7 @@ def dump_w2v(model_paths=None, model_dict=None):
 
     for obj in iter_list:
         model_path = obj if loading else model_dict[obj]["model_path"]
-        if "-embed" in model_path:
+        if detm:
             detm_embed_dump(model_path)
             continue
 
@@ -80,7 +80,11 @@ def dump_w2v(model_paths=None, model_dict=None):
         print(timestamp(), "Done!", file=sys.stderr)
 
 def main():
-    dump_w2v(sys.argv[1:])
+    dump_w2v(args.model_path, detm=args.detm)
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('model_path', type=str, default="", help='path to word2vec model/embedding model run using detm')
+    parser.add_argument('--detm', action='store_true', help='flag indicating that input model was run for detm')
+    args = parser.parse_args()
+    main(args)
