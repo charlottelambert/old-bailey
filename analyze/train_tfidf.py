@@ -4,7 +4,6 @@ from gensim.utils import simple_preprocess
 import argparse, os, sys, time, natsort
 from tqdm import tqdm
 from gensim.corpora.mmcorpus import MmCorpus
-from sklearn.feature_extraction.text import TfidfVectorizer
 from string import punctuation
 from nltk.corpus import stopwords
 import numpy as np
@@ -20,49 +19,10 @@ def build_vocab(documents):
         vocabulary.update(words)
 
     vocabulary = list(vocabulary)
-    # word_index = {w: idx for idx, w in enumerate(vocabulary)}
 
     VOCABULARY_SIZE = len(vocabulary)
     DOCUMENTS_COUNT = len(documents)
     return vocabulary
-    # print(VOCABULARY_SIZE, DOCUMENTS_COUNT)
-
-
-def sklearn_tfidf(args, pre, documents):
-    stop_words = stopwords.words('english') + list(punctuation)
-    print(timestamp() + " Building vocabulary...", file=sys.stderr)
-    vocabulary = build_vocab(documents)
-    tfidf = TfidfVectorizer(stop_words=stop_words, vocabulary=vocabulary) #tokenizer=tokenize,
-
-    print(timestamp() + " Fitting the model...", file=sys.stderr)
-    # Fit the TfIdf model
-    # tfidf.fit([doc for doc in documents])
-    # or:
-    X = tfidf.fit_transform(documents) # ?
-    print(X.shape)
-    print(X[1])
-    exit(0)
-
-    # MAKE THIS SPLIT UP BY DOC IN DOCUMENTS! THIS IS JUST TF IDF OVER ALL
-
-    print(timestamp() + " Calculating top words...", file=sys.stderr)
-    indices = np.argsort(tfidf.idf_)[::-1]
-    features = tfidf.get_feature_names()
-    top_n = 10
-    top_features = [features[i] for i in indices[:top_n]]
-    print(top_features)
-
-    # # Transform a document into TfIdf coordinates
-    # X = tfidf.transform([reuters.raw('test/14829')])
-    #
-    # # Check out some frequencies
-    # print X[0, tfidf.vocabulary_['year']]                   # 0.0562524229373
-    # print X[0, tfidf.vocabulary_['following']]              # 0.057140265658
-    # print X[0, tfidf.vocabulary_['provided']]               # 0.0689364372666
-    # print X[0, tfidf.vocabulary_['structural']]             # 0.0900802810906
-    # print X[0, tfidf.vocabulary_['japanese']]               # 0.114492409303
-    # print X[0, tfidf.vocabulary_['downtrend']]              # 0.111137191743
-
 
 def gensim_tfidf(args, pre, documents):
     # Create the Dictionary and Corpus
@@ -98,23 +58,26 @@ def before_train(args):
     documents = []
     for first_year, files in files_dict.items():
         joined_docs = []
-        # Merge all files from a year chunk into one file
-        for file in files:
-            with open(file) as f:
-                joined_docs.append(f.read())
+        if args.tsv_corpus:
+            joined_docs = [line.split("\t")[2] for line in files]
+        else:
+            # Merge all files from a year chunk into one file
+            for file in files:
+                with open(file) as f:
+                    joined_docs.append(f.read())
 
         documents.append("\n".join(joined_docs))
     return [pre, documents]
 
 def main(args):
     pre, documents = before_train(args)
-    # sklearn_tfidf(args, pre, documents)
     tfidf, corpus, mydict = gensim_tfidf(args, pre, documents)
 
     print(timestamp() + " Done!", file=sys.stderr)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--tsv_corpus', type=str, default="", help='path to tsv file containing corpus')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-stats", help='directory containing corpus')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--year_split', type=int, default=100, help='number of years to include in each chunk of corpus (run tf-idf over each chunk)')

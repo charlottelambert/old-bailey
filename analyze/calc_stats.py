@@ -216,9 +216,7 @@ def find_basic_stats(args, files_dict, dir):
     graph_word_freqs(args, corpus_fd, suff, dir=os.path.dirname(stats_path), save=True, restart=True)
     print(timestamp() + " Done! Wrote basic statistics to", stats_path, file=sys.stderr)
 
-
 def main(args):
-
     data_list = ["modern_english", "old_english", "latin", "proper_nouns", "upper",
                  "lower", "mixed", "unk", "total", "num_entities"]
 
@@ -285,8 +283,12 @@ def main(args):
     if args.unique:
         path_suff += "unique-"
     # Add latin words to keyword processor
-    with open(args.latin_dict) as f:
-        latin_dict = f.read().split()
+    try:
+        with open(args.latin_dict) as f:
+            latin_dict = f.read().split()
+    except:
+        print("Latin dictionary specified does not exist. See documentation for ./make_latin_dict.py to generate one.", file=sys.stderr)
+        exit(0)
     latin_words.add_keywords_from_list(latin_dict)
 
     # Define an English dictionary depending on inputs
