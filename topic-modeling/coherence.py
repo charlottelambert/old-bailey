@@ -26,7 +26,11 @@ def vector_coherence(model, T):
             except:
                 print(w_i, w_j)
                 continue
-    return sum / acc
+    try: ret = sum/acc
+    except:
+        ret = 0
+        print("Problem with topic:",T". Skipping...")
+    return ret
 
 # http://qpleple.com/topic-coherence-to-evaluate-topic-models/
 def umass_coherence(T, corpus):
