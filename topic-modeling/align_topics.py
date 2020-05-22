@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
 import sys, os, argparse
 from vis_topic_mallet import get_topics, read_weighted_keys
-# It's possible to automatically align the topics from the different models, and that might be worth doing. Since every word is in every topic (even though its weight might be 0), you can compute the difference between topics by doing for each word w:
 
 def get_diffs(t1_list, t2_list, slices):
+    """
+        Function comparing the difference between two topics.
+
+        input:
+            t1_list (list): list of words representing a topic.
+            t2_list (list): list of words representing a topic.
+            slices (pair): pair indicating which slice the two topics come from
+
+        returns dictionary containing differences between each pair of words
+        between the two topics.
+    """
     print("Comparing topic differences...", end=' ')
     diffs = {}
     for id1, t1 in t1_list.items():
@@ -24,19 +34,29 @@ def get_diffs(t1_list, t2_list, slices):
             mini_vocab = set(list(t1_words + t2_words))
             diffs[key] = 0
             for word in mini_vocab:
-                try:
-                    t1_val = t1_dict[word]
-                except KeyError:
-                    t1_val = 0
-                try:
-                    t2_val = t2_dict[word]
-                except KeyError:
-                    t2_val = 0
+                try: t1_val = t1_dict[word]
+                except KeyError: t1_val = 0
+                try: t2_val = t2_dict[word]
+                except KeyError: t2_val = 0
 
                 diffs[key] += abs(t1_val - t2_val)
     return diffs
 
 def compare_topics(n_most, n_least, triples, topic_lists):
+    """
+        Function to print out most and least similar topics between time slices
+
+        input:
+            n_most (int): number of most similar topics to print
+            n_least (int): number of least similar topics to print
+            triples (list): list of alignments in format (t0, t1, t2) where
+                each element is the index of a topic from corresponding time
+                slice
+            topic_lists (list): list containing lists of topics from each time
+                slice
+
+        returns index of last topic alignment printed
+    """
     print("Words in the", n_most, "most similar topics:")
     print("-"*50)
     seen_list = {0:[], 1:[], 2:[]}
@@ -73,6 +93,16 @@ def compare_topics(n_most, n_least, triples, topic_lists):
     return acc
 
 def print_similarities(triple, topic_lists):
+    """
+        Function to print out topics indicated by an alignment.
+
+        input:
+            triples (list): list of alignments in format (t0, t1, t2) where
+                each element is the index of a topic from corresponding time
+                slice
+            topic_lists (list): list containing lists of topics from each time
+                slice
+    """
     for time_slice, id in enumerate(triple):
         if id == "-1":
             print("No topic for time slice", time_slice)

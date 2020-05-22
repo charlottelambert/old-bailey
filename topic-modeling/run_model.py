@@ -7,7 +7,6 @@
 # or DTM based on input.
 #
 ###############################################################################
-
 import sys, os, csv, gensim, time, argparse, pyLDAvis, tempfile, random
 from gensim import corpora, models
 from gensim.corpora import MalletCorpus, Dictionary
@@ -21,13 +20,26 @@ from vis_topic_mallet import get_topics
 sys.path.append('../')
 from utils import *
 
-
 def calc_coherence(model, corpus):
+    """
+        Calculate UMass topic coherence for topics in gensim-run model.
+
+        input:
+            model: gensim model
+            corpus: corpus associated with model
+    """
     cm = CoherenceModel(model=model, corpus=corpus, coherence='u_mass')
     coherence = cm.get_coherence()
     print(timestamp(),"Topic coherence:", coherence)
 
 def print_params(pre, args):
+    """
+        Write input parameters to parameters.tsv file.
+
+        input:
+            pre (str): path to directory where results are stored
+            args (argparse object): input arguments
+    """
     # Print out arguments used to file
     with open(pre + "parameters.tsv", "w+") as f:
         tsv_writer = csv.writer(f, delimiter='\t')
@@ -35,23 +47,16 @@ def print_params(pre, args):
         for key in arg_dict:
             tsv_writer.writerow([key, arg_dict[key]])
 
-def get_ngrams(args, texts):
-    if not args.unigrams_only:
-        print(timestamp() + " Finding bigrams.", file=sys.stderr)
-        bigram = Phrases(texts, min_count=1) # Is this an appropriate value for min_count?
-        bigram = Phraser(bigram)
-        for idx in range(len(texts)):
-            bigrams = bigram[texts[idx]]
-            if args.bigrams_only:
-                texts[idx] = [] # If we only want bigrams, remove all unigrams
-            for token in bigrams:
-                if '_' in token:
-                    texts[idx].append(token)
-                    if args.mixed_ngrams:
-                        texts[idx].append(token) # Scale bigrams
-    return texts
-
 def compile_tokens(args, files):
+    """
+        Function to compile tokens from input files.
+
+        input:
+            args (argparse object): input arguments
+            files (list): list of filepaths to process
+
+        returns list of tokens built from the files in files
+    """
     # Compile list of lists of tokens
     texts = []
     print(timestamp() + " Compiling tokens.", file=sys.stderr)
@@ -64,12 +69,24 @@ def compile_tokens(args, files):
             # stop_words = stop.modified_stop_words
             # text = [word for word in text if word not in stop_words]
             texts.append(text)
-
-    # If we want to include a mix of unigrams and bigrams or just bigrams
-    # texts = get_ngrams(args, texts)
     return texts
 
 def run_lda(args, corpus, pre, dictionary=None, workers=None, docs=None, num_files=None):
+    """
+        Function to run LDA using gensim or mallet wrapper code in lda-tools.
+
+        input:
+            args (argparse object): input arguments
+            corpus: corpus to run model over
+            pre (str): path to save all models/etc. to
+            dictionary: optional dictionary for the use with gensim model
+            workers: optional number of workers used by gensim model
+            docs (pair): optional pair of start year and associated lines from
+                tsv file for use by mallet when running over time slices
+            num_files (int): optional number of files being input
+
+        returns LDA model
+    """
     MALLET_PATH = os.environ.get("MALLET_PATH", "lda-tools/ext/mallet/bin/mallet")
     if args.gensim:
         lda = gensim.models.wrappers.LdaMallet
@@ -94,7 +111,6 @@ def run_lda(args, corpus, pre, dictionary=None, workers=None, docs=None, num_fil
             tsv_corpus = os.path.join(mallet_corpus, str(year) + "-tmp.tsv")
             with open(tsv_corpus, 'w') as f:
                 f.write("\n".join(lines))
-                # num_docs = len(lines)
         else:
             tsv_corpus = args.tsv_corpus
 
@@ -108,13 +124,38 @@ def run_lda(args, corpus, pre, dictionary=None, workers=None, docs=None, num_fil
     return model
 
 def run_multicore(args, corpus, dictionary, passes, alpha, workers, pre):
+    """
+        Function to run LDA using multicore.
+
+        input:
+            args (argparse object): input arguments
+            corpus: corpus to run LDA over
+            dictionary: dictionary from corpus
+            passes (int): number of passes to execute
+            workers (int): number of workers to use
+            pre (str): path to save all results to
+
+        returns multicore LDA model
+    """
     lda = gensim.models.ldamulticore.LdaMulticore
     ldamodel = lda(corpus, num_topics=args.num_topics,
-                   id2word=dictionary, passes=200, alpha=20, workers=8,
+                   id2word=dictionary, passes=passes, alpha=alpha, workers=workers,
                    prefix=pre)
     return model
 
 def run_dtm(args, corpus, dictionary, time_slices, pre):
+    """
+        Function to run DTM over corpus.
+
+        input:
+            args (argparse object): input arguments
+            corpus: corpus to run LDA over
+            dictionary: dictionary from corpus
+            time_slices (list): list containing number of files per time time slice
+            pre (str): path to save all results to
+
+        returns DTM model
+    """
     DTM_PATH = os.environ.get('DTM_PATH', None)
     if not DTM_PATH:
         raise ValueError("You need to set the DTM path.")
@@ -125,6 +166,17 @@ def run_dtm(args, corpus, dictionary, time_slices, pre):
     return model
 
 def run_ldaseq(args, corpus, dictionary, time_slices):
+    """
+        Function to run LDASeq model.
+
+        input:
+            args (argparse object): input arguments
+            corpus: corpus to run LDA over
+            dictionary: dictionary from corpus
+            time_slices (list): list containing number of files per time time slice
+
+        returns
+    """
     # Run the model
     model = LdaSeqModel(corpus=corpus, num_topics=args.num_topics,
         id2word=dictionary, time_slice=time_slices,
@@ -132,6 +184,18 @@ def run_ldaseq(args, corpus, dictionary, time_slices):
     return model
 
 def pylda_vis(args, model, corpus, time_slices, pre):
+    """
+        Function to visualize model using pyLDAvis
+
+        input:
+            args (argparse object): input arguments
+            model: LDA model to visualize
+            corpus: corpus to run LDA over
+            time_slices (list): list containing number of files per time time slice
+            pre (str): path to save all results to
+
+        returns
+    """
     print(timestamp() + " About to visualize...", file=sys.stderr)
     for slice in range(len(time_slices)):
         doc_topic, topic_term, doc_lengths, term_frequency, vocab = model.dtm_vis(time=slice, corpus=corpus)
@@ -145,16 +209,25 @@ def pylda_vis(args, model, corpus, time_slices, pre):
         print(timestamp() + " Prepared time slice", slice, "for pyLDAvis...", file=sys.stderr)
 
 def model_for_year(args, year, files, pre, time_slices):
+    """
+        Function to run model over one time slice
 
-    # if not args.mixed_ngrams:
-    #     # Filter extremes if not doing only bigrams
-    #     dictionary.filter_extremes(no_below=50, no_above=0.90)
+        input:
+            args (argparse object): input arguments
+            year (int): time slice running model over
+            files (list): list of files in time slice
+            pre (str): path to save all results to
+            time_slices (list): list containing number of files per time time slice
+
+        returns printed topics for model run
+    """
     if args.gensim or args.model_type != "lda":
         texts = compile_tokens(args, files)
 
         print(timestamp() + " Building dictionary.", file=sys.stderr)
 
         dictionary = corpora.Dictionary(texts)
+        dictionary.filter_extremes(no_below=args.min_df, no_above=args.max_df)
 
         print(timestamp() + " Reading corpus.", file=sys.stderr)
         corpus = [dictionary.doc2bow(text) for text in texts]
@@ -195,6 +268,16 @@ def model_for_year(args, year, files, pre, time_slices):
     return model.print_topics(num_topics=-1, num_words=20)
 
 def save_model_files(pre, year, model, files):
+    """
+        Function to save relevant model files for a given model
+
+        input:
+            year (int): time slice running model over
+            model: model to save files for
+            files (list): list of files in time slice
+
+        returns
+    """
     append = "" if not year else "-" + str(year)
     # Save model with timestamp
     model.save(pre + "model" + append)
@@ -207,6 +290,12 @@ def save_model_files(pre, year, model, files):
     f.close()
 
 def model_on_directory(args):
+    """
+        Function to run model over all files in a directory.
+
+        input:
+            args (argparse object): input arguments
+    """
     # Types of valid models to run
     type_list = ["lda", "multicore", "dtm", "ldaseq"]
     if args.model_type not in type_list:
@@ -247,8 +336,6 @@ def model_on_directory(args):
 
         model_for_year(args, None, docs, pre, time_slices)
     print(timestamp() + " Done.", file=sys.stderr)
-
-# _________________________________________________________________________
 
 def main(args):
     arg_dict = vars(args)

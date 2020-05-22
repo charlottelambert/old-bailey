@@ -9,8 +9,16 @@ import math
 from tqdm import tqdm
 from optparse import OptionParser
 
-# https://www.overleaf.com/project/5e66a0594ea6e50001c76ffd
 def vector_coherence(model, T):
+    """
+        Calculate topic coherence of a topic given word2vec model.
+
+        input:
+            model (w2v model): model containing word similarities
+            T (list): list of words representing a topic
+
+        return topic coherence for topic T
+    """
     sum = 0
     acc = 0
     # Go through all distinct pairs in the topic
@@ -24,7 +32,7 @@ def vector_coherence(model, T):
                 sum += model.similarity(w_i, w_j)
                 acc += 1
             except:
-                print(w_i, w_j)
+                print("One of these words is not in model:",w_i, w_j)
                 continue
     try: ret = sum/acc
     except:
