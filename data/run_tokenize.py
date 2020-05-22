@@ -4,8 +4,7 @@
 # run-tokenize.py
 #
 # Tokenize text using word_tokenize and replace split-up contractions with
-# equivalent words (i.e., couldn't -> could not). Should be run after text
-# is dehyphenated.
+# equivalent words (i.e., couldn't -> could not).
 #
 ###############################################################################
 
@@ -21,6 +20,15 @@ from utils import *
 stop_words = set(stopwords.words('english'))
 
 def contractions(token_list):
+    """
+        Function to replace split up contractions with two full words
+        (e.g., "do n't" --> "do not").
+
+        input:
+            token_list (list): list of tokens
+
+        returns token list with replaced contractions.
+    """
     # Remove all asterisks and replace contractions
     for idx, token in enumerate(token_list):
         if token == "*":
@@ -35,6 +43,14 @@ def contractions(token_list):
     return token_list
 
 def make_bigrams(tokens):
+    """
+        Turn tokens into bigrams.
+
+        input:
+            tokens (list): list of tokens to convert
+
+        returns list of bigrams built from input tokens.
+    """
     if len(tokens) == 0:
         return tokens
     # If using bigrams, convert tokenized unigrams to bigrams
@@ -45,10 +61,16 @@ def make_bigrams(tokens):
     return output
 
 def remove_unwanted(args, tokens):
-    # Keep all words containing at least one letter
-    # Also remove words of length < 2
-    # Lemmatize if necessary
+    """
+        Remove unwanted words from tokens including words that are too short
+        and stopwords (if not disabled). Also lemmatize if flag is passed in.
 
+        input:
+            args (argparse object): input arguments
+            tokens (list): list of tokens
+
+        return list of tokens with unwanted ones removed.
+    """
     if args.disable_stopwords: s = []
     else: s = stop_words
 
@@ -63,7 +85,20 @@ def remove_unwanted(args, tokens):
                   and re.search('[a-zA-Z]', x)]
     return tokens
 
-def tokenize_line(args, line, output_dir, gb, gb_and_pwl, bigrams):
+def tokenize_line(args, line, gb, gb_and_pwl, bigrams):
+    """
+        Function to tokenize one line of a file.
+
+        input:
+            args (arparse object): input arguments
+            line (str): line from a file
+            gb: british dictionary for spell checking
+            gb_and_pwl: words from british dictionary and input personal word
+                list
+            bigrams (dict): corpus bigrams read from args.corpus_bigrams
+
+        returns tokenized line joined back into a string (to be written to file)
+    """
     if not line.strip():
         return ""
 
@@ -123,23 +158,44 @@ def tokenize_line(args, line, output_dir, gb, gb_and_pwl, bigrams):
 
     return finished
 
-def tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams):
+def tokenize_file(args, file, gb, gb_and_pwl, bigrams):
+    """
+        Function to tokenize each line in a file.
+
+        input:
+            args (argparse object): input arguments
+            file (str): path to file to tokenize
+            gb: british dictionary for spell checking
+            gb_and_pwl: words from british dictionary and input personal word
+                list
+            bigrams (dict): corpus bigrams read from args.corpus_bigrams
+
+        returns list of tokenized lines
+    """
     output = []
     with open(file, "r") as f:
         for line in f:
-            output.append(tokenize_line(args, line, output_dir, gb, gb_and_pwl, bigrams))
+            output.append(tokenize_line(args, line, gb, gb_and_pwl, bigrams))
     return output
 
-# Eventually, we jsut want to run this on each word, might need a way to speed
-# this up, parallel?
-# gonna have millions of tokens, need to be more efficient!
+
 def spell_correct(args, gb, gb_and_pwl, word, bigrams):
+    """
+        Function to spell-check a word and correct it if possible.
+
+        input:
+            args (argparse object): input arguments
+            gb: british dictionary for spell checking
+            gb_and_pwl: words from british dictionary and input personal word
+                list
+            word (str): word to spell-check
+            bigrams (dict): corpus bigrams read from args.corpus_bigrams
+
+        returns spell-checked (and corrected, if necessary) word
+    """
     # If the line is a valid word, continue
-    if word == "" or word[0].isupper() or gb.check(word):
-        # print("Is a word:", word)
-        return word
+    if word == "" or word[0].isupper() or gb.check(word): return word
     else:
-        # print("not a word:", word)
         # Suggest corrections for sub_line
         suggestions = gb_and_pwl.suggest(word)
         # See if any of them are reasonable
@@ -154,10 +210,8 @@ def spell_correct(args, gb, gb_and_pwl, word, bigrams):
         for opt in options:
             try:
                 # Check if option is a bigram that appears in corpus
-                if bigrams[opt] > best[1]:
-                    best = (opt, bigrams[opt])
-            except KeyError:
-                continue
+                if bigrams[opt] > best[1]: best = (opt, bigrams[opt])
+            except KeyError: continue
 
     return best[0]
 
@@ -166,6 +220,14 @@ def merge_words(args, pwl, input, bigrams):
         Go through the text and for every pair of words, check if they're in
         the unigram list (args.pwl_path) when you remove the space. If so, make
         the change.
+
+        input:
+            args (argparse object): input arguments
+            pwl: personal word list loaded from args.pwl_path
+            input: line of file to merge words in (if necessary)
+            bigrams (dict): corpus bigrams read from args.corpus_bigrams
+
+        returns list of words from input, merged if necessary
     """
     output = []
 
@@ -232,7 +294,7 @@ def main(args):
         if not args.overwrite and os.path.exists(output_file):
             exit(0)
         # Tokenize single file
-        output = tokenize_file(args, args.filepath, output_dir, gb, gb_and_pwl, bigrams)
+        output = tokenize_file(args, args.filepath, gb, gb_and_pwl, bigrams)
         # Merge words if flag is set to true
         if args.merge_words:
             # Create dictionary (personal word list) out of unigrams
@@ -264,7 +326,7 @@ def main(args):
                     try:
                         id, year, text = doc.split("\t")
                     except ValueError: continue
-                    tokenized = tokenize_line(args, text, output_dir, gb, gb_and_pwl, bigrams)
+                    tokenized = tokenize_line(args, text, gb, gb_and_pwl, bigrams)
                     tsv_out.append(id + "\t" + year + "\t" + tokenized)
             with open(output_file, "w") as f:
                 f.write('\n'.join(tsv_out))
@@ -281,7 +343,7 @@ def main(args):
                     continue
 
                 # Tokenize single file
-                output = tokenize_file(args, file, output_dir, gb, gb_and_pwl, bigrams)
+                output = tokenize_file(args, file, gb, gb_and_pwl, bigrams)
 
                 # Write output to new file
                 with open(output_file, "w") as f:

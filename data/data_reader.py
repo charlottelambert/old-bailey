@@ -249,9 +249,7 @@ def main(args):
     else: tsv_out = ["id\tyear\ttext"]
 
     # Go through input files and generate output files
-    for i in tqdm(range(len(input_files))):
-        # Get current file
-        file = input_files[i]
+    for file in tqdm(input_files):
 
         # Change to txt file
         if not args.london_lives and not args.tsv:

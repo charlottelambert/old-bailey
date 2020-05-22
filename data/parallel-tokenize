@@ -2,13 +2,16 @@
 
 set -e
 
+# Get input tsv filepath
 TSV=${1:-/work/clambert/thesis-data/sessionsAndOrdinarys-txt.tsv}
 
 echo "File being processed:" $TSV
 
+# Split tsv file into 64 files
 ./prep_tsv.py --tsv_file=$TSV --num_splits=64
 
 # Only process files that have not been processed yet (i.e., split-{0..9}+.tsv)
 ls -d $TSV-dir/*{0..9}.tsv | parallel --progress -j 64 "./run_tokenize.py --tsv_corpus={} --overwrite"
 
+# Merge files back into one tsv file and remove temporary directory
 ./prep_tsv.py $TSV-dir/*-tok.tsv --rm_dir
