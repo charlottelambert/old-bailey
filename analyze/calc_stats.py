@@ -22,6 +22,14 @@ latin_words = KeywordProcessor()
 unk_words = set()
 
 def load_models(args):
+    """
+        Load tfidf model, corpus, and dictionary if specified in arguments.
+
+        input:
+            args (arparse object): input arguments
+
+        return loaded tfidf object, corpus, and dictionary if specified
+    """
     try:
         tfidf = models.TfidfModel.load(os.path.join(args.tfidf_model_dir_path, "model"))
         corpus = mm = MmCorpus(os.path.join(args.tfidf_model_dir_path, "corpus"))
@@ -32,6 +40,18 @@ def load_models(args):
     return tfidf, corpus, mydict
 
 def get_top_words(args, doc_idx, tfidf=None, corpus=None, mydict=None):
+    """
+        Get top words in document given tfidf model.
+
+        input:
+            args (arparse object): input arguments
+            doc_idx (int): index of document to find top words for
+            tfidf: tfidf model
+            corpus: tfidf corpus
+            mydict: tfidf dictionary
+
+        returns top args.num_top_words words from given document
+    """
     if not (tfidf and corpus and mydict):
         print(timestamp(), "get_top_words(): You must input a valid model, corpus, and dictionary.", file=sys.stderr)
         exit(1)
@@ -43,17 +63,41 @@ def get_top_words(args, doc_idx, tfidf=None, corpus=None, mydict=None):
     return [word[0] for word in top_words]
 
 def update_tok_lists(all_tokens, list_to_check):
+    """
+        Function to separate a list into two lists: one containing all the
+        words in another input list, and another to contain all the remaining
+        words.
+
+        input:
+            all_tokens (list): list of all tokens to update
+            list_to_check (list): check if words in all_tokens are in list_to_check
+
+        returns list of words only in all_tokens and list of words in both input lists
+    """
     out = []
     new_all = []
     for i in range(len(all_tokens)):
         if all_tokens[i] in list_to_check:
             out.append(all_tokens[i])
         else:
-            new_all.append(all_tokens[i].lower()) # Lowercase because it isn't a proper noun anymore
+            new_all.append(all_tokens[i].lower())
     return [new_all, out]
 
 # Get output of row
 def get_stat_output(args, first_year, stats_dict, top_words, data_list):
+    """
+        Function to format output statistics for one subset of corpus between
+        first_year and first_year + args.year_split.
+
+        input:
+            args (argparse object): input arguments
+            first_year (int): start year of this time slice
+            stats_dict (dict): dictionary containing calculated statistics
+            top_words (list): list of top words
+            data_list (list): list of titles of all statistics found
+
+        return list that is a row in output tsv file when joined by tabs
+    """
     ret = [first_year]
     for count in data_list:
         # This tag isn't a percentage
@@ -235,10 +279,13 @@ def main(args):
         print(timestamp(), "Finding entities for files in directory", dir)
         element_run = Parallel(n_jobs=-1)(delayed(noun_counts)(files[i]) for i in tqdm(range(len(files))))
 
+        # Extract number of proper nouns, non-proper nouns, and total words
         for ret in element_run:
             num_proper_nouns = sum([ret[0] for ret in element_run])
             num_other_nouns = sum([ret[1] for ret in element_run])
             num_total = sum([ret[2] for ret in element_run])
+
+        # Useful print statements
         print(timestamp(), "Done! Number of proper nouns:", num_proper_nouns)
         print("Number of other nouns:", num_other_nouns)
         print("Number of total words:", num_total)
@@ -254,11 +301,6 @@ def main(args):
     if args.tsv_corpus:
         dir = os.path.dirname(args.tsv_corpus)
         base = os.path.basename(args.tsv_corpus).replace(".tsv", "")
-        if args.london_lives_file:
-            s = base.split("-")
-            if len(s) > 1:
-                base = "OB_LL" + "-" + "-".join(base.split("-")[1:])
-            else: base = "OB_LL"
         base += "-stats"
         dir = os.path.join(dir, base)
         if not os.path.exists(dir): os.makedirs(dir)
@@ -301,7 +343,6 @@ def main(args):
 
     # Initialize stats dict
     stats_dict = init_stats_dict(data_list)
-
     stats_path = os.path.join(dir, path_suff + "stats.tsv")
 
     with open(stats_path, "w") as f: # FIX OUTPUT DIRECTORY AND PATH
@@ -342,7 +383,6 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--tsv_corpus', type=str, default='path to tsv file containing corpus')
-    parser.add_argument('--london_lives_file', type=str, default='')
     parser.add_argument('--basic_stats', default=False, action='store_true', help='whether to find basic corpus stats only.')
     parser.add_argument('--corpus_dir', type=str, default="/work/clambert/thesis-data/sessionsAndOrdinarys-txt-stats", help='directory containing corpus')
     parser.add_argument('--year_split', type=int, default=100, help='number of years to calculate stats for')
@@ -353,7 +393,7 @@ if __name__ == '__main__':
     parser.add_argument('--tfidf_model_dir_path', type=str, default = "", help='path to tfidf model directory containing model to load.')
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--count_entities', default=False, action='store_true', help='whether or not to count named entities in corpus and bnc')
-    parser.add_argument('--print_unk', default=False, action='store_true', help='whether or not to print out unknown words')
+    parser.add_argument('--print_unk', default=False, action='store_true', help='whether or not to print out unknown words (for testing)')
     parser.add_argument('--bnc_dir', type=str, default="/work/clambert/thesis-data/parsed-bnc", help='path for calculating bnc entities')
     parser.add_argument('--disable_tfidf', default=False, action='store_true')
     parser.add_argument('--graph_bnc', default=False, action='store_true')

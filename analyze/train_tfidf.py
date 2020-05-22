@@ -1,30 +1,25 @@
 #!/usr/bin/env python3
 from gensim import models, corpora
 from gensim.utils import simple_preprocess
-import argparse, os, sys, time, natsort
+import argparse, os, sys, time
 from tqdm import tqdm
 from gensim.corpora.mmcorpus import MmCorpus
-from string import punctuation
-from nltk.corpus import stopwords
 import numpy as np
 # from nltk import word_tokenize
 sys.path.append('../')
 from utils import *
 
-def build_vocab(documents):
-    # build the vocabulary in one pass
-    vocabulary = set()
-    for doc in documents:
-        words = doc.split()# tokenize(doc)
-        vocabulary.update(words)
-
-    vocabulary = list(vocabulary)
-
-    VOCABULARY_SIZE = len(vocabulary)
-    DOCUMENTS_COUNT = len(documents)
-    return vocabulary
-
 def gensim_tfidf(args, pre, documents):
+    """
+        Code to run TF-IDF model on documents (using gensim).
+
+        input:
+            args (argparse object): input arguments
+            pre (str): path to save model, corpus, and dictionary to
+            documents (list): list of text from input documents
+
+        returns tfidf model, corpus, and dictionary
+    """
     # Create the Dictionary and Corpus
     print(timestamp() + " Building dictionary...", file=sys.stderr)
     mydict = corpora.Dictionary([simple_preprocess(doc) for doc in documents])
@@ -45,6 +40,14 @@ def gensim_tfidf(args, pre, documents):
     return[tfidf, corpus, mydict]
 
 def before_train(args):
+    """
+        Function to compile text from documents
+
+        input:
+            args (argparse object): input arguments
+
+        returns prefix to save models to and list of all text from input files
+    """
     print(timestamp() +  " Beginning tf-idf...", file=sys.stderr)
     pre = os.path.join(args.save_model_dir, "tf-idf", time.strftime("%Y-%m-%d"), time.strftime("%H-%M-%S"))
     pre = pre.rstrip("/") + "/"
