@@ -113,7 +113,9 @@ def order_files(args):
     for doc in docs:
         # Get year for current document
         cur_year = get_year(doc, tsv=tsv)
+        # If year returned is -1, indicates invalid
         if cur_year == -1: continue
+        # Check if current year is at least year_split years away from the start
         if cur_year - start_year >= args.year_split:
             start_year = cur_year
             docs_dict[start_year] = []
