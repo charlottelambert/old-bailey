@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
-
 import gensim
 import sys, os, argparse
 sys.path.append('../')
 from utils import *
 
 def detm_embed_dump(model_txt_path):
+    """
+        Dump appropriate files to use projector.tensorflow.org for
+        visualization on embeddings from detm.
+
+        input:
+            model_txt_path (str): path to embeddings file
+    """
     # Convert text file to tsv file
     model_tsv_path = model_txt_path.rstrip("/") + ".tsv"
     labels_tsv_path = model_txt_path.rstrip('/') + "_labels.tsv"
@@ -28,6 +34,17 @@ def detm_embed_dump(model_txt_path):
     print(timestamp(), "Done!", file=sys.stderr)
 
 def dump_w2v(model_paths=None, model_dict=None, detm=False):
+    """
+        Dump appropriate files to use projector.tensorflow.org for
+        visualization on model trained by train_embeddings.py.
+
+        input:
+            model_paths (list): optional list of models to load and dump
+            model_dict (dict): optional dictionary of models to load and write
+                files for
+            detm (bool): optional flag indicating whether or not embeddings
+                were trained by detm code
+    """
     print(timestamp(), "Starting txt and tsv file dump...", file=sys.stderr)
     if not (model_paths or model_dict):
         print("dump_w2v: input list of model paths or valid models.", file=sys.stderr)
@@ -79,7 +96,7 @@ def dump_w2v(model_paths=None, model_dict=None, detm=False):
         print(timestamp(), "Done!", file=sys.stderr)
 
 def main():
-    dump_w2v(args.model_path, detm=args.detm)
+    dump_w2v([args.model_path], detm=args.detm)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

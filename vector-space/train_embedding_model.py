@@ -17,8 +17,16 @@ word_list = ["sentence", "punishment", "guilt", "murder", "vote", "woman", "man"
 word_list.sort()
 
 def gen_wordcloud(args, pre, first_year, neighbor_dict):
-    # dict is {word: [(neighbor, similarity), ...]}
-    # pre will be /path/to/dir/
+    """
+        Generate word clouds for word similarities found by word2vec.
+
+        input:
+            args (argparse object): input arguments
+            pre (str): path to save output images to
+            first_year (int): first year of time slice
+            neighbor_dict (dict): dictionary of words from word_list and their
+                most similar words (format: {word: [(neighbor, similarity), ...]})
+    """
     max_words = len(word_list)*(args.find_n_neighbors+1)
     wordcloud = WordCloud(background_color="white", max_words=max_words, width=400, height=400)
 
@@ -34,6 +42,17 @@ def gen_wordcloud(args, pre, first_year, neighbor_dict):
 
 
 def find_n_neighbors(args, pre, model_dict):
+    """
+        Find the args.find_n_neighbors most similar words to each word in
+        word_list.
+
+        input:
+            args (argparse object): input arguments
+            pre (str): path to save output images to
+            model_dict (dict): dictionary of models for each time slice
+
+        return dictionary of words and their most similar words.
+    """
     print(timestamp(), "Finding nearest", args.find_n_neighbors, "neighbors...", file=sys.stderr)
     tsv_path = os.path.join(pre, "neighbors.tsv")
     with open(tsv_path, "w") as f:
@@ -64,6 +83,16 @@ def build_corpus(args, input_dir_path=None, files=None, corpus_txt_file=None):
     """
         Function to build a corpus (list of contents of files) based on input
         directory.
+
+        input:
+            args (argparse object): input arguments
+            input_dir_path (str): optional directory from which files should be
+                loaded to build corpus
+            files (list): list of files to use for corpus
+            corpus_txt_file (str): filepath to corpus.txt file output from
+                running Mallet
+
+        returns list of words representing corpus
     """
     # If input tsv file, compile the third column of all
     if args.tsv_corpus:
@@ -104,11 +133,14 @@ def build_corpus(args, input_dir_path=None, files=None, corpus_txt_file=None):
         exit(1)
     return corpus
 
-# https://stackoverflow.com/questions/48941648/how-to-remove-a-word-completely-from-a-word2vec-model-in-gensim
 def filter_top_words(model, n):
     """
         Filter the most frequent n words found by model. Maximum of 10,000 words
         can be visualized using projector.tensorflow.org.
+
+        input:
+            model: word2vec model
+            n (int): number of words to filter out
     """
     wv = model.wv
     words_to_trim = wv.index2word[n:]
@@ -123,53 +155,6 @@ def filter_top_words(model, n):
     for i in sorted(ids_to_trim, reverse=True):
         del(wv.index2word[i])
     return model
-
-# https://www.kaggle.com/jeffd23/visualizing-word-vectors-with-t-sne/notebook
-def tsne_plot(model, pre, neighbor_dict):
-    """
-        Creates and TSNE model and plots it
-    """
-    words_to_plot = []
-    for word in neighbor_dict:
-        words_to_plot.append(word)
-        for neighbor in neighbor_dict[word]:
-            words_to_plot.append(neighbor[0])
-
-    labels = []
-    tokens = []
-
-    for i, word in enumerate(model.wv.vocab):
-        tokens.append(model.wv[word])
-        labels.append(word)
-
-    tsne_model = TSNE(random_state=2017, perplexity=12, n_components=2, init='pca', method='barnes_hut', verbose=1)
-    print(timestamp(), "TSNE model initialized.", file=sys.stderr)
-    try:
-        new_values = tsne_model.fit_transform(tokens)
-    except KeyboardInterrupt:
-        print(timestamp(), "Exiting...", file=sys.stderr)
-
-    x = []
-    y = []
-    for i in tqdm(range(len(new_values))):
-        value = new_values[i]
-        x.append(value[0])
-        y.append(value[1])
-
-    plt.figure(figsize=(10, 10))
-    for i in tqdm(range(len(x))):
-        if labels[i] not in words_to_plot:
-            continue
-
-        plt.scatter(x[i],y[i])
-        plt.annotate(labels[i],
-                     xy=(x[i], y[i]),
-                     xytext=(5, 2),
-                     textcoords='offset points',
-                     ha='right',
-                     va='bottom')
-    plt.savefig(pre + "_plot.png")
-    print(timestamp(), "TSNE plot saved.", file=sys.stderr)
 
 def main(args):
     print(timestamp(), "Beginning at " + time.strftime("%m/%d/%Y %H:%M "), file=sys.stderr)
@@ -264,14 +249,8 @@ def main(args):
             print("model dict:", model_dict)
 
     # Find nearest n neighbors
-    if args.find_n_neighbors or args.plot_neighbors:
+    if args.find_n_neighbors:
         neighbor_dict = find_n_neighbors(args, pre, model_dict)
-
-    # THIS IS BROKEN
-    if args.plot_neighbors:
-        print(timestamp(), "Visualizing results...", file=sys.stderr)
-        for year in model_dict:
-            tsne_plot(model_dict[year]["model"], os.path.join(pre, str(year)), neighbor_dict[year])
 
     print(timestamp(), "Done! Ending at " + time.strftime("%d/%m/%Y %H:%M ") , file=sys.stderr)
 
@@ -283,7 +262,6 @@ if __name__ == '__main__':
     parser.add_argument('--save_model_dir', type=str, default="/work/clambert/models/", help='base directory for saving model directory')
     parser.add_argument('--load_model_dir', type=str, help='path to directory containing models to load and visualize.')
     parser.add_argument('--pretrained', type=str, help='path to pretrained model (use /work/clambert/models/pretrained/GoogleNews-vectors-negative300.bin).')
-    parser.add_argument('--plot_neighbors', default=False, action="store_true", help='whether or not to visualize and plot data.')
     parser.add_argument('--filter_top_words', type=int, default=10000, help='number of words to include in model (take the most common words)')
     parser.add_argument('--find_n_neighbors', type=int, default=0, help='how many nearest neighbors to find')
     parser.add_argument('--epochs', type=int, default=100, help='how many epochs')
