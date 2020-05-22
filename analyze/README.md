@@ -38,8 +38,6 @@ This will first run TF-IDF on the data (if no `--tfidf_model_dir_path` argument 
 
 If you want, you can replace the `--corpus_dir` argument with the `--tsv_corpus` argument and pass in a path to the tsv file containing the corpus.
 
-Note, you can also supply a document to serve as an English dictionary (e.g., `/work/clambert/thesis-data/english_dict.txt`). By default, `words.words()` from `nltk` will be used. The most updated version can be obtained by running `/home/clambert/english-words/word_fix.py`.
-
 Including the `--basic_stats` flag may be more useful. It will calculate how many documents, how many tokens, and how many types there are per time slice and overall. It will also find the most common word in each time slice and overall.
 
 ## TF-IDF
