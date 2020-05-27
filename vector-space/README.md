@@ -1,6 +1,6 @@
-# thesis/vector-space
+# old-bailey/vector-space
 
-The following table shows all files present in the `thesis/vector-space` directory. Below the table there are descriptions of how to run each file.
+The following table shows all files present in the `old-bailey/vector-space` directory. Below the table there are descriptions of how to run each file.
 
 Name | Contents
 -------|-------

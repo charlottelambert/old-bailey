@@ -1,6 +1,6 @@
-# thesis/topic-modeling
+# old-bailey/topic-modeling
 
-The following table shows all files present in the `thesis/data` directory. Below the table there are descriptions of how to run each file.
+The following table shows all files present in the `old-bailey/data` directory. Below the table there are descriptions of how to run each file.
 
 Name | Content
 -------|-------
@@ -16,7 +16,7 @@ Name | Content
 `vis-topic-gensim.py` | Code to generate html visualization of LDA model run using Gensim
 `vis_topic_mallet.py` | Code to generate html visualization of LDA model run using wrapper code in `lda-tools`
 
-Note: To run topic models using the Mallet wrapper, clone [this](https://github.com/charlottelambert/techknacq-tk) repo into `thesis/topic-modeling/lda-tools`.
+Note: To run topic models using the Mallet wrapper, clone [this](https://github.com/charlottelambert/techknacq-tk) repo into `old-bailey/topic-modeling/lda-tools`.
 
 ## Running LDA/DTM/LDAseq
 
@@ -32,7 +32,7 @@ This will run an LDA model over the entire corpus found in `TSV_DATA` with `NUM_
 
 If no file is passed into `--corpus_file`, the value for `--corpus_dir`, a directory containing the data in text files, will be used instead. If the input `--corpus_file` only contains Old Bailey data and you wish to run the model over both Old Bailey and London Lives data, pass in the path to a tsv file containing the London Lives data to the `--london_lives_file` argument in addition to the `--corpus_file` argument.
 
-Including the flag `--gensim` indicates that you wish to run LDA with Gensim's wrapper. It is recommended that you do not use this flag and instead let the Mallet wrapper code in `lda-tools` run LDA. See the `README.md` in the `thesis` directory for instructions on obtaining the Mallet wrapper.
+Including the flag `--gensim` indicates that you wish to run LDA with Gensim's wrapper. It is recommended that you do not use this flag and instead let the Mallet wrapper code in `lda-tools` run LDA. See the `README.md` in the `old-bailey` directory for instructions on obtaining the Mallet wrapper.
 
 When running LDA on the files in a directory, you may specify the `--bigrams_only` argument to convert the data to bigrams. This will be reported to the Mallet wrapper code.
 

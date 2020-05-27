@@ -112,7 +112,6 @@ def main(options, args):
         if options.method == 'umass':
             print("Generating corpus...", file=sys.stderr, end=' ')
             # Generate corpus from documents
-            # export PYTHONPATH=/home/clambert/thesis/topic-modeling/lda-tools/lib:$PYTHONPATH
             corpus = load_docs(options)
             print("Done!", file=sys.stderr)
 
