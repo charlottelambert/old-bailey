@@ -1,6 +1,6 @@
 ## Old Bailey (senior thesis project)
 
-This code accompanies my senior thesis project, ~Temporal Exploration of Old Bailey~. You can read the full document [here](https://digitalwindow.vassar.edu/senior_capstone/996/).
+This code accompanies my senior thesis project, _Temporal Exploration of the Proceedings of Old Bailey_. You can read the full document [here](https://digitalwindow.vassar.edu/senior_capstone/996/).
 
 ### Code contained in this project
 
