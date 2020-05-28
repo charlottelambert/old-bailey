@@ -1,5 +1,7 @@
 ## Old Bailey (senior thesis project)
 
+This code accompanies my senior thesis project, ~Temporal Exploration of Old Bailey~. You can read the full document [here](https://digitalwindow.vassar.edu/senior_capstone/996/).
+
 ### Code contained in this project
 
 The following descriptions relate to code in the `old-bailey` directory. Follow the instructions in this document to obtain the necessary files. To get more information about the code, see `README.md` files in each sub-directory. Run each file with the `--help` flag to get more info for each program.
@@ -8,7 +10,6 @@ Name | Content
 -------|-------
 [`analyze`](analyze) | Code for analyzing processed data
 [`data`](data) | Code for acquiring and processing text data
-[`lambert-final-thesis.pdf`](lambert-final-thesis.pdf) | Final thesis draft.
 [`logs`](logs) | Directory containing logfiles from topic modeling
 [`README.md`](README.md) | This file
 [`topic-modeling`](topic-modeling) | Code for running LDA/DTM/other variations of topic modeling
